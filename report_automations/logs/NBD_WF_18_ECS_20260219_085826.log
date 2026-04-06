@@ -1,0 +1,26 @@
+2026-02-19 08:58:26,350 - INFO - Logger initialized
+2026-02-19 08:58:26,351 - INFO - Date parsed using format: %m/%d/%Y
+2026-02-19 08:58:26,352 - INFO - [START] Main report header and account updates
+2026-02-19 08:58:32,485 - INFO - [START] process_accounts
+2026-02-19 08:58:32,514 - INFO - Current Accounts Balances: extracted 44 rows
+2026-02-19 08:58:32,515 - INFO - [END] process_accounts - Elapsed: 0.03s
+2026-02-19 08:58:32,515 - INFO - [START] process_accounts
+2026-02-19 08:58:32,516 - INFO - Savings Accounts Balances: extracted 17 rows
+2026-02-19 08:58:32,516 - INFO - [END] process_accounts - Elapsed: 0.00s
+2026-02-19 08:58:32,516 - INFO - [START] process_daily_bank_balances
+2026-02-19 08:58:32,557 - INFO - Found 31 date columns
+2026-02-19 08:58:32,557 - INFO - Using latest available date: 2025-08-31
+2026-02-19 08:58:32,562 - INFO - Daily bank balances total: -1713550.647362537
+2026-02-19 08:58:32,562 - INFO - [END] process_daily_bank_balances - Elapsed: 0.05s
+2026-02-19 08:58:32,562 - INFO - [START] apply_vlookup
+2026-02-19 08:58:32,564 - INFO - [END] apply_vlookup - Elapsed: 0.00s
+2026-02-19 08:58:32,565 - INFO - [START] apply_vlookup
+2026-02-19 08:58:32,566 - INFO - [END] apply_vlookup - Elapsed: 0.00s
+2026-02-19 08:58:32,566 - WARNING - Validation failed: totals do not match
+2026-02-19 08:58:39,550 - INFO - Saved main report updates
+2026-02-19 08:58:39,550 - INFO - [END] Main report header and account updates - Elapsed: 13.20s
+2026-02-19 08:58:39,550 - INFO - [START] process_weekly_distributions
+2026-02-19 08:58:39,550 - INFO - Processing Weekly Distributions (WeekOfMonth=3, WeekOfYear=8)
+2026-02-19 08:58:42,873 - INFO - [START] xlwings batch read
+2026-02-19 08:58:45,431 - INFO - [END] xlwings batch read - Elapsed: 2.56s
+2026-02-19 08:58:45,988 - INFO - [END] process_weekly_distributions - Elapsed: 6.44s

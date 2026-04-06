@@ -1,0 +1,10 @@
+2025-12-18 17:56:56,760 - INFO - Logger initialized
+2025-12-18 17:57:03,513 - INFO - Current Accounts Balances: extracted 44 rows
+2025-12-18 17:57:03,515 - INFO - Savings Accounts Balances: extracted 17 rows
+2025-12-18 17:57:03,567 - INFO - Found 31 date columns: ['2025-08-01', '2025-08-02', '2025-08-03', '2025-08-04', '2025-08-05', '2025-08-06', '2025-08-07', '2025-08-08', '2025-08-09', '2025-08-10', '2025-08-11', '2025-08-12', '2025-08-13', '2025-08-14', '2025-08-15', '2025-08-16', '2025-08-17', '2025-08-18', '2025-08-19', '2025-08-20', '2025-08-21', '2025-08-22', '2025-08-23', '2025-08-24', '2025-08-25', '2025-08-26', '2025-08-27', '2025-08-28', '2025-08-29', '2025-08-30', '2025-08-31']
+2025-12-18 17:57:03,568 - INFO - Exact date match found: 2025-08-18
+2025-12-18 17:57:03,571 - INFO - Daily bank balances total: 0.0
+2025-12-18 17:57:03,573 - INFO - Weekly distribution process started | Date=2025-08-18 | WeekOfMonth=3 | WeekOfYear=34
+2025-12-18 17:57:09,664 - INFO - Opened report file: C:\CBSL\Script\working\NBD_WF_18_ECS\22-06-2025\Cash-Flow-Forecast-Week_33.xlsm
+2025-12-18 17:57:09,664 - INFO - Available sheets: ['NBD-WF-18-ECS', 'Opening&End LA', 'Weekly Distributions ', 'Borrowing & Settlement ', 'Bond Adjustment', 'M2M', 'Treasury Input', 'Opening TB-10-Aug', 'Close TB-17-Aug', 'Op. Borrowing', 'Cl. Borrowing', 'Sheet1', 'FD', 'utilized credit lines', 'SasiaNet', 'INT Co. Borrowings 12', 'Receipt - 08-18', 'Payment 08-18', 'List', 'TAX Payments', 'Collection', 'Last  Cum month collection', 'Cashflow Movement', 'Types of Receipt']
+2025-12-18 17:57:09,665 - INFO - Using sheet: 'Weekly Distributions '

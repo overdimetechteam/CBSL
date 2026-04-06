@@ -1,0 +1,73 @@
+2026-02-19 08:48:58,483 - INFO - Logger initialized
+2026-02-19 08:48:58,485 - INFO - Date parsed using format: %m/%d/%Y
+2026-02-19 08:48:58,485 - INFO - [START] Main report header and account updates
+2026-02-19 08:49:04,332 - INFO - [START] process_accounts
+2026-02-19 08:49:04,366 - INFO - Current Accounts Balances: extracted 44 rows
+2026-02-19 08:49:04,366 - INFO - [END] process_accounts - Elapsed: 0.03s
+2026-02-19 08:49:04,367 - INFO - [START] process_accounts
+2026-02-19 08:49:04,368 - INFO - Savings Accounts Balances: extracted 17 rows
+2026-02-19 08:49:04,368 - INFO - [END] process_accounts - Elapsed: 0.00s
+2026-02-19 08:49:04,368 - INFO - [START] process_daily_bank_balances
+2026-02-19 08:49:04,420 - INFO - Found 31 date columns
+2026-02-19 08:49:04,420 - INFO - Using latest available date: 2025-08-31
+2026-02-19 08:49:04,426 - INFO - Daily bank balances total: -1713550.647362537
+2026-02-19 08:49:04,426 - INFO - [END] process_daily_bank_balances - Elapsed: 0.06s
+2026-02-19 08:49:04,426 - INFO - [START] apply_vlookup
+2026-02-19 08:49:04,429 - INFO - [END] apply_vlookup - Elapsed: 0.00s
+2026-02-19 08:49:04,429 - INFO - [START] apply_vlookup
+2026-02-19 08:49:04,430 - INFO - [END] apply_vlookup - Elapsed: 0.00s
+2026-02-19 08:49:04,431 - WARNING - Validation failed: totals do not match
+2026-02-19 08:49:11,104 - INFO - Saved main report updates
+2026-02-19 08:49:11,104 - INFO - [END] Main report header and account updates - Elapsed: 12.62s
+2026-02-19 08:49:11,104 - INFO - [START] process_weekly_distributions
+2026-02-19 08:49:11,104 - INFO - Processing Weekly Distributions (WeekOfMonth=3, WeekOfYear=8)
+2026-02-19 08:49:13,539 - INFO - [START] xlwings batch read
+2026-02-19 08:49:16,268 - INFO - Read Weekly Distributions G18:G22: [22453.07914, 1109592.9283000005, 2901.80188, 652.82077, 57279.07654000002]
+2026-02-19 08:49:16,386 - INFO - [END] xlwings batch read - Elapsed: 2.85s
+2026-02-19 08:49:16,829 - INFO - [START] Write to Payments file
+2026-02-19 08:49:16,837 - INFO - Pasted Payments D2: 22453.07914
+2026-02-19 08:49:16,838 - INFO - Pasted Payments D3: 1109592.9283000005
+2026-02-19 08:49:16,838 - INFO - Pasted Payments D4: 2901.80188
+2026-02-19 08:49:16,838 - INFO - Pasted Payments D5: 652.82077
+2026-02-19 08:49:16,838 - INFO - Pasted Payments D6: 57279.07654000002
+2026-02-19 08:49:16,845 - INFO - Saved Payments file
+2026-02-19 08:49:16,845 - INFO - [END] Write to Payments file - Elapsed: 0.02s
+2026-02-19 08:49:16,845 - INFO - [START] Process DM Deposit Liability
+2026-02-19 08:49:17,159 - INFO - DM Week 3: Total Payable 0.0 -> D7
+2026-02-19 08:49:17,159 - INFO - [END] Process DM Deposit Liability - Elapsed: 0.31s
+2026-02-19 08:49:17,160 - INFO - [END] process_weekly_distributions - Elapsed: 6.06s
+2026-02-19 08:49:17,160 - INFO - [START] copy_cash_flow_to_weekly_distributions
+2026-02-19 08:49:17,160 - INFO - Processing Cash Flow to Weekly Distributions mapping
+2026-02-19 08:49:17,386 - INFO - Found 'APIT': 19913800
+2026-02-19 08:49:17,386 - INFO - Found 'Central Bank': 497480
+2026-02-19 08:49:17,386 - INFO - Found 'Taxes': 391126896.66
+2026-02-19 08:49:17,386 - INFO - Found 'Outsource staff': 416500
+2026-02-19 08:49:25,930 - INFO - Updated 'CBSL': 497480
+2026-02-19 08:49:25,930 - INFO - Updated 'Outsource Staff': 416500
+2026-02-19 08:49:25,930 - INFO - Updated 'APIIT': 19913800
+2026-02-19 08:49:25,930 - INFO - Updated 'Taxes': 391126896.66
+2026-02-19 08:49:33,080 - INFO - Cash Flow mapping complete: 4 cells updated
+2026-02-19 08:49:33,080 - INFO - [END] copy_cash_flow_to_weekly_distributions - Elapsed: 15.92s
+2026-02-19 08:49:33,080 - INFO - [START] update_treasury_input_sheet
+2026-02-19 08:49:33,080 - INFO - Processing Treasury Input sheet update
+2026-02-19 08:49:34,820 - INFO - [START] xlwings read Treasury Input
+2026-02-19 08:49:37,533 - INFO - Read D8 ('Securitization Loans - Capital'): 778156679.4400002
+2026-02-19 08:49:37,538 - INFO - Read D9 ('Securitization Loans - Interest Payable'): 2223229.700342466
+2026-02-19 08:49:37,543 - INFO - Read D18 ('Cost of Investment (Cost + Price Accrued)'): 4364127971.69
+2026-02-19 08:49:37,548 - INFO - Read D19 ('Interest Receivable (Coupon Accrued Interest)'): 257232716.26
+2026-02-19 08:49:37,553 - INFO - Read D20 ('M2M Gain'): 1455114172.76
+2026-02-19 08:49:37,630 - INFO - [END] xlwings read Treasury Input - Elapsed: 2.81s
+2026-02-19 08:49:38,142 - INFO - [START] openpyxl write Treasury Input
+2026-02-19 08:49:46,811 - INFO - 'Securitization Loans - Capital': Moved D->C: 778156679.4400002
+2026-02-19 08:49:46,812 - INFO - 'Securitization Loans - Interest Payable': Moved D->C: 2223229.700342466
+2026-02-19 08:49:46,812 - INFO - 'Cost of Investment (Cost + Price Accrued)': Moved D->C: 4364127971.69
+2026-02-19 08:49:46,812 - INFO - 'Interest Receivable (Coupon Accrued Interest)': Moved D->C: 257232716.26
+2026-02-19 08:49:46,812 - INFO - 'M2M Gain': Moved D->C: 1455114172.76
+2026-02-19 08:49:54,092 - INFO - [END] openpyxl write Treasury Input - Elapsed: 15.95s
+2026-02-19 08:49:54,092 - INFO - [END] update_treasury_input_sheet - Elapsed: 21.01s
+2026-02-19 08:49:54,092 - INFO - [START] update_tb_sheets
+2026-02-19 08:49:54,092 - INFO - Processing Opening TB and Close TB sheet updates
+2026-02-19 08:50:02,846 - INFO - Close TB dimensions: 2783 rows x 16384 columns
+2026-02-19 08:50:02,846 - INFO - [START] Read Close TB into DataFrame
+2026-02-19 08:53:34,110 - INFO - [END] Read Close TB into DataFrame - Elapsed: 211.26s
+2026-02-19 08:53:34,115 - INFO - [END] update_tb_sheets - Elapsed: 220.02s

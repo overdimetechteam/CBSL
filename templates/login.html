@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign In — Report Automation Portal</title>
+  <style>
+    :root {
+      --bg-page:        #0f172a;
+      --bg-card:        rgba(255,255,255,.06);
+      --border:         rgba(255,255,255,.12);
+      --border-focus:   #3b82f6;
+      --text-primary:   #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-footer:    #475569;
+      --input-bg:       rgba(255,255,255,.06);
+      --input-border:   rgba(255,255,255,.14);
+      --input-text:     #f1f5f9;
+      --btn-bg:         linear-gradient(135deg,#1d4ed8 0%,#2563eb 100%);
+      --btn-toggle-bg:  rgba(255,255,255,.08);
+      --btn-toggle-border: rgba(255,255,255,.15);
+      --alert-error-bg:   rgba(239,68,68,.12);
+      --alert-error-text: #fca5a5;
+      --alert-error-border: rgba(239,68,68,.35);
+      --alert-warn-bg:    rgba(249,115,22,.12);
+      --alert-warn-text:  #fdba74;
+      --alert-warn-border: rgba(249,115,22,.35);
+    }
+    [data-theme="light"] {
+      --bg-page:        #f0f4f8;
+      --bg-card:        #ffffff;
+      --border:         #e2e8f0;
+      --border-focus:   #2563eb;
+      --text-primary:   #0f172a;
+      --text-secondary: #475569;
+      --text-footer:    #94a3b8;
+      --input-bg:       #f8fafc;
+      --input-border:   #cbd5e1;
+      --input-text:     #0f172a;
+      --btn-toggle-bg:  #f1f5f9;
+      --btn-toggle-border: #cbd5e1;
+      --alert-error-bg:   #fef2f2;
+      --alert-error-text: #b91c1c;
+      --alert-error-border: #fca5a5;
+      --alert-warn-bg:    #fff7ed;
+      --alert-warn-text:  #c2410c;
+      --alert-warn-border: #fdba74;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { transition: background .25s; }
+    html, body { height: 100%; margin: 0; }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg-page);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      color: var(--text-primary);
+    }
+    [data-theme="dark"] body {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 60%, #0f172a 100%);
+    }
+
+    .login-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 1.25rem;
+      padding: 2.75rem 3rem 2.25rem;
+      width: 90%; max-width: 420px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.35);
+    }
+
+    .portal-logo { height: 56px; width: auto; margin-bottom: 1rem; display: block; margin-left: auto; margin-right: auto; }
+
+    .login-title {
+      font-size: 1.55rem; font-weight: 700; letter-spacing: .3px;
+      text-align: center; margin-bottom: .25rem;
+    }
+    .login-subtitle {
+      text-align: center; color: var(--text-secondary);
+      font-size: .88rem; margin-bottom: 2rem;
+    }
+
+    /* ── Alerts ── */
+    .alert {
+      border-radius: .6rem; padding: .7rem 1rem;
+      font-size: .88rem; margin-bottom: 1.25rem;
+      border: 1px solid transparent;
+    }
+    .alert-error   { background: var(--alert-error-bg); color: var(--alert-error-text); border-color: var(--alert-error-border); }
+    .alert-warning { background: var(--alert-warn-bg);  color: var(--alert-warn-text);  border-color: var(--alert-warn-border); }
+
+    /* ── Form ── */
+    .form-group { margin-bottom: 1.1rem; }
+    .form-group label {
+      display: block; font-size: .85rem; font-weight: 600;
+      margin-bottom: .4rem; color: var(--text-secondary);
+      letter-spacing: .2px;
+    }
+    .form-group input {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: .6rem;
+      padding: .65rem .9rem;
+      font-size: .95rem;
+      color: var(--input-text);
+      outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .form-group input:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(59,130,246,.2);
+    }
+    .form-group input::placeholder { color: var(--text-secondary); opacity: .7; }
+
+    /* ── Password wrapper ── */
+    .pw-wrap { position: relative; }
+    .pw-wrap input { padding-right: 2.8rem; }
+    .pw-toggle {
+      position: absolute; right: .75rem; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer;
+      color: var(--text-secondary); font-size: 1.05rem; padding: 0;
+      line-height: 1;
+    }
+    .pw-toggle:hover { color: var(--text-primary); }
+
+    /* ── Submit ── */
+    .btn-signin {
+      width: 100%; padding: .72rem;
+      background: var(--btn-bg); color: #fff;
+      border: none; border-radius: .75rem;
+      font-size: 1rem; font-weight: 600; letter-spacing: .2px;
+      cursor: pointer; margin-top: .5rem;
+      transition: filter .15s, transform .15s;
+    }
+    .btn-signin:hover { filter: brightness(1.1); transform: translateY(-1px); }
+    .btn-signin:active { transform: translateY(0); }
+
+    /* ── Footer ── */
+    .divider { border: none; border-top: 1px solid var(--border); margin: 1.75rem 0 1.25rem; }
+    .footer-row { display: flex; align-items: center; justify-content: space-between; }
+    .footer-note { color: var(--text-footer); font-size: .76rem; }
+
+    .theme-toggle-btn {
+      background: var(--btn-toggle-bg); border: 1px solid var(--btn-toggle-border);
+      color: var(--text-secondary); border-radius: .6rem;
+      padding: .3rem .7rem; font-size: .78rem; cursor: pointer;
+      transition: border-color .15s, color .15s;
+    }
+    .theme-toggle-btn:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <img src="/static/logo/logo.png" alt="Logo" class="portal-logo" onerror="this.style.display='none'">
+    <div class="login-title">Sign In</div>
+    <div class="login-subtitle">Report Automation Portal &mdash; ASSETLINE FINANCE PLC</div>
+
+    {% for category, message in get_flashed_messages(with_categories=true) %}
+    <div class="alert alert-{{ 'error' if category == 'error' else 'warning' }}">{{ message }}</div>
+    {% endfor %}
+
+    <form method="post" action="/login" autocomplete="off">
+      <input type="hidden" name="next" value="{{ next or '' }}">
+
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" placeholder="Enter your username"
+               value="{{ username or '' }}" autocomplete="username" required>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="password" name="password" placeholder="Enter your password"
+                 autocomplete="current-password" required>
+          <button type="button" class="pw-toggle" onclick="togglePw()" id="pw-toggle-btn" title="Show/hide password">&#128065;</button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-signin">Sign In</button>
+    </form>
+
+    <hr class="divider">
+    <div class="footer-row">
+      <span class="footer-note">Internal Use Only</span>
+      <button class="theme-toggle-btn" onclick="toggleTheme()" id="theme-btn">&#9680; Theme</button>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const saved = localStorage.getItem('cbsl-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', saved);
+      updateThemeBtn(saved);
+    })();
+    function toggleTheme() {
+      const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+      const nxt = cur === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', nxt);
+      localStorage.setItem('cbsl-theme', nxt);
+      updateThemeBtn(nxt);
+    }
+    function updateThemeBtn(t) {
+      const b = document.getElementById('theme-btn');
+      if (b) b.innerHTML = t === 'dark' ? '&#9728; Light' : '&#9790; Dark';
+    }
+    function togglePw() {
+      const inp = document.getElementById('password');
+      const btn = document.getElementById('pw-toggle-btn');
+      if (inp.type === 'password') {
+        inp.type = 'text';
+        btn.innerHTML = '&#128584;';
+      } else {
+        inp.type = 'password';
+        btn.innerHTML = '&#128065;';
+      }
+    }
+  </script>
+</body>
+</html>

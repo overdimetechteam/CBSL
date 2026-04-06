@@ -1,0 +1,5 @@
+2026-03-03 14:52:07,766 - INFO - setup_logging:31 - Logging initialized. Log file: C:\CBSL\Script\report_automations\logs\Supporting_Schedules_20260303_145207.log
+2026-03-03 14:52:07,767 - INFO - <module>:2516 - Working directory: C:\CBSL\Script\working\monthly
+2026-03-03 14:52:07,768 - INFO - get_month_from_gl_file:102 - Extracting month from GL Account Details file...
+2026-03-03 14:52:07,769 - INFO - get_monthly_folder:41 - Searching for monthly folder in: C:\CBSL\Script\working\monthly
+2026-03-03 14:52:07,769 - ERROR - get_monthly_folder:44 - Base path does not exist or is not a directory: C:\CBSL\Script\working\monthly

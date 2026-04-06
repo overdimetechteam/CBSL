@@ -1,0 +1,635 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IFRS Report Automation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+      /* ── Theme tokens ──────────────────────────────────────────── */
+      :root {
+        --bg-page:        #0f172a;
+        --bg-surface:     rgba(255,255,255,.05);
+        --bg-surface-2:   rgba(255,255,255,.08);
+        --bg-surface-3:   rgba(255,255,255,.12);
+        --border:         rgba(255,255,255,.10);
+        --border-strong:  rgba(255,255,255,.18);
+        --text-primary:   #f1f5f9;
+        --text-secondary: #94a3b8;
+        --text-muted:     #64748b;
+        --accent-blue:    #143285;
+        --accent-blue-2:  #19295e;
+        --accent-green:   #16a34a;
+        --accent-green-2: #15803d;
+        --accent-orange:  #f97316;
+        --accent-red:     #ef4444;
+        --accent-red-2:   #dc2626;
+        --datetime-date:  #94a3b8;
+        --datetime-time:  #f1f5f9;
+        --shadow-sm:      0 2px 8px rgba(0,0,0,.4);
+        --shadow-md:      0 6px 24px rgba(0,0,0,.5);
+        --radius-sm:      .5rem;
+        --radius-md:      .75rem;
+        --radius-lg:      1rem;
+      }
+
+      [data-theme="light"] {
+        --bg-page:        #f0f4f8;
+        --bg-surface:     #ffffff;
+        --bg-surface-2:   #f8fafc;
+        --bg-surface-3:   #f1f5f9;
+        --border:         #e2e8f0;
+        --border-strong:  #cbd5e1;
+        --text-primary:   #0f172a;
+        --text-secondary: #475569;
+        --text-muted:     #94a3b8;
+        --accent-blue:    #143285;
+        --accent-blue-2:  #19295e;
+        --accent-green:   #16a34a;
+        --accent-green-2: #15803d;
+        --accent-orange:  #ea580c;
+        --accent-red:     #dc2626;
+        --accent-red-2:   #b91c1c;
+        --datetime-date:  #475569;
+        --datetime-time:  #0f172a;
+        --shadow-sm:      0 2px 8px rgba(0,0,0,.07);
+        --shadow-md:      0 6px 24px rgba(0,0,0,.10);
+      }
+
+      /* ── Base ──────────────────────────────────────────────────── */
+      *, *::before, *::after { box-sizing: border-box; }
+      html { transition: background .25s, color .25s; }
+      body {
+        background-color: var(--bg-page);
+        color: var(--text-primary);
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        margin: 0; padding: 0;
+      }
+
+      /* ── Header ────────────────────────────────────────────────── */
+      .header {
+        background: var(--bg-surface-2);
+        border-bottom: 1px solid var(--border);
+        padding: 1rem 0;
+        box-shadow: var(--shadow-sm);
+        backdrop-filter: blur(8px);
+        position: sticky; top: 0; z-index: 200;
+      }
+      .header h1 { color: var(--text-primary); font-size: 1.4rem; font-weight: 700; margin: 0; }
+      .header p  { color: var(--text-secondary); font-size: .88rem; margin: .2rem 0 0; }
+      .logo-placeholder { height: 40px; width: auto; max-width: 100px; }
+
+      #live-datetime { text-align: right; line-height: 1.2; }
+      #live-datetime .dt-date { display: block; font-size: .75rem; font-weight: 400; color: var(--datetime-date); letter-spacing: .2px; }
+      #live-datetime .dt-time { display: block; font-size: 1.4rem; font-weight: 700; color: var(--datetime-time); letter-spacing: .5px; font-variant-numeric: tabular-nums; }
+
+      /* ── Theme / home buttons ───────────────────────────────────── */
+      .theme-toggle-btn {
+        background: var(--bg-surface-3); border: 1px solid var(--border);
+        color: var(--text-primary); border-radius: var(--radius-md);
+        padding: .4rem .8rem; font-size: .85rem; cursor: pointer;
+        transition: border-color .15s;
+        display: flex; align-items: center; gap: .4rem; white-space: nowrap;
+      }
+      .theme-toggle-btn:hover { border-color: var(--border-strong); }
+
+      .home-btn {
+        background: var(--bg-surface-3); border: 1px solid var(--border);
+        color: var(--text-primary); border-radius: var(--radius-md);
+        padding: .4rem .9rem; font-size: .85rem; text-decoration: none;
+        transition: border-color .15s;
+        display: flex; align-items: center; gap: .4rem;
+      }
+      .home-btn:hover { border-color: var(--border-strong); color: var(--text-primary); }
+
+      /* ── Layout ────────────────────────────────────────────────── */
+      .main-container {
+        padding: 2rem 0;
+        min-height: calc(100vh - 80px);
+      }
+      .content-wrapper {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 2rem;
+        box-shadow: var(--shadow-sm);
+      }
+      .section-title {
+        color: var(--text-primary);
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        font-size: 1.35rem;
+        letter-spacing: .3px;
+      }
+
+      /* ── Action bar (sticky inside card) ───────────────────────── */
+      .action-bar {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border);
+        padding: .75rem 1.5rem;
+        margin: -2rem -2rem 1.5rem -2rem;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,.08);
+      }
+
+      /* ── Date controls ──────────────────────────────────────────── */
+      .date-controls {
+        background: var(--bg-surface-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.5rem;
+      }
+      .date-controls label { color: var(--text-primary); }
+      .date-controls small { color: var(--text-secondary); }
+
+      /* ── Report cards ───────────────────────────────────────────── */
+      .report-card {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 1rem 1.25rem;
+        margin-bottom: .75rem;
+        background: var(--bg-surface);
+        transition: border-color .15s, box-shadow .15s;
+      }
+      .report-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
+      .report-card.selected { border-color: var(--accent-blue); background: var(--bg-surface-2); }
+
+      .priority-badge {
+        display: inline-flex;
+        align-items: center; justify-content: center;
+        width: 26px; height: 26px;
+        border-radius: 50%;
+        background: var(--accent-blue);
+        color: #fff;
+        font-size: .75rem; font-weight: 700;
+        flex-shrink: 0;
+      }
+
+      .report-label { font-weight: 600; font-size: .95rem; color: var(--text-primary); }
+      .report-desc  { font-size: .82rem; color: var(--text-secondary); margin-top: .2rem; }
+      .last-run     { font-size: .78rem; color: var(--text-muted); }
+
+      /* ── Status panel ───────────────────────────────────────────── */
+      .status-badge {
+        display: inline-block;
+        padding: .3rem .9rem;
+        border-radius: 20px;
+        font-size: .82rem; font-weight: 600;
+        letter-spacing: .03em;
+      }
+      .badge-idle     { background: var(--bg-surface-3); color: var(--text-secondary); }
+      .badge-running  { background: rgba(20,50,133,.25);  color: #60a5fa; }
+      .badge-done     { background: rgba(22,163,74,.15);  color: #4ade80; }
+      .badge-error    { background: rgba(239,68,68,.15);  color: #f87171; }
+      .badge-stopping { background: rgba(249,115,22,.15); color: #fbbf24; }
+
+      /* ── Checklist ──────────────────────────────────────────────── */
+      .checklist-item {
+        display: flex; align-items: center; gap: .6rem;
+        padding: .5rem .75rem;
+        border-radius: var(--radius-sm);
+        margin-bottom: .3rem;
+        background: var(--bg-surface-2);
+        font-size: .88rem;
+        color: var(--text-primary);
+      }
+      .ci-icon { font-size: 1rem; width: 1.2rem; text-align: center; }
+      .ci-pending  .ci-icon { color: var(--text-muted); }
+      .ci-running  { background: var(--bg-surface-3); }
+      .ci-running  .ci-icon { color: #60a5fa; }
+      .ci-done     .ci-icon { color: #4ade80; }
+      .ci-failed   .ci-icon { color: var(--accent-red); }
+      .ci-stopped  .ci-icon { color: var(--accent-orange); }
+
+      /* ── Log viewer ─────────────────────────────────────────────── */
+      #log-list {
+        max-height: 320px;
+        overflow-y: auto;
+        font-family: 'Consolas', 'Courier New', monospace;
+        font-size: .78rem;
+        background: #0a0f1e;
+        color: #a8c0e8;
+        border-radius: var(--radius-sm);
+        padding: .75rem 1rem;
+      }
+      [data-theme="light"] #log-list { background: #1e2030; color: #c8d8f0; }
+      #log-list li {
+        list-style: none; padding: .1rem 0;
+        border-bottom: 1px solid rgba(255,255,255,.04);
+        white-space: pre-wrap; word-break: break-all;
+      }
+
+      /* ── Progress bar ────────────────────────────────────────────── */
+      .progress { height: 6px; border-radius: 3px; background: var(--bg-surface-3); }
+
+      /* ── Scrollbar ───────────────────────────────────────────────── */
+      ::-webkit-scrollbar { width: 7px; }
+      ::-webkit-scrollbar-track { background: var(--bg-page); }
+      ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+    </style>
+  </head>
+  <body>
+
+    <!-- ── Header ────────────────────────────────────────────────── -->
+    <header class="header">
+      <div class="container">
+        <div class="d-flex align-items-center justify-content-between gap-3">
+          <div class="d-flex align-items-center gap-3">
+            <img src="/static/logo/logo.png" alt="Logo" class="logo-placeholder" onerror="this.style.display='none'">
+            <div>
+              <h1>IFRS Report Automation</h1>
+              <p>International Financial Reporting Standards &mdash; ASSETLINE FINANCE PLC</p>
+            </div>
+          </div>
+          <div class="d-flex align-items-center gap-3">
+            <div id="live-datetime">
+              <span class="dt-date">—</span>
+              <span class="dt-time">—</span>
+            </div>
+            <a href="/" class="home-btn">&#8962; Home</a>
+            <button class="theme-toggle-btn" onclick="toggleTheme()" id="theme-btn">&#9680; Theme</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ── Main ──────────────────────────────────────────────────── -->
+    <div class="main-container">
+      <div class="container">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="mb-3">
+            {% for category, message in messages %}
+              <div class="alert alert-{{ 'warning' if category == 'warning' else ('danger' if category == 'error' else 'success') }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <div class="row g-4">
+
+          <!-- =========================================================
+               LEFT COLUMN – Report selection + run controls
+               ========================================================= -->
+          <div class="col-lg-7">
+            <div class="content-wrapper">
+
+              <!-- Sticky action bar -->
+              <div class="action-bar">
+                <div class="d-flex align-items-center gap-3 flex-wrap">
+                  <span class="text-secondary small fw-semibold">IFRS Reports</span>
+                  <button type="button" class="btn btn-outline-danger btn-sm" id="stop-btn" onclick="requestStop()" style="display:none;">
+                    &#9724; Stop
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary btn-sm" id="reset-btn" onclick="resetState()" style="display:none;">
+                    &#8635; Reset
+                  </button>
+                  <div class="ms-auto">
+                    <span id="running-label" class="text-secondary small"></span>
+                  </div>
+                </div>
+              </div>
+
+              <h2 class="section-title">IFRS Reports</h2>
+
+              <!-- Date controls -->
+              <div class="date-controls">
+                <div class="row g-2 align-items-end">
+                  <div class="col-sm-5">
+                    <label for="sel-date" class="form-label form-label-sm fw-semibold mb-1">Report Date</label>
+                    <input type="date" id="sel-date" class="form-control form-control-sm" value="{{ today_iso }}">
+                  </div>
+                  <div class="col-sm-7 d-flex align-items-end">
+                    <small>Select a date, then click Run on a report.</small>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Report list — each report runs independently -->
+              <div id="report-list">
+                {% for report in reports %}
+                <div class="report-card" id="card-{{ report.id }}">
+                  <div class="d-flex align-items-start gap-3">
+                    <div class="priority-badge flex-shrink-0">{{ report.num }}</div>
+                    <div class="flex-grow-1">
+                      <div class="report-label">{{ report.name }}</div>
+                      <div class="report-desc">{{ report.desc }}</div>
+                      {% if last_runs.get(report.id) %}
+                        <div class="last-run mt-1">Last run: {{ last_runs[report.id] }}</div>
+                      {% endif %}
+                    </div>
+                    <button type="button"
+                            class="btn btn-sm btn-outline-primary flex-shrink-0 run-single-btn"
+                            id="runbtn-{{ report.id }}"
+                            onclick="runSingle('{{ report.id }}')">
+                      &#9654; Run
+                    </button>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+
+            </div><!-- /content-wrapper -->
+          </div><!-- /col-lg-7 -->
+
+          <!-- =========================================================
+               RIGHT COLUMN – Status + checklist + logs
+               ========================================================= -->
+          <div class="col-lg-5">
+
+            <!-- Status card -->
+            <div class="content-wrapper mb-4" id="status-card">
+              <h5 class="fw-semibold mb-3" style="color:var(--text-primary);">Run Status</h5>
+              <div class="d-flex align-items-center gap-3 mb-3">
+                <div id="status-badge" class="status-badge badge-idle">Idle</div>
+                <div id="status-spinner" class="spinner-border spinner-border-sm text-primary" role="status" style="display:none!important;">
+                  <span class="visually-hidden">Running…</span>
+                </div>
+              </div>
+              <div class="progress mb-3" id="progress-wrap" style="display:none;">
+                <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" style="width:0%"></div>
+              </div>
+              <div id="status-msg" class="small" style="color:var(--text-secondary);"></div>
+            </div>
+
+            <!-- Checklist card -->
+            <div class="content-wrapper mb-4" id="checklist-card" style="display:none;">
+              <h5 class="fw-semibold mb-3" style="color:var(--text-primary);">Report Checklist</h5>
+              <div id="checklist-body"></div>
+            </div>
+
+            <!-- Log card -->
+            <div class="content-wrapper" id="log-card" style="display:none;">
+              <h5 class="fw-semibold mb-2" style="color:var(--text-primary);">Live Log</h5>
+              <ul id="log-list"></ul>
+            </div>
+
+          </div><!-- /col-lg-5 -->
+
+        </div><!-- /row -->
+      </div><!-- /container -->
+    </div><!-- /main-container -->
+
+    <!-- Hidden form for POST submission -->
+    <form id="run-form" method="post" action="/ifrs/run-report" style="display:none;">
+      <input type="hidden" name="date" id="form-date">
+      <div id="form-ids"></div>
+    </form>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // ── Theme ──────────────────────────────────────────────────────
+      (function () {
+        const saved = localStorage.getItem('cbsl-theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', saved);
+        updateThemeBtn(saved);
+      })();
+      function toggleTheme() {
+        const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+        const nxt = cur === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', nxt);
+        localStorage.setItem('cbsl-theme', nxt);
+        updateThemeBtn(nxt);
+      }
+      function updateThemeBtn(t) {
+        const b = document.getElementById('theme-btn');
+        if (b) b.innerHTML = t === 'dark' ? '&#9728; Light' : '&#9790; Dark';
+      }
+
+      // ── Live datetime ───────────────────────────────────────────────
+      function updateClock() {
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+        const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        document.getElementById('live-datetime').innerHTML =
+          '<div class="dt-date">' + dateStr + '</div><div class="dt-time">' + timeStr + '</div>';
+      }
+      updateClock();
+      setInterval(updateClock, 1000);
+
+      // ── Run a single report ─────────────────────────────────────────
+      function runSingle(reportId) {
+        const date = document.getElementById('sel-date').value;
+        if (!date) { alert('Please select a date before running.'); return; }
+
+        setRunBtnsDisabled(true);
+        document.getElementById('form-date').value = date;
+
+        const container = document.getElementById('form-ids');
+        container.innerHTML = '';
+        const inp = document.createElement('input');
+        inp.type  = 'hidden';
+        inp.name  = 'report_id';
+        inp.value = reportId;
+        container.appendChild(inp);
+
+        document.getElementById('run-form').submit();
+      }
+
+      function setRunBtnsDisabled(disabled) {
+        document.querySelectorAll('.run-single-btn').forEach(btn => {
+          btn.disabled = disabled;
+          btn.classList.toggle('disabled', disabled);
+        });
+      }
+
+      // ── Stop / Reset ────────────────────────────────────────────────
+      function requestStop() {
+        fetch('/ifrs/stop', { method: 'POST' });
+      }
+
+      function resetState() {
+        fetch('/ifrs/reset', { method: 'POST' })
+          .then(() => {
+            document.getElementById('status-badge').className = 'status-badge badge-idle';
+            document.getElementById('status-badge').textContent = 'Idle';
+            document.getElementById('status-msg').textContent = '';
+            document.getElementById('running-label').textContent = '';
+            document.getElementById('progress-wrap').style.display = 'none';
+            document.getElementById('checklist-card').style.display = 'none';
+            document.getElementById('log-card').style.display = 'none';
+            document.getElementById('stop-btn').style.display = 'none';
+            document.getElementById('reset-btn').style.display = 'none';
+            setRunBtnsDisabled(false);
+          });
+      }
+
+      // ── Polling ─────────────────────────────────────────────────────
+      let _statusInterval    = null;
+      let _logsInterval      = null;
+      let _checklistInterval = null;
+      let _lastLogLen = 0;
+
+      function startPolling() {
+        _statusInterval    = setInterval(pollStatus,    2000);
+        _logsInterval      = setInterval(pollLogs,      1500);
+        _checklistInterval = setInterval(pollChecklist, 1000);
+      }
+
+      function stopPolling() {
+        clearInterval(_statusInterval);
+        clearInterval(_logsInterval);
+        clearInterval(_checklistInterval);
+      }
+
+      // -- Status --
+      function pollStatus() {
+        fetch('/ifrs/status')
+          .then(r => r.json())
+          .then(data => {
+            const badge = document.getElementById('status-badge');
+            const spin  = document.getElementById('status-spinner');
+            const msg   = document.getElementById('status-msg');
+            const prog  = document.getElementById('progress-wrap');
+            const bar   = document.getElementById('progress-bar');
+            const lbl   = document.getElementById('running-label');
+
+            msg.textContent = data.message || '';
+
+            const stageMap = {
+              'idle':     ['Idle',     'badge-idle'],
+              'running':  ['Running',  'badge-running'],
+              'done':     ['Done',     'badge-done'],
+              'error':    ['Error',    'badge-error'],
+              'stopping': ['Stopping', 'badge-stopping'],
+            };
+            const [stageLbl, cls] = stageMap[data.stage] || ['Idle', 'badge-idle'];
+            badge.textContent = stageLbl;
+            badge.className   = 'status-badge ' + cls;
+
+            if (data.running) {
+              spin.style.setProperty('display', 'inline-block', 'important');
+              prog.style.display = '';
+              bar.style.width = '100%';
+              lbl.textContent = data.current_report ? 'Running: ' + data.current_report : 'Running…';
+              document.getElementById('stop-btn').style.display  = '';
+              document.getElementById('reset-btn').style.display = 'none';
+              setRunBtnsDisabled(true);
+            } else {
+              spin.style.setProperty('display', 'none', 'important');
+              lbl.textContent = '';
+              document.getElementById('stop-btn').style.display = 'none';
+              if (['done', 'error', 'stopping'].includes(data.stage)) {
+                prog.style.display = 'none';
+                document.getElementById('reset-btn').style.display = '';
+                setRunBtnsDisabled(false);
+              } else {
+                setRunBtnsDisabled(false);
+              }
+            }
+          })
+          .catch(() => {});
+      }
+
+      // -- Logs --
+      function pollLogs() {
+        fetch('/ifrs/logs')
+          .then(r => r.text())
+          .then(text => {
+            if (!text.trim()) return;
+            const lines = text.split('\n').filter(l => l);
+            if (lines.length === _lastLogLen) return;
+            _lastLogLen = lines.length;
+
+            document.getElementById('log-card').style.display = '';
+            const ul = document.getElementById('log-list');
+            ul.innerHTML = '';
+            lines.slice(-100).forEach(line => {
+              const li = document.createElement('li');
+              li.textContent = line;
+              ul.appendChild(li);
+            });
+            ul.scrollTop = ul.scrollHeight;
+          })
+          .catch(() => {});
+      }
+
+      // -- Checklist --
+      const CI_ICONS = { pending:'●', running:'▶', done:'✓', failed:'✗', stopped:'◉' };
+
+      function pollChecklist() {
+        fetch('/ifrs/checklist')
+          .then(r => r.json())
+          .then(items => {
+            if (!items.length) return;
+            document.getElementById('checklist-card').style.display = '';
+            const body = document.getElementById('checklist-body');
+            body.innerHTML = '';
+            items.forEach(item => {
+              const div = document.createElement('div');
+              div.className = 'checklist-item ci-' + item.status;
+
+              const icon = document.createElement('span');
+              icon.className   = 'ci-icon';
+              icon.textContent = CI_ICONS[item.status] || '●';
+
+              const lbl = document.createElement('span');
+              lbl.className   = 'flex-grow-1';
+              lbl.textContent = item.label;
+
+              const right = document.createElement('span');
+              right.className   = 'ms-auto small';
+              right.style.color = 'var(--text-muted)';
+              right.textContent = item.elapsed ? item.elapsed + 's' : (item.status === 'running' ? '…' : '');
+
+              div.appendChild(icon);
+              div.appendChild(lbl);
+              div.appendChild(right);
+              body.appendChild(div);
+            });
+          })
+          .catch(() => {});
+      }
+
+      // ── Boot ────────────────────────────────────────────────────────
+      document.addEventListener('DOMContentLoaded', () => {
+        startPolling();
+      });
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) stopPolling(); else startPolling();
+      });
+    </script>
+  
+  <!-- ── Inactivity timeout (10 min) ── -->
+  <script>
+  (function(){
+    var TIMEOUT = 15 * 60 * 1000;
+    var WARN_BEFORE = 60 * 1000;
+    var timer, warnTimer, toast;
+    function resetTimer() {
+      clearTimeout(timer); clearTimeout(warnTimer);
+      if (toast) { toast.remove(); toast = null; }
+      warnTimer = setTimeout(showWarning, TIMEOUT - WARN_BEFORE);
+      timer     = setTimeout(function(){ window.location.href = '/logout?reason=timeout'; }, TIMEOUT);
+    }
+    function showWarning() {
+      toast = document.createElement('div');
+      toast.id = 'inactivity-toast';
+      toast.style.cssText = 'position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;background:#1e293b;border:1px solid rgba(249,115,22,.5);color:#fdba74;padding:.85rem 1.25rem;border-radius:.75rem;font-size:.88rem;font-family:Segoe UI,system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.5);max-width:320px;line-height:1.5;';
+      toast.innerHTML = '&#9888; You will be signed out in <strong id="toast-countdown">60</strong>s due to inactivity. <a href="#" onclick="resetTimer();return false;" style="color:#60a5fa;text-decoration:underline;margin-left:.5rem;">Stay signed in</a>';
+      document.body.appendChild(toast);
+      var secs = 60;
+      var interval = setInterval(function(){
+        secs--;
+        var el = document.getElementById('toast-countdown');
+        if (el) el.textContent = secs;
+        if (secs <= 0) clearInterval(interval);
+      }, 1000);
+    }
+    ['mousemove','mousedown','keydown','touchstart','scroll','click'].forEach(function(e){
+      document.addEventListener(e, resetTimer, { passive: true });
+    });
+    resetTimer();
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin — Manage Users</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --bg-page:        #0f172a;
+      --bg-surface:     rgba(255,255,255,.05);
+      --bg-surface-2:   rgba(255,255,255,.08);
+      --bg-surface-3:   rgba(255,255,255,.12);
+      --border:         rgba(255,255,255,.10);
+      --border-strong:  rgba(255,255,255,.18);
+      --text-primary:   #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted:     #64748b;
+      --accent-blue:    #143285;
+      --accent-blue-2:  #19295e;
+      --accent-green:   #16a34a;
+      --accent-red:     #ef4444;
+      --accent-orange:  #f97316;
+      --shadow-sm:      0 2px 8px rgba(0,0,0,.4);
+      --radius-sm:      .5rem;
+      --radius-md:      .75rem;
+      --radius-lg:      1rem;
+    }
+    [data-theme="light"] {
+      --bg-page:        #f0f4f8;
+      --bg-surface:     #ffffff;
+      --bg-surface-2:   #f8fafc;
+      --bg-surface-3:   #f1f5f9;
+      --border:         #e2e8f0;
+      --border-strong:  #cbd5e1;
+      --text-primary:   #0f172a;
+      --text-secondary: #475569;
+      --text-muted:     #94a3b8;
+      --accent-red:     #dc2626;
+      --shadow-sm:      0 2px 8px rgba(0,0,0,.07);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { transition: background .25s, color .25s; }
+    body { background: var(--bg-page); color: var(--text-primary); font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; }
+
+    /* ── Header ── */
+    .header {
+      background: var(--bg-surface-2); border-bottom: 1px solid var(--border);
+      padding: 1rem 0; box-shadow: var(--shadow-sm);
+      backdrop-filter: blur(8px); position: sticky; top: 0; z-index: 200;
+    }
+    .header h1 { color: var(--text-primary); font-size: 1.4rem; font-weight: 700; margin: 0; }
+    .header p  { color: var(--text-secondary); font-size: .88rem; margin: .2rem 0 0; }
+    .logo-placeholder { height: 40px; width: auto; max-width: 100px; }
+
+    .header-btn {
+      background: var(--bg-surface-3); border: 1px solid var(--border);
+      color: var(--text-primary); border-radius: var(--radius-md);
+      padding: .4rem .9rem; font-size: .85rem; text-decoration: none;
+      display: inline-flex; align-items: center; gap: .4rem;
+      transition: border-color .15s; cursor: pointer;
+    }
+    .header-btn:hover { border-color: var(--border-strong); color: var(--text-primary); }
+
+    /* ── Layout ── */
+    .main-container { padding: 2rem 0; min-height: calc(100vh - 80px); }
+    .content-wrapper {
+      background: var(--bg-surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 2rem; box-shadow: var(--shadow-sm);
+    }
+    .section-title { color: var(--text-primary); font-weight: 700; font-size: 1.2rem; margin-bottom: 1.5rem; }
+
+    /* ── Alerts ── */
+    .flash-zone { margin-bottom: 1.25rem; }
+    .flash-msg {
+      padding: .65rem 1rem; border-radius: var(--radius-sm); font-size: .88rem;
+      border: 1px solid transparent; margin-bottom: .5rem;
+    }
+    .flash-success { background: rgba(22,163,74,.12); color: #4ade80; border-color: rgba(22,163,74,.3); }
+    .flash-error   { background: rgba(239,68,68,.12);  color: #fca5a5; border-color: rgba(239,68,68,.3); }
+    .flash-warning { background: rgba(249,115,22,.12); color: #fdba74; border-color: rgba(249,115,22,.3); }
+    [data-theme="light"] .flash-success { background: #f0fdf4; color: #15803d; border-color: #86efac; }
+    [data-theme="light"] .flash-error   { background: #fef2f2; color: #b91c1c; border-color: #fca5a5; }
+    [data-theme="light"] .flash-warning { background: #fff7ed; color: #c2410c; border-color: #fdba74; }
+
+    /* ── Add user form ── */
+    .add-user-form {
+      background: var(--bg-surface-2); border: 1px solid var(--border);
+      border-radius: var(--radius-md); padding: 1.5rem;
+    }
+    .form-label-custom { font-size: .85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: .35rem; }
+    .form-control-custom {
+      background: var(--bg-surface); border: 1px solid var(--border);
+      color: var(--text-primary); border-radius: var(--radius-sm);
+      padding: .55rem .85rem; font-size: .92rem; width: 100%; outline: none;
+      transition: border-color .15s;
+    }
+    .form-control-custom:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(20,50,133,.2); }
+    .form-control-custom::placeholder { color: var(--text-muted); }
+    [data-theme="light"] .form-control-custom { background: #fff; border-color: #cbd5e1; color: #0f172a; }
+
+    /* permission checkboxes */
+    .perm-check-group { display: flex; gap: 1.5rem; align-items: center; padding-top: .3rem; }
+    .perm-check-label {
+      display: flex; align-items: center; gap: .45rem;
+      font-size: .92rem; color: var(--text-primary); cursor: pointer; user-select: none;
+    }
+    .perm-check-label input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent-blue); cursor: pointer; }
+
+    .btn-add {
+      background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-blue-2) 100%);
+      color: #fff; border: none; border-radius: var(--radius-md);
+      padding: .6rem 1.5rem; font-size: .92rem; font-weight: 600;
+      cursor: pointer; transition: filter .15s;
+    }
+    .btn-add:hover { filter: brightness(1.15); }
+
+    /* ── Users table ── */
+    .users-table-wrap { overflow-x: auto; margin-top: 2rem; }
+    .users-table {
+      width: 100%; border-collapse: collapse; font-size: .88rem;
+    }
+    .users-table th {
+      background: var(--bg-surface-2); color: var(--text-secondary);
+      font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .04em;
+      padding: .65rem 1rem; border-bottom: 2px solid var(--border); text-align: left;
+      white-space: nowrap;
+    }
+    .users-table td {
+      padding: .7rem 1rem; border-bottom: 1px solid var(--border);
+      color: var(--text-primary); vertical-align: middle;
+    }
+    .users-table tr:last-child td { border-bottom: none; }
+    .users-table tr:hover td { background: var(--bg-surface-2); }
+
+    .badge-perm {
+      display: inline-block; padding: .2rem .6rem; border-radius: .35rem;
+      font-size: .75rem; font-weight: 600; margin-right: .3rem;
+    }
+    .badge-cbsl { background: rgba(20,50,133,.2); color: #60a5fa; }
+    .badge-ifrs { background: rgba(22,163,74,.15); color: #4ade80; }
+    [data-theme="light"] .badge-cbsl { background: #dbeafe; color: #1d4ed8; }
+    [data-theme="light"] .badge-ifrs { background: #dcfce7; color: #15803d; }
+
+    .badge-admin { background: rgba(249,115,22,.15); color: #fdba74; }
+    [data-theme="light"] .badge-admin { background: #fff7ed; color: #c2410c; }
+
+    /* ── Row action buttons ── */
+    .btn-row {
+      border: 1px solid var(--border); background: var(--bg-surface-3);
+      color: var(--text-secondary); border-radius: .4rem;
+      padding: .22rem .6rem; font-size: .78rem; cursor: pointer;
+      transition: border-color .15s, color .15s; white-space: nowrap;
+    }
+    .btn-row:hover { border-color: var(--border-strong); color: var(--text-primary); }
+    .btn-row-danger { border-color: rgba(239,68,68,.4); color: #f87171; }
+    .btn-row-danger:hover { border-color: var(--accent-red); background: rgba(239,68,68,.1); color: var(--accent-red); }
+
+    /* ── Modal ── */
+    .modal-content-custom {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-lg);
+      color: var(--text-primary);
+    }
+    [data-theme="light"] .modal-content-custom { background: #fff; }
+    .modal-header-custom {
+      border-bottom: 1px solid var(--border);
+      padding: 1.1rem 1.5rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .modal-title-custom { font-weight: 700; font-size: 1.05rem; }
+    .modal-body-custom { padding: 1.5rem; }
+    .modal-footer-custom {
+      border-top: 1px solid var(--border);
+      padding: 1rem 1.5rem;
+      display: flex; justify-content: flex-end; gap: .75rem;
+    }
+    .btn-modal-cancel {
+      background: var(--bg-surface-3); border: 1px solid var(--border);
+      color: var(--text-primary); border-radius: var(--radius-md);
+      padding: .5rem 1.2rem; font-size: .9rem; cursor: pointer;
+      transition: border-color .15s;
+    }
+    .btn-modal-cancel:hover { border-color: var(--border-strong); }
+    .btn-modal-save {
+      background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-blue-2) 100%);
+      color: #fff; border: none; border-radius: var(--radius-md);
+      padding: .5rem 1.4rem; font-size: .9rem; font-weight: 600; cursor: pointer;
+    }
+    .btn-modal-delete {
+      background: linear-gradient(135deg, #b91c1c 0%, var(--accent-red) 100%);
+      color: #fff; border: none; border-radius: var(--radius-md);
+      padding: .5rem 1.4rem; font-size: .9rem; font-weight: 600; cursor: pointer;
+    }
+
+    ::-webkit-scrollbar { width: 7px; }
+    ::-webkit-scrollbar-track { background: var(--bg-page); }
+    ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="container">
+      <div class="d-flex align-items-center justify-content-between gap-3">
+        <div class="d-flex align-items-center gap-3">
+          <img src="/static/logo/logo.png" alt="Logo" class="logo-placeholder" onerror="this.style.display='none'">
+          <div>
+            <h1>Admin — Manage Users</h1>
+            <p>Report Automation Portal &mdash; ASSETLINE FINANCE PLC</p>
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          <a href="/" class="header-btn">&#8962; Home</a>
+          <button class="header-btn" onclick="toggleTheme()" id="theme-btn">&#9680; Theme</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="main-container">
+    <div class="container">
+
+      <!-- Flash messages -->
+      <div class="flash-zone">
+        {% for category, message in get_flashed_messages(with_categories=true) %}
+        <div class="flash-msg flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+
+      <div class="row g-4">
+
+        <!-- ── Add New User ── -->
+        <div class="col-12">
+          <div class="content-wrapper">
+            <div class="section-title">Add New User</div>
+            <form method="post" action="/admin/create-user" class="add-user-form" autocomplete="off">
+              <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                  <div class="form-label-custom">Username (Email)</div>
+                  <input type="text" name="username" class="form-control-custom"
+                         placeholder="user@assetlinefinance.lk" required autocomplete="off">
+                </div>
+                <div class="col-md-3">
+                  <div class="form-label-custom">Password</div>
+                  <input type="password" name="password" class="form-control-custom"
+                         placeholder="Temporary password" required autocomplete="new-password">
+                </div>
+                <div class="col-md-3">
+                  <div class="form-label-custom">Permissions</div>
+                  <div class="perm-check-group">
+                    <label class="perm-check-label">
+                      <input type="checkbox" name="perm_cbsl" value="1"> CBSL
+                    </label>
+                    <label class="perm-check-label">
+                      <input type="checkbox" name="perm_ifrs" value="1"> IFRS
+                    </label>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <button type="submit" class="btn-add w-100">+ Add User</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- ── Users Table ── -->
+        <div class="col-12">
+          <div class="content-wrapper">
+            <div class="section-title">All Users <span style="font-size:.85rem;font-weight:400;color:var(--text-muted);">({{ users|length }} total)</span></div>
+            <div class="users-table-wrap">
+              <table class="users-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Username</th>
+                    <th>Permissions</th>
+                    <th>Created</th>
+                    <th>Updated</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for user in users %}
+                  <tr>
+                    <td style="color:var(--text-muted);font-size:.8rem;">{{ loop.index }}</td>
+                    <td>
+                      <span style="font-weight:600;">{{ user.un }}</span>
+                      {% if 'ADMIN' in user.permissions.upper() %}
+                        <span class="badge-perm badge-admin">admin</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% for perm in user.permissions.split(',') %}
+                        {% if perm.strip() == 'CBSL' %}
+                          <span class="badge-perm badge-cbsl">CBSL</span>
+                        {% elif perm.strip() == 'IFRS' %}
+                          <span class="badge-perm badge-ifrs">IFRS</span>
+                        {% endif %}
+                      {% endfor %}
+                    </td>
+                    <td style="color:var(--text-secondary);font-size:.82rem;">{{ user.created_at }}</td>
+                    <td style="color:var(--text-secondary);font-size:.82rem;">{{ user.updated_at }}</td>
+                    <td>
+                      <div class="d-flex gap-2 flex-wrap">
+                        <button class="btn-row"
+                                onclick="openEditModal('{{ user.un }}', '{{ user.permissions }}')"
+                                title="Edit permissions">
+                          &#9998; Edit
+                        </button>
+                        <button class="btn-row"
+                                onclick="openResetModal('{{ user.un }}')"
+                                title="Reset password">
+                          &#128274; Reset PW
+                        </button>
+                        {% if 'ADMIN' not in user.permissions.upper() %}
+                        <button class="btn-row btn-row-danger"
+                                onclick="openDeleteModal('{{ user.un }}')"
+                                title="Delete user">
+                          &#10005; Delete
+                        </button>
+                        {% endif %}
+                      </div>
+                    </td>
+                  </tr>
+                  {% else %}
+                  <tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem;">No users found.</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /row -->
+    </div><!-- /container -->
+  </div>
+
+  <!-- ── Edit Permissions Modal ── -->
+  <div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content modal-content-custom">
+        <div class="modal-header-custom">
+          <span class="modal-title-custom">Edit Permissions</span>
+          <button type="button" class="btn-modal-cancel" style="padding:.3rem .7rem;" data-bs-dismiss="modal">&#10005;</button>
+        </div>
+        <form method="post" action="/admin/update-permissions">
+          <input type="hidden" name="username" id="edit-username">
+          <div class="modal-body-custom">
+            <div style="margin-bottom:1rem;color:var(--text-secondary);font-size:.88rem;">
+              User: <strong id="edit-username-display" style="color:var(--text-primary);"></strong>
+            </div>
+            <div class="form-label-custom">Permissions</div>
+            <div class="perm-check-group mt-2">
+              <label class="perm-check-label">
+                <input type="checkbox" name="perm_cbsl" id="edit-perm-cbsl" value="1"> CBSL
+              </label>
+              <label class="perm-check-label">
+                <input type="checkbox" name="perm_ifrs" id="edit-perm-ifrs" value="1"> IFRS
+              </label>
+            </div>
+          </div>
+          <div class="modal-footer-custom">
+            <button type="button" class="btn-modal-cancel" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn-modal-save">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Reset Password Modal ── -->
+  <div class="modal fade" id="resetModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content modal-content-custom">
+        <div class="modal-header-custom">
+          <span class="modal-title-custom">Reset Password</span>
+          <button type="button" class="btn-modal-cancel" style="padding:.3rem .7rem;" data-bs-dismiss="modal">&#10005;</button>
+        </div>
+        <form method="post" action="/admin/reset-password">
+          <input type="hidden" name="username" id="reset-username">
+          <div class="modal-body-custom">
+            <div style="margin-bottom:1rem;color:var(--text-secondary);font-size:.88rem;">
+              Resetting password for: <strong id="reset-username-display" style="color:var(--text-primary);"></strong>
+            </div>
+            <div class="form-label-custom">New Password</div>
+            <input type="password" name="new_password" class="form-control-custom mt-1"
+                   placeholder="Enter new password" required autocomplete="new-password">
+          </div>
+          <div class="modal-footer-custom">
+            <button type="button" class="btn-modal-cancel" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn-modal-save">Set Password</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Delete Confirm Modal ── -->
+  <div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content modal-content-custom">
+        <div class="modal-header-custom">
+          <span class="modal-title-custom">Delete User</span>
+          <button type="button" class="btn-modal-cancel" style="padding:.3rem .7rem;" data-bs-dismiss="modal">&#10005;</button>
+        </div>
+        <form method="post" action="/admin/delete-user">
+          <input type="hidden" name="username" id="delete-username">
+          <div class="modal-body-custom">
+            <p style="color:var(--text-secondary);">
+              Are you sure you want to delete <strong id="delete-username-display" style="color:var(--text-primary);"></strong>?
+              This action cannot be undone.
+            </p>
+          </div>
+          <div class="modal-footer-custom">
+            <button type="button" class="btn-modal-cancel" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn-modal-delete">Delete User</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Theme
+    (function () {
+      const saved = localStorage.getItem('cbsl-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', saved);
+      updateThemeBtn(saved);
+    })();
+    function toggleTheme() {
+      const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+      const nxt = cur === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', nxt);
+      localStorage.setItem('cbsl-theme', nxt);
+      updateThemeBtn(nxt);
+    }
+    function updateThemeBtn(t) {
+      const b = document.getElementById('theme-btn');
+      if (b) b.innerHTML = t === 'dark' ? '&#9728; Light' : '&#9790; Dark';
+    }
+
+    // Edit permissions modal
+    function openEditModal(un, perms) {
+      document.getElementById('edit-username').value = un;
+      document.getElementById('edit-username-display').textContent = un;
+      document.getElementById('edit-perm-cbsl').checked = perms.includes('CBSL');
+      document.getElementById('edit-perm-ifrs').checked = perms.includes('IFRS');
+      new bootstrap.Modal(document.getElementById('editModal')).show();
+    }
+
+    // Reset password modal
+    function openResetModal(un) {
+      document.getElementById('reset-username').value = un;
+      document.getElementById('reset-username-display').textContent = un;
+      new bootstrap.Modal(document.getElementById('resetModal')).show();
+    }
+
+    // Delete modal
+    function openDeleteModal(un) {
+      document.getElementById('delete-username').value = un;
+      document.getElementById('delete-username-display').textContent = un;
+      new bootstrap.Modal(document.getElementById('deleteModal')).show();
+    }
+  </script>
+
+  <!-- ── Inactivity timeout (10 min) ── -->
+  <script>
+  (function(){
+    var TIMEOUT = 15 * 60 * 1000;
+    var WARN_BEFORE = 60 * 1000;
+    var timer, warnTimer, toast;
+    function resetTimer() {
+      clearTimeout(timer); clearTimeout(warnTimer);
+      if (toast) { toast.remove(); toast = null; }
+      warnTimer = setTimeout(showWarning, TIMEOUT - WARN_BEFORE);
+      timer     = setTimeout(function(){ window.location.href = '/logout?reason=timeout'; }, TIMEOUT);
+    }
+    function showWarning() {
+      toast = document.createElement('div');
+      toast.id = 'inactivity-toast';
+      toast.style.cssText = 'position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;background:#1e293b;border:1px solid rgba(249,115,22,.5);color:#fdba74;padding:.85rem 1.25rem;border-radius:.75rem;font-size:.88rem;font-family:Segoe UI,system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.5);max-width:320px;line-height:1.5;';
+      toast.innerHTML = '&#9888; You will be signed out in <strong id="toast-countdown">60</strong>s due to inactivity. <a href="#" onclick="resetTimer();return false;" style="color:#60a5fa;text-decoration:underline;margin-left:.5rem;">Stay signed in</a>';
+      document.body.appendChild(toast);
+      var secs = 60;
+      var interval = setInterval(function(){
+        secs--;
+        var el = document.getElementById('toast-countdown');
+        if (el) el.textContent = secs;
+        if (secs <= 0) clearInterval(interval);
+      }, 1000);
+    }
+    ['mousemove','mousedown','keydown','touchstart','scroll','click'].forEach(function(e){
+      document.addEventListener(e, resetTimer, { passive: true });
+    });
+    resetTimer();
+  })();
+  </script>
+</body>
+</html>

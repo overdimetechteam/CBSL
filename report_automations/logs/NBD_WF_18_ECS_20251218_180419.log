@@ -1,0 +1,17 @@
+2025-12-18 18:04:19,391 - INFO - Logger initialized
+2025-12-18 18:04:26,980 - INFO - Current Accounts Balances: extracted 44 rows
+2025-12-18 18:04:26,981 - INFO - Savings Accounts Balances: extracted 17 rows
+2025-12-18 18:04:27,022 - INFO - Found 31 date columns: ['2025-08-01', '2025-08-02', '2025-08-03', '2025-08-04', '2025-08-05', '2025-08-06', '2025-08-07', '2025-08-08', '2025-08-09', '2025-08-10', '2025-08-11', '2025-08-12', '2025-08-13', '2025-08-14', '2025-08-15', '2025-08-16', '2025-08-17', '2025-08-18', '2025-08-19', '2025-08-20', '2025-08-21', '2025-08-22', '2025-08-23', '2025-08-24', '2025-08-25', '2025-08-26', '2025-08-27', '2025-08-28', '2025-08-29', '2025-08-30', '2025-08-31']
+2025-12-18 18:04:27,024 - INFO - Exact date match found: 2025-08-17
+2025-12-18 18:04:27,027 - INFO - Daily bank balances total: 78934325.20436648
+2025-12-18 18:04:27,029 - WARNING - Validation failed: totals do not match
+2025-12-18 18:04:27,030 - INFO - Weekly distribution process started | Date=2025-08-17 | WeekOfMonth=3 | WeekOfYear=33
+2025-12-18 18:04:34,223 - INFO - Opened report file: C:\CBSL\Script\working\NBD_WF_18_ECS\22-06-2025\Cash-Flow-Forecast-Week_33.xlsm
+2025-12-18 18:04:34,224 - INFO - Available sheets: ['NBD-WF-18-ECS', 'Opening&End LA', 'Weekly Distributions ', 'Borrowing & Settlement ', 'Bond Adjustment', 'M2M', 'Treasury Input', 'Opening TB-10-Aug', 'Close TB-17-Aug', 'Op. Borrowing', 'Cl. Borrowing', 'Sheet1', 'FD', 'utilized credit lines', 'SasiaNet', 'INT Co. Borrowings 12', 'Receipt - 08-18', 'Payment 08-18', 'List', 'TAX Payments', 'Collection', 'Last  Cum month collection', 'Cashflow Movement', 'Types of Receipt']
+2025-12-18 18:04:34,224 - INFO - Using sheet: 'Weekly Distributions '
+2025-12-18 18:04:34,228 - INFO - Opened Payments file: C:\CBSL\Script\working\NBD_WF_18_ECS\22-06-2025\Payments and Receipts.xlsx
+2025-12-18 18:04:34,228 - INFO - Payments sheet: Sheet1
+2025-12-18 18:04:34,228 - INFO - Not Week 1 - skipping Payments to Weekly Distributions copy
+2025-12-18 18:04:34,229 - INFO - Read source values from Weekly Distributions G18:G22: [None, None, None, None, None]
+2025-12-18 18:04:34,229 - INFO - Pasting values into Payments D2:D6 and setting D1 = 33
+2025-12-18 18:04:40,964 - INFO - Weekly distribution process completed successfully

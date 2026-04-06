@@ -1,0 +1,30 @@
+2026-03-03 15:54:55,506 - INFO - setup_logging:31 - Logging initialized. Log file: C:\CBSL\Script\report_automations\logs\Supporting_Schedules_20260303_155455.log
+2026-03-03 15:54:55,506 - INFO - <module>:2538 - Working directory: C:\CBSL\Script\working\Supporting Schedules
+2026-03-03 15:54:55,507 - INFO - <module>:2558 - Input date: 03/04/2026
+2026-03-03 15:54:55,508 - INFO - <module>:2559 - Month start date: 01/04/2026
+2026-03-03 15:54:55,508 - INFO - <module>:2560 - Month name: April
+2026-03-03 15:54:55,509 - INFO - clear_new_schedule_for_april:2494 - April detected — clearing New Shcedule ranges before processing.
+2026-03-03 15:54:55,509 - INFO - get_monthly_folder:41 - Searching for monthly folder in: C:\CBSL\Script\working\Supporting Schedules
+2026-03-03 15:54:55,510 - INFO - get_monthly_folder:48 - Found 1 subdirectories: ['03-03-2026']
+2026-03-03 15:54:55,510 - INFO - get_monthly_folder:55 - Selected monthly folder: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-03 15:54:55,510 - INFO - find_supporting_schedule_file:238 - Searching for Supporting Schedule file in: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-03 15:54:55,511 - INFO - find_supporting_schedule_file:252 - Found matching file: Supporting Schedules - Mar 2026.xlsx
+2026-03-03 15:54:55,511 - INFO - find_supporting_schedule_file:262 - Selected file: C:\CBSL\Script\working\Supporting Schedules\03-03-2026\Supporting Schedules - Mar 2026.xlsx
+2026-03-03 15:54:55,511 - INFO - clear_new_schedule_for_april:2504 - Opening Supporting Schedules - Mar 2026.xlsx to clear April ranges.
+2026-03-03 15:54:55,591 - INFO - clear_new_schedule_for_april:2519 - Cleared range B5:M13
+2026-03-03 15:54:55,592 - INFO - clear_new_schedule_for_april:2519 - Cleared range B15:M20
+2026-03-03 15:54:55,592 - INFO - clear_new_schedule_for_april:2519 - Cleared range B22:M26
+2026-03-03 15:54:55,593 - ERROR - clear_new_schedule_for_april:2527 - Error during April cleanup: [Errno 13] Permission denied: 'C:\\CBSL\\Script\\working\\Supporting Schedules\\03-03-2026\\Supporting Schedules - Mar 2026.xlsx'
+Traceback (most recent call last):
+  File "C:\CBSL\Script\report_automations\Supporting_Schedules.py", line 2521, in clear_new_schedule_for_april
+    wb.save(ss_file)
+    ~~~~~~~^^^^^^^^^
+  File "C:\CBSL\Script\.venv\Lib\site-packages\openpyxl\workbook\workbook.py", line 386, in save
+    save_workbook(self, filename)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\CBSL\Script\.venv\Lib\site-packages\openpyxl\writer\excel.py", line 291, in save_workbook
+    archive = ZipFile(filename, 'w', ZIP_DEFLATED, allowZip64=True)
+  File "C:\Users\Overdime\AppData\Local\Programs\Python\Python313\Lib\zipfile\__init__.py", line 1367, in __init__
+    self.fp = io.open(file, filemode)
+              ~~~~~~~^^^^^^^^^^^^^^^^
+PermissionError: [Errno 13] Permission denied: 'C:\\CBSL\\Script\\working\\Supporting Schedules\\03-03-2026\\Supporting Schedules - Mar 2026.xlsx'

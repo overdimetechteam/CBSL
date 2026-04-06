@@ -1,0 +1,183 @@
+2026-02-23 15:39:01,416 - INFO - Logger initialized
+2026-02-23 15:39:01,420 - INFO - ============================================================
+2026-02-23 15:39:01,420 - INFO - NBD-MF-04-LA Monthly Liquidity Report Generation
+2026-02-23 15:39:01,420 - INFO - Report date: 02/23/2026
+2026-02-23 15:39:01,420 - INFO - ============================================================
+2026-02-23 15:39:01,421 - INFO - 
+Step 1: Finding working folder...
+2026-02-23 15:39:01,421 - INFO - Found single subdirectory: 30-06-2025
+2026-02-23 15:39:01,421 - INFO - Working folder: C:\CBSL\Script\working\NBD_MF_04_LA\30-06-2025
+2026-02-23 15:39:01,422 - INFO - 
+Step 2: Finding monthly report template...
+2026-02-23 15:39:01,422 - INFO - Found template: NBD-MF-04-LA Liquid Assets - Jul 25.xlsm
+2026-02-23 15:39:01,422 - INFO - 
+Step 3: Finding AFL Liquidity files from working folder...
+2026-02-23 15:39:01,422 - INFO - Looking for AFL files:
+2026-02-23 15:39:01,423 - INFO -   Week 1: AFL Liquidity - Week_1.xlsx ✓
+2026-02-23 15:39:01,423 - INFO -   Week 2: AFL Liquidity - Week_2.xlsx ✓
+2026-02-23 15:39:01,423 - INFO -   Week 3: AFL Liquidity - Week_3.xlsx ✓
+2026-02-23 15:39:01,423 - INFO -   Week 4: AFL Liquidity - Week_4.xlsx ✓
+2026-02-23 15:39:01,423 - INFO -   Week 5 (Month End): AFL Liquidity - Dec-2025.xlsx ✓
+2026-02-23 15:39:01,423 - INFO - Total AFL files found: 5 / 5
+2026-02-23 15:39:01,423 - INFO - 
+Step 4: Opening monthly template and populating Week sheets...
+2026-02-23 15:39:01,578 - INFO - Monthly template sheets: ['NBD-MF-04-LA', 'Upload', 'Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Average', 'NBD-MF-04-BO']
+2026-02-23 15:39:01,578 - INFO - 
+--- Week 1 ---
+2026-02-23 15:39:01,578 - INFO -   Source: AFL Liquidity - Week_1.xlsx [NBD-WF-15-LA] C3:C22
+2026-02-23 15:39:01,579 - INFO -   Target: Week 1!H1:H20
+2026-02-23 15:39:01,630 - INFO -   Read 20 values from AFL Liquidity - Week_1.xlsx [NBD-WF-15-LA] C3:C22
+2026-02-23 15:39:01,630 - INFO -     C3 = Jan 4, 2026
+2026-02-23 15:39:01,631 - INFO -     C4 = None
+2026-02-23 15:39:01,631 - INFO -     C5 = None
+2026-02-23 15:39:01,631 - INFO -     C6 = None
+2026-02-23 15:39:01,631 - INFO -     C7 = 9799716
+2026-02-23 15:39:01,631 - INFO -     C8 = 0
+2026-02-23 15:39:01,631 - INFO -     C9 = 0
+2026-02-23 15:39:01,631 - INFO -     C10 = None
+2026-02-23 15:39:01,631 - INFO -     C11 = None
+2026-02-23 15:39:01,631 - INFO -     C12 = None
+2026-02-23 15:39:01,631 - INFO -     C13 = None
+2026-02-23 15:39:01,631 - INFO -     C14 = None
+2026-02-23 15:39:01,631 - INFO -     C15 = None
+2026-02-23 15:39:01,631 - INFO -     C16 = None
+2026-02-23 15:39:01,631 - INFO -     C17 = None
+2026-02-23 15:39:01,631 - INFO -     C18 = None
+2026-02-23 15:39:01,631 - INFO -     C19 = None
+2026-02-23 15:39:01,631 - INFO -     C20 = None
+2026-02-23 15:39:01,631 - INFO -     C21 = None
+2026-02-23 15:39:01,631 - INFO -     C22 = None
+2026-02-23 15:39:01,631 - INFO -   Pasted 20 values into Week 1!H1:H20
+2026-02-23 15:39:01,631 - INFO -   Week 1 complete
+2026-02-23 15:39:01,632 - INFO - 
+--- Week 2 ---
+2026-02-23 15:39:01,632 - INFO -   Source: AFL Liquidity - Week_2.xlsx [NBD-WF-15-LA] C3:C22
+2026-02-23 15:39:01,632 - INFO -   Target: Week 2!H1:H20
+2026-02-23 15:39:01,689 - INFO -   Read 20 values from AFL Liquidity - Week_2.xlsx [NBD-WF-15-LA] C3:C22
+2026-02-23 15:39:01,689 - INFO -     C3 = Feb 08, 2026
+2026-02-23 15:39:01,689 - INFO -     C4 = None
+2026-02-23 15:39:01,689 - INFO -     C5 = None
+2026-02-23 15:39:01,689 - INFO -     C6 = None
+2026-02-23 15:39:01,689 - INFO -     C7 = 9799716
+2026-02-23 15:39:01,689 - INFO -     C8 = 0
+2026-02-23 15:39:01,689 - INFO -     C9 = 0
+2026-02-23 15:39:01,689 - INFO -     C10 = None
+2026-02-23 15:39:01,689 - INFO -     C11 = None
+2026-02-23 15:39:01,689 - INFO -     C12 = None
+2026-02-23 15:39:01,689 - INFO -     C13 = None
+2026-02-23 15:39:01,689 - INFO -     C14 = None
+2026-02-23 15:39:01,689 - INFO -     C15 = None
+2026-02-23 15:39:01,689 - INFO -     C16 = None
+2026-02-23 15:39:01,689 - INFO -     C17 = None
+2026-02-23 15:39:01,689 - INFO -     C18 = None
+2026-02-23 15:39:01,690 - INFO -     C19 = None
+2026-02-23 15:39:01,690 - INFO -     C20 = None
+2026-02-23 15:39:01,690 - INFO -     C21 = None
+2026-02-23 15:39:01,690 - INFO -     C22 = None
+2026-02-23 15:39:01,690 - INFO -   Pasted 20 values into Week 2!H1:H20
+2026-02-23 15:39:01,690 - INFO -   Week 2 complete
+2026-02-23 15:39:01,690 - INFO - 
+--- Week 3 ---
+2026-02-23 15:39:01,690 - INFO -   Source: AFL Liquidity - Week_3.xlsx [NBD-WF-15-LA] C3:C22
+2026-02-23 15:39:01,690 - INFO -   Target: Week 3!H1:H20
+2026-02-23 15:39:01,743 - INFO -   Read 20 values from AFL Liquidity - Week_3.xlsx [NBD-WF-15-LA] C3:C22
+2026-02-23 15:39:01,743 - INFO -     C3 = Feb 01, 2026
+2026-02-23 15:39:01,743 - INFO -     C4 = None
+2026-02-23 15:39:01,743 - INFO -     C5 = None
+2026-02-23 15:39:01,743 - INFO -     C6 = None
+2026-02-23 15:39:01,743 - INFO -     C7 = 9799716
+2026-02-23 15:39:01,743 - INFO -     C8 = 0
+2026-02-23 15:39:01,743 - INFO -     C9 = 0
+2026-02-23 15:39:01,743 - INFO -     C10 = None
+2026-02-23 15:39:01,743 - INFO -     C11 = None
+2026-02-23 15:39:01,743 - INFO -     C12 = None
+2026-02-23 15:39:01,743 - INFO -     C13 = None
+2026-02-23 15:39:01,743 - INFO -     C14 = None
+2026-02-23 15:39:01,743 - INFO -     C15 = None
+2026-02-23 15:39:01,743 - INFO -     C16 = None
+2026-02-23 15:39:01,743 - INFO -     C17 = None
+2026-02-23 15:39:01,743 - INFO -     C18 = None
+2026-02-23 15:39:01,743 - INFO -     C19 = None
+2026-02-23 15:39:01,743 - INFO -     C20 = None
+2026-02-23 15:39:01,743 - INFO -     C21 = None
+2026-02-23 15:39:01,743 - INFO -     C22 = None
+2026-02-23 15:39:01,743 - INFO -   Pasted 20 values into Week 3!H1:H20
+2026-02-23 15:39:01,744 - INFO -   Week 3 complete
+2026-02-23 15:39:01,744 - INFO - 
+--- Week 4 ---
+2026-02-23 15:39:01,744 - INFO -   Source: AFL Liquidity - Week_4.xlsx [NBD-WF-15-LA] C3:C22
+2026-02-23 15:39:01,744 - INFO -   Target: Week 4!H1:H20
+2026-02-23 15:39:01,797 - INFO -   Read 20 values from AFL Liquidity - Week_4.xlsx [NBD-WF-15-LA] C3:C22
+2026-02-23 15:39:01,797 - INFO -     C3 = Jan 25, 2026
+2026-02-23 15:39:01,797 - INFO -     C4 = None
+2026-02-23 15:39:01,797 - INFO -     C5 = None
+2026-02-23 15:39:01,797 - INFO -     C6 = None
+2026-02-23 15:39:01,797 - INFO -     C7 = 9799716
+2026-02-23 15:39:01,797 - INFO -     C8 = 0
+2026-02-23 15:39:01,797 - INFO -     C9 = 0
+2026-02-23 15:39:01,797 - INFO -     C10 = None
+2026-02-23 15:39:01,797 - INFO -     C11 = None
+2026-02-23 15:39:01,797 - INFO -     C12 = None
+2026-02-23 15:39:01,797 - INFO -     C13 = None
+2026-02-23 15:39:01,797 - INFO -     C14 = None
+2026-02-23 15:39:01,797 - INFO -     C15 = None
+2026-02-23 15:39:01,797 - INFO -     C16 = None
+2026-02-23 15:39:01,797 - INFO -     C17 = None
+2026-02-23 15:39:01,797 - INFO -     C18 = None
+2026-02-23 15:39:01,797 - INFO -     C19 = None
+2026-02-23 15:39:01,797 - INFO -     C20 = None
+2026-02-23 15:39:01,798 - INFO -     C21 = None
+2026-02-23 15:39:01,798 - INFO -     C22 = None
+2026-02-23 15:39:01,798 - INFO -   Pasted 20 values into Week 4!H1:H20
+2026-02-23 15:39:01,798 - INFO -   Week 4 complete
+2026-02-23 15:39:01,798 - INFO - 
+--- Week 5 ---
+2026-02-23 15:39:01,798 - INFO -   Source: AFL Liquidity - Dec-2025.xlsx [NBD-WF-15-LA] C3:C22
+2026-02-23 15:39:01,798 - INFO -   Target: Week 5!J1:J20
+2026-02-23 15:39:01,850 - INFO -   Read 20 values from AFL Liquidity - Dec-2025.xlsx [NBD-WF-15-LA] C3:C22
+2026-02-23 15:39:01,850 - INFO -     C3 = Jan 18, 2026
+2026-02-23 15:39:01,850 - INFO -     C4 = None
+2026-02-23 15:39:01,850 - INFO -     C5 = None
+2026-02-23 15:39:01,850 - INFO -     C6 = None
+2026-02-23 15:39:01,850 - INFO -     C7 = 9799716
+2026-02-23 15:39:01,850 - INFO -     C8 = 0
+2026-02-23 15:39:01,850 - INFO -     C9 = 0
+2026-02-23 15:39:01,851 - INFO -     C10 = None
+2026-02-23 15:39:01,851 - INFO -     C11 = None
+2026-02-23 15:39:01,851 - INFO -     C12 = None
+2026-02-23 15:39:01,851 - INFO -     C13 = None
+2026-02-23 15:39:01,851 - INFO -     C14 = None
+2026-02-23 15:39:01,851 - INFO -     C15 = None
+2026-02-23 15:39:01,851 - INFO -     C16 = None
+2026-02-23 15:39:01,851 - INFO -     C17 = None
+2026-02-23 15:39:01,851 - INFO -     C18 = None
+2026-02-23 15:39:01,851 - INFO -     C19 = None
+2026-02-23 15:39:01,851 - INFO -     C20 = None
+2026-02-23 15:39:01,851 - INFO -     C21 = None
+2026-02-23 15:39:01,851 - INFO -     C22 = None
+2026-02-23 15:39:01,852 - INFO -   Pasted 20 values into Week 5!J1:J20
+2026-02-23 15:39:01,852 - INFO -   Week 5 complete
+2026-02-23 15:39:01,852 - INFO - 
+============================================================
+2026-02-23 15:39:01,852 - INFO - Step 5: Filling NBD-MF-04-LA sheet with weekly data...
+2026-02-23 15:39:01,852 - INFO - 
+--- Filling NBD-MF-04-LA Sheet ---
+2026-02-23 15:39:01,852 - INFO -   Week 1: Week 1!H -> NBD-MF-04-LA!C
+2026-02-23 15:39:01,852 - INFO -     Done
+2026-02-23 15:39:01,852 - INFO -   Week 2: Week 2!H -> NBD-MF-04-LA!D
+2026-02-23 15:39:01,852 - INFO -     Done
+2026-02-23 15:39:01,852 - INFO -   Week 3: Week 3!H -> NBD-MF-04-LA!E
+2026-02-23 15:39:01,852 - INFO -     Done
+2026-02-23 15:39:01,852 - INFO -   Week 4: Week 4!H -> NBD-MF-04-LA!F
+2026-02-23 15:39:01,852 - INFO -     Done
+2026-02-23 15:39:01,852 - INFO -   Week 5: Week 5!J -> NBD-MF-04-LA!G and H
+2026-02-23 15:39:01,853 - INFO -     Done
+2026-02-23 15:39:01,853 - INFO - NBD-MF-04-LA sheet filled successfully
+2026-02-23 15:39:01,853 - INFO - 
+Step 6: Saving monthly report...
+2026-02-23 15:39:02,020 - INFO - Saved: NBD-MF-04-LA Liquid Assets - Feb 26.xlsm
+2026-02-23 15:39:02,020 - INFO - 
+============================================================
+2026-02-23 15:39:02,020 - INFO - SUCCESS: Monthly Liquidity Report generated successfully
+2026-02-23 15:39:02,020 - INFO - Output: C:\CBSL\Script\working\NBD_MF_04_LA\30-06-2025\NBD-MF-04-LA Liquid Assets - Feb 26.xlsm
+2026-02-23 15:39:02,020 - INFO - ============================================================

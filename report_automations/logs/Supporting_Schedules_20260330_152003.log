@@ -1,0 +1,428 @@
+2026-03-30 15:20:03,109 - INFO - setup_logging:32 - Logging initialized. Log file: C:\CBSL\Script\report_automations\logs\Supporting_Schedules_20260330_152003.log
+2026-03-30 15:20:03,109 - INFO - <module>:2553 - Working directory: C:\CBSL\Script\working\Supporting Schedules
+2026-03-30 15:20:03,109 - INFO - <module>:2573 - Input date: 30/09/2025
+2026-03-30 15:20:03,109 - INFO - <module>:2574 - Month start date: 01/09/2025
+2026-03-30 15:20:03,110 - INFO - <module>:2575 - Month name: September
+2026-03-30 15:20:03,110 - INFO - get_gl_account_data:169 - Getting GL Account Details data...
+2026-03-30 15:20:03,110 - INFO - get_monthly_folder:42 - Searching for monthly folder in: C:\CBSL\Script\working\Supporting Schedules
+2026-03-30 15:20:03,110 - INFO - get_monthly_folder:49 - Found 1 subdirectories: ['03-03-2026']
+2026-03-30 15:20:03,110 - INFO - get_monthly_folder:56 - Selected monthly folder: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:03,110 - INFO - find_gl_account_details_file:63 - Searching for GL Account Details file in: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:03,111 - INFO - find_gl_account_details_file:77 - Found matching file: 2026_03_30_15_19GL Account Details.xlsx
+2026-03-30 15:20:03,111 - INFO - find_gl_account_details_file:87 - Selected file: C:\CBSL\Script\working\Supporting Schedules\03-03-2026\2026_03_30_15_19GL Account Details.xlsx
+2026-03-30 15:20:03,111 - INFO - get_gl_account_data:180 - Reading Excel file: 2026_03_30_15_19GL Account Details.xlsx
+2026-03-30 15:20:03,131 - INFO - get_gl_account_data:183 - Excel file read successfully. Shape: (13, 7)
+2026-03-30 15:20:03,131 - INFO - get_gl_account_data:184 - Columns found: ['Date', 'Transaction No.', 'Description', 'Comp. Prod. Hierarchy', 'Debit Amount', 'Credit Amount', 'Running Balance']
+2026-03-30 15:20:03,131 - INFO - get_gl_account_data:193 - Found 'Debit Amount' column: Debit Amount
+2026-03-30 15:20:03,131 - INFO - get_gl_account_data:196 - Found 'Credit Amount' column: Credit Amount
+2026-03-30 15:20:03,137 - INFO - get_gl_account_data:210 - Last filled row position: 12 (Excel row: 24)
+2026-03-30 15:20:03,138 - INFO - get_gl_account_data:225 - Data stored in DataFrame. Shape: (13, 3)
+2026-03-30 15:20:03,143 - INFO - get_gl_account_data:226 - Full DataFrame contents:
+    Debit Amount  Credit Amount   Net Amount
+0           0.00           0.00         0.00
+1      556954.52           0.00    556954.52
+2      868873.00           0.00    868873.00
+3    17955409.46           0.00  17955409.46
+4           0.00    28044398.98 -28044398.98
+5           0.00    13668027.00 -13668027.00
+6      424165.30           0.00    424165.30
+7      939742.70           0.00    939742.70
+8      392189.00           0.00    392189.00
+9     9549007.04           0.00   9549007.04
+10          0.00    14926729.00 -14926729.00
+11          0.00    18095896.00 -18095896.00
+12          0.00     2289973.25  -2289973.25
+2026-03-30 15:20:03,144 - INFO - paste_data_to_supporting_schedule:304 - Pasting data to Supporting Schedule for month: September
+2026-03-30 15:20:03,144 - INFO - get_monthly_folder:42 - Searching for monthly folder in: C:\CBSL\Script\working\Supporting Schedules
+2026-03-30 15:20:03,145 - INFO - get_monthly_folder:49 - Found 1 subdirectories: ['03-03-2026']
+2026-03-30 15:20:03,145 - INFO - get_monthly_folder:56 - Selected monthly folder: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:03,145 - INFO - find_supporting_schedule_file:239 - Searching for Supporting Schedule file in: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:03,145 - INFO - find_supporting_schedule_file:253 - Found matching file: Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:03,145 - INFO - find_supporting_schedule_file:263 - Selected file: C:\CBSL\Script\working\Supporting Schedules\03-03-2026\Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:03,145 - INFO - paste_data_to_supporting_schedule:315 - Opening workbook: Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:03,205 - INFO - paste_data_to_supporting_schedule:324 - Working with sheet: New Shcedule
+2026-03-30 15:20:03,205 - INFO - paste_data_to_supporting_schedule:332 - Found 'Description' in column A at row 4
+2026-03-30 15:20:03,205 - INFO - paste_data_to_supporting_schedule:342 - Searching for month 'September' in row 4
+2026-03-30 15:20:03,205 - INFO - paste_data_to_supporting_schedule:348 - Column A: 'Description'
+2026-03-30 15:20:03,205 - INFO - paste_data_to_supporting_schedule:348 - Column B: '2025-04-01 00:00:00'
+2026-03-30 15:20:03,205 - INFO - paste_data_to_supporting_schedule:348 - Column C: '2025-05-01 00:00:00'
+2026-03-30 15:20:03,205 - INFO - paste_data_to_supporting_schedule:348 - Column D: '2025-06-01 00:00:00'
+2026-03-30 15:20:03,206 - INFO - paste_data_to_supporting_schedule:348 - Column E: '2025-07-01 00:00:00'
+2026-03-30 15:20:03,206 - INFO - paste_data_to_supporting_schedule:348 - Column F: '2025-08-01 00:00:00'
+2026-03-30 15:20:03,206 - INFO - paste_data_to_supporting_schedule:348 - Column G: '2025-09-01 00:00:00'
+2026-03-30 15:20:03,206 - INFO - paste_data_to_supporting_schedule:356 - Found month 'September' at column G (index 7)
+2026-03-30 15:20:03,206 - INFO - paste_data_to_supporting_schedule:374 - Pasting data starting at row 5, column G
+2026-03-30 15:20:03,206 - INFO - paste_data_to_supporting_schedule:380 - Cleared cells G5 to G10
+2026-03-30 15:20:03,206 - INFO - paste_data_to_supporting_schedule:387 - Pasted row 1: 556954.52 to cell G5
+2026-03-30 15:20:03,206 - INFO - paste_data_to_supporting_schedule:387 - Pasted row 2: 868873.0 to cell G6
+2026-03-30 15:20:03,206 - INFO - paste_data_to_supporting_schedule:387 - Pasted row 3: 17955409.46 to cell G7
+2026-03-30 15:20:03,206 - INFO - paste_data_to_supporting_schedule:387 - Pasted row 4: -28044398.98 to cell G8
+2026-03-30 15:20:03,206 - INFO - paste_data_to_supporting_schedule:387 - Pasted row 5: -13668027.0 to cell G9
+2026-03-30 15:20:03,207 - INFO - paste_data_to_supporting_schedule:387 - Pasted row 6: 424165.3 to cell G10
+2026-03-30 15:20:03,270 - INFO - paste_data_to_supporting_schedule:394 - Successfully saved data to Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:03,270 - INFO - get_cbsl_provision_values:442 - Getting CBSL Provision values from Comparison sheet...
+2026-03-30 15:20:03,270 - INFO - get_monthly_folder:42 - Searching for monthly folder in: C:\CBSL\Script\working\Supporting Schedules
+2026-03-30 15:20:03,270 - INFO - get_monthly_folder:49 - Found 1 subdirectories: ['03-03-2026']
+2026-03-30 15:20:03,270 - INFO - get_monthly_folder:56 - Selected monthly folder: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:03,270 - INFO - find_cbsl_provision_file:407 - Searching for CBSL Provision Comparison file in: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:03,271 - INFO - find_cbsl_provision_file:421 - Found matching file: CBSL Provision Comparison - Aug 2025.xlsb
+2026-03-30 15:20:03,271 - INFO - find_cbsl_provision_file:431 - Selected file: C:\CBSL\Script\working\Supporting Schedules\03-03-2026\CBSL Provision Comparison - Aug 2025.xlsb
+2026-03-30 15:20:03,271 - INFO - get_cbsl_provision_values:453 - Reading .xlsb file: CBSL Provision Comparison - Aug 2025.xlsb
+2026-03-30 15:20:03,628 - INFO - get_cbsl_provision_values:459 - Available sheets: ['Comparison', 'FOR QRTLY', 'Sheet2', 'Portfolio', 'PropertyMortgage', 'RepossessedList', 'Settled', 'Types']
+2026-03-30 15:20:03,629 - INFO - get_cbsl_provision_values:466 - Reading from sheet: Comparison
+2026-03-30 15:20:03,631 - INFO - get_cbsl_provision_values:475 - DataFrame shape: (23, 13)
+2026-03-30 15:20:03,632 - INFO - get_cbsl_provision_values:476 - First 20 rows of column J (index 9):
+0                  None
+1                  None
+2                  None
+3             Imparment
+4       565592345.60775
+5      574098114.715206
+6       -8505769.107456
+7                  None
+8            Impairment
+9                  None
+10    1967969023.908352
+11      565592345.60775
+12    1402376678.300602
+13                 None
+14                 None
+15                 None
+16                 None
+17                 None
+18                 None
+19                 None
+Name: 9, dtype: object
+2026-03-30 15:20:03,633 - INFO - get_cbsl_provision_values:477 - First 20 rows of column L (index 11):
+0                  None
+1                  None
+2                  None
+3                  None
+4                  None
+5                  None
+6                  None
+7                  None
+8                 Total
+9                  None
+10    2313202122.928351
+11     910825444.627749
+12    1402376678.300602
+13     107343258.128973
+14    1295033420.171628
+15                 None
+16                 None
+17                 None
+18                 None
+19                 None
+Name: 11, dtype: object
+2026-03-30 15:20:03,633 - INFO - get_cbsl_provision_values:486 - J11 (row 11, col J, index [10,9]) value: 1967969023.9083517
+2026-03-30 15:20:03,633 - INFO - get_cbsl_provision_values:487 - J12 (row 12, col J, index [11,9]) value: 565592345.6077498
+2026-03-30 15:20:03,633 - INFO - get_cbsl_provision_values:488 - L14 (row 14, col L, index [13,11]) value: 107343258.12897336
+2026-03-30 15:20:03,635 - INFO - paste_cbsl_provision_to_supporting_schedule:520 - Pasting CBSL Provision data to Supporting Schedule for month: September
+2026-03-30 15:20:03,636 - INFO - get_monthly_folder:42 - Searching for monthly folder in: C:\CBSL\Script\working\Supporting Schedules
+2026-03-30 15:20:03,636 - INFO - get_monthly_folder:49 - Found 1 subdirectories: ['03-03-2026']
+2026-03-30 15:20:03,636 - INFO - get_monthly_folder:56 - Selected monthly folder: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:03,636 - INFO - find_supporting_schedule_file:239 - Searching for Supporting Schedule file in: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:03,636 - INFO - find_supporting_schedule_file:253 - Found matching file: Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:03,636 - INFO - find_supporting_schedule_file:263 - Selected file: C:\CBSL\Script\working\Supporting Schedules\03-03-2026\Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:03,636 - INFO - paste_cbsl_provision_to_supporting_schedule:531 - Opening workbook: Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:03,696 - INFO - paste_cbsl_provision_to_supporting_schedule:540 - Working with sheet: New Shcedule
+2026-03-30 15:20:03,697 - INFO - paste_cbsl_provision_to_supporting_schedule:548 - Found 'Description' in column A at row 4
+2026-03-30 15:20:03,697 - INFO - paste_cbsl_provision_to_supporting_schedule:558 - Searching for month 'September' in row 4
+2026-03-30 15:20:03,697 - INFO - paste_cbsl_provision_to_supporting_schedule:570 - Found month 'September' at column G (index 7)
+2026-03-30 15:20:03,697 - INFO - paste_cbsl_provision_to_supporting_schedule:588 - Cleared cells G24, G25, G26
+2026-03-30 15:20:03,697 - INFO - paste_cbsl_provision_to_supporting_schedule:594 - Pasted J11 value (1967969023.9083517) to cell G25
+2026-03-30 15:20:03,697 - INFO - paste_cbsl_provision_to_supporting_schedule:601 - Pasted J12 value (565592345.6077498) to cell G24
+2026-03-30 15:20:03,697 - INFO - paste_cbsl_provision_to_supporting_schedule:608 - Pasted L14 value (107343258.12897336) to cell G26
+2026-03-30 15:20:03,770 - INFO - paste_cbsl_provision_to_supporting_schedule:615 - Successfully saved CBSL Provision data to Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:03,770 - INFO - copy_property_mortgage_to_new_schedule:641 - Copying PropertyMortgage data to New Shcedule sheet
+2026-03-30 15:20:03,770 - INFO - get_monthly_folder:42 - Searching for monthly folder in: C:\CBSL\Script\working\Supporting Schedules
+2026-03-30 15:20:03,771 - INFO - get_monthly_folder:49 - Found 1 subdirectories: ['03-03-2026']
+2026-03-30 15:20:03,771 - INFO - get_monthly_folder:56 - Selected monthly folder: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:03,771 - INFO - find_cbsl_provision_file:407 - Searching for CBSL Provision Comparison file in: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:03,771 - INFO - find_cbsl_provision_file:421 - Found matching file: CBSL Provision Comparison - Aug 2025.xlsb
+2026-03-30 15:20:03,771 - INFO - find_cbsl_provision_file:431 - Selected file: C:\CBSL\Script\working\Supporting Schedules\03-03-2026\CBSL Provision Comparison - Aug 2025.xlsb
+2026-03-30 15:20:03,771 - INFO - find_supporting_schedule_file:239 - Searching for Supporting Schedule file in: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:03,771 - INFO - find_supporting_schedule_file:253 - Found matching file: Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:03,771 - INFO - find_supporting_schedule_file:263 - Selected file: C:\CBSL\Script\working\Supporting Schedules\03-03-2026\Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:03,771 - INFO - copy_property_mortgage_to_new_schedule:658 - Reading .xlsb file: CBSL Provision Comparison - Aug 2025.xlsb
+2026-03-30 15:20:04,120 - INFO - copy_property_mortgage_to_new_schedule:666 - Available sheets: ['Comparison', 'FOR QRTLY', 'Sheet2', 'Portfolio', 'PropertyMortgage', 'RepossessedList', 'Settled', 'Types']
+2026-03-30 15:20:04,121 - INFO - copy_property_mortgage_to_new_schedule:673 - Reading from PropertyMortgage sheet
+2026-03-30 15:20:04,126 - INFO - copy_property_mortgage_to_new_schedule:686 - DataFrame shape: (4, 19)
+2026-03-30 15:20:04,126 - INFO - copy_property_mortgage_to_new_schedule:693 - S2 (row 2, col S, index [1,18]) value: 73816129.34193169
+2026-03-30 15:20:04,126 - INFO - copy_property_mortgage_to_new_schedule:694 - S3 (row 3, col S, index [2,18]) value: 62027379.887815855
+2026-03-30 15:20:04,127 - INFO - copy_property_mortgage_to_new_schedule:697 - Opening Supporting Schedule file: Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:04,190 - INFO - copy_property_mortgage_to_new_schedule:706 - Working with sheet: New Shcedule
+2026-03-30 15:20:04,190 - INFO - copy_property_mortgage_to_new_schedule:711 - Cleared cells B80 and B81
+2026-03-30 15:20:04,190 - INFO - copy_property_mortgage_to_new_schedule:716 - Pasted S2 value (73816129.34193169) to B80
+2026-03-30 15:20:04,190 - INFO - copy_property_mortgage_to_new_schedule:722 - Pasted S3 value (62027379.887815855) to B81
+2026-03-30 15:20:04,252 - INFO - copy_property_mortgage_to_new_schedule:729 - Successfully saved PropertyMortgage data to Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:04,254 - INFO - update_b31_and_reorganize_cells:760 - Updating B31 and reorganizing cells for date: 9/1/2025
+2026-03-30 15:20:04,254 - INFO - get_monthly_folder:42 - Searching for monthly folder in: C:\CBSL\Script\working\Supporting Schedules
+2026-03-30 15:20:04,254 - INFO - get_monthly_folder:49 - Found 1 subdirectories: ['03-03-2026']
+2026-03-30 15:20:04,254 - INFO - get_monthly_folder:56 - Selected monthly folder: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:04,254 - INFO - find_supporting_schedule_file:239 - Searching for Supporting Schedule file in: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:04,254 - INFO - find_supporting_schedule_file:253 - Found matching file: Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:04,254 - INFO - find_supporting_schedule_file:263 - Selected file: C:\CBSL\Script\working\Supporting Schedules\03-03-2026\Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:04,255 - INFO - update_b31_and_reorganize_cells:771 - Opening workbook: Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:04,313 - INFO - update_b31_and_reorganize_cells:780 - Working with sheet: New Shcedule
+2026-03-30 15:20:04,314 - INFO - update_b31_and_reorganize_cells:784 - Updated B31 with date: 9/1/2025
+2026-03-30 15:20:04,314 - INFO - update_b31_and_reorganize_cells:789 - Read B41 value: 23441732.31999999
+2026-03-30 15:20:04,314 - INFO - update_b31_and_reorganize_cells:790 - Read B45 value: 1967969023.908352
+2026-03-30 15:20:04,314 - INFO - update_b31_and_reorganize_cells:795 - Cleared B40 and B44
+2026-03-30 15:20:04,314 - INFO - update_b31_and_reorganize_cells:800 - Copied B41 (23441732.31999999) → B40
+2026-03-30 15:20:04,314 - INFO - update_b31_and_reorganize_cells:801 - Copied B45 (1967969023.908352) → B44
+2026-03-30 15:20:04,314 - INFO - update_b31_and_reorganize_cells:806 - Cleared B41 and B45
+2026-03-30 15:20:04,372 - INFO - update_b31_and_reorganize_cells:811 - Successfully saved changes to Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:04,372 - INFO - copy_from_summary_to_supporting_schedule:870 - Copying values from Summary file to Supporting Schedule
+2026-03-30 15:20:04,372 - INFO - get_monthly_folder:42 - Searching for monthly folder in: C:\CBSL\Script\working\Supporting Schedules
+2026-03-30 15:20:04,372 - INFO - get_monthly_folder:49 - Found 1 subdirectories: ['03-03-2026']
+2026-03-30 15:20:04,372 - INFO - get_monthly_folder:56 - Selected monthly folder: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:04,372 - INFO - find_summary_file:824 - Searching for Summary file in: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:04,373 - INFO - find_summary_file:840 - Found matching file: 3. Summary_2025-08-31_Final_V2.xlsb
+2026-03-30 15:20:04,373 - INFO - find_summary_file:850 - Selected file: C:\CBSL\Script\working\Supporting Schedules\03-03-2026\3. Summary_2025-08-31_Final_V2.xlsb
+2026-03-30 15:20:04,373 - INFO - find_supporting_schedule_file:239 - Searching for Supporting Schedule file in: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:04,373 - INFO - find_supporting_schedule_file:253 - Found matching file: Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:04,373 - INFO - find_supporting_schedule_file:263 - Selected file: C:\CBSL\Script\working\Supporting Schedules\03-03-2026\Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:04,373 - INFO - copy_from_summary_to_supporting_schedule:888 - Opening Summary file: 3. Summary_2025-08-31_Final_V2.xlsb
+2026-03-30 15:20:04,373 - INFO - copy_from_summary_to_supporting_schedule:895 - Reading .xlsb file using pyxlsb
+2026-03-30 15:20:04,753 - INFO - copy_from_summary_to_supporting_schedule:898 - Available sheets in Summary file: ['Check', 'PBI_Data', 'SUMMARY', 'Exp0', 'Pivot', 'MTD', 'NPA', 'WC_Sheet', 'Chart', 'WC_Chart', 'ECL Provision', 'Stage', 'Yard Provision', 'Auto-Non Auto', 'DP', 'Branch Vs. Reigion', 'NPA Category', 'JEs', 'Other Pivots', 'RPT', 'Staff']
+2026-03-30 15:20:04,757 - INFO - copy_from_summary_to_supporting_schedule:912 - Read 'Yard Provision' F1 value: 23441732.319999985
+2026-03-30 15:20:05,790 - INFO - copy_from_summary_to_supporting_schedule:933 - Read 'SUMMARY' Z2 value: 1967969023.9083517
+2026-03-30 15:20:05,816 - INFO - copy_from_summary_to_supporting_schedule:967 - Opening Supporting Schedule file: Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:05,885 - INFO - copy_from_summary_to_supporting_schedule:980 - Cleared cells B41 and B45
+2026-03-30 15:20:05,885 - INFO - copy_from_summary_to_supporting_schedule:984 - Pasted 'Yard Provision' F1 value (23441732.319999985) to B41
+2026-03-30 15:20:05,886 - INFO - copy_from_summary_to_supporting_schedule:987 - Pasted 'SUMMARY' Z2 value (1967969023.9083517) to B45
+2026-03-30 15:20:05,963 - INFO - copy_from_summary_to_supporting_schedule:992 - Successfully saved values to Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:05,964 - INFO - copy_other_pivots_to_staging:1020 - Copying Other Pivots data to Staging sheet
+2026-03-30 15:20:05,964 - INFO - get_monthly_folder:42 - Searching for monthly folder in: C:\CBSL\Script\working\Supporting Schedules
+2026-03-30 15:20:05,966 - INFO - get_monthly_folder:49 - Found 1 subdirectories: ['03-03-2026']
+2026-03-30 15:20:05,966 - INFO - get_monthly_folder:56 - Selected monthly folder: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:05,966 - INFO - find_summary_file:824 - Searching for Summary file in: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:05,968 - INFO - find_summary_file:840 - Found matching file: 3. Summary_2025-08-31_Final_V2.xlsb
+2026-03-30 15:20:05,968 - INFO - find_summary_file:850 - Selected file: C:\CBSL\Script\working\Supporting Schedules\03-03-2026\3. Summary_2025-08-31_Final_V2.xlsb
+2026-03-30 15:20:05,968 - INFO - find_supporting_schedule_file:239 - Searching for Supporting Schedule file in: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:05,969 - INFO - find_supporting_schedule_file:253 - Found matching file: Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:05,969 - INFO - find_supporting_schedule_file:263 - Selected file: C:\CBSL\Script\working\Supporting Schedules\03-03-2026\Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:05,969 - INFO - copy_other_pivots_to_staging:1038 - Opening Summary file: 3. Summary_2025-08-31_Final_V2.xlsb
+2026-03-30 15:20:05,969 - INFO - copy_other_pivots_to_staging:1051 - Reading .xlsb file using pyxlsb
+2026-03-30 15:20:06,316 - INFO - copy_other_pivots_to_staging:1054 - Available sheets in Summary file: ['Check', 'PBI_Data', 'SUMMARY', 'Exp0', 'Pivot', 'MTD', 'NPA', 'WC_Sheet', 'Chart', 'WC_Chart', 'ECL Provision', 'Stage', 'Yard Provision', 'Auto-Non Auto', 'DP', 'Branch Vs. Reigion', 'NPA Category', 'JEs', 'Other Pivots', 'RPT', 'Staff']
+2026-03-30 15:20:06,320 - INFO - copy_other_pivots_to_staging:1071 - Read 6 rows from Other Pivots sheet
+2026-03-30 15:20:06,320 - INFO - copy_other_pivots_to_staging:1082 - B4:B6 values: [46436004187.48499, 5592540915.567669, 2724956048.0020084]
+2026-03-30 15:20:06,320 - INFO - copy_other_pivots_to_staging:1083 - C4:C6 values: [340386724.39814115, 282212406.6854463, 1289022837.8233972]
+2026-03-30 15:20:06,320 - INFO - copy_other_pivots_to_staging:1084 - L4:L6 values: [47954536469.607956, 5789370185.451606, 2792674755.254564]
+2026-03-30 15:20:06,320 - INFO - copy_other_pivots_to_staging:1085 - E4:E6 values: [0.0, 0.0, 345233099.0199992]
+2026-03-30 15:20:06,321 - INFO - copy_other_pivots_to_staging:1086 - F4:F6 values: [13816316.746763295, 10573119.52047257, 31957618.734127026]
+2026-03-30 15:20:06,321 - INFO - copy_other_pivots_to_staging:1118 - Opening Supporting Schedule file: Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:06,385 - INFO - copy_other_pivots_to_staging:1127 - Writing to sheet: Staging
+2026-03-30 15:20:06,385 - INFO - copy_other_pivots_to_staging:1133 - Cleared cells B4:F6
+2026-03-30 15:20:06,386 - INFO - copy_other_pivots_to_staging:1140 - Pasted B4:B6
+2026-03-30 15:20:06,386 - INFO - copy_other_pivots_to_staging:1146 - Pasted C4:C6
+2026-03-30 15:20:06,386 - INFO - copy_other_pivots_to_staging:1152 - Pasted L4:L6 to D4:D6
+2026-03-30 15:20:06,386 - INFO - copy_other_pivots_to_staging:1158 - Pasted E4:E6
+2026-03-30 15:20:06,386 - INFO - copy_other_pivots_to_staging:1164 - Pasted F4:F6
+2026-03-30 15:20:06,446 - INFO - copy_other_pivots_to_staging:1169 - Successfully saved Other Pivots data to Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:06,447 - INFO - copy_summary_sheet_to_staging:1199 - Copying SUMMARY sheet data to Staging sheet (Date: 9/1/2025)
+2026-03-30 15:20:06,447 - INFO - get_monthly_folder:42 - Searching for monthly folder in: C:\CBSL\Script\working\Supporting Schedules
+2026-03-30 15:20:06,448 - INFO - get_monthly_folder:49 - Found 1 subdirectories: ['03-03-2026']
+2026-03-30 15:20:06,448 - INFO - get_monthly_folder:56 - Selected monthly folder: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:06,448 - INFO - find_summary_file:824 - Searching for Summary file in: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:06,448 - INFO - find_summary_file:840 - Found matching file: 3. Summary_2025-08-31_Final_V2.xlsb
+2026-03-30 15:20:06,448 - INFO - find_summary_file:850 - Selected file: C:\CBSL\Script\working\Supporting Schedules\03-03-2026\3. Summary_2025-08-31_Final_V2.xlsb
+2026-03-30 15:20:06,448 - INFO - find_supporting_schedule_file:239 - Searching for Supporting Schedule file in: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:06,448 - INFO - find_supporting_schedule_file:253 - Found matching file: Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:06,449 - INFO - find_supporting_schedule_file:263 - Selected file: C:\CBSL\Script\working\Supporting Schedules\03-03-2026\Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:06,449 - INFO - copy_summary_sheet_to_staging:1217 - Opening Summary file: 3. Summary_2025-08-31_Final_V2.xlsb
+2026-03-30 15:20:06,449 - INFO - copy_summary_sheet_to_staging:1225 - Reading .xlsb file using pyxlsb
+2026-03-30 15:20:06,818 - INFO - copy_summary_sheet_to_staging:1228 - Available sheets in Summary file: ['Check', 'PBI_Data', 'SUMMARY', 'Exp0', 'Pivot', 'MTD', 'NPA', 'WC_Sheet', 'Chart', 'WC_Chart', 'ECL Provision', 'Stage', 'Yard Provision', 'Auto-Non Auto', 'DP', 'Branch Vs. Reigion', 'NPA Category', 'JEs', 'Other Pivots', 'RPT', 'Staff']
+2026-03-30 15:20:07,719 - INFO - copy_summary_sheet_to_staging:1239 - Reading row 88822 from SUMMARY sheet...
+2026-03-30 15:20:30,452 - INFO - copy_summary_sheet_to_staging:1255 - W88822 value: 3059942299.21
+2026-03-30 15:20:30,452 - INFO - copy_summary_sheet_to_staging:1256 - X88822 value: 28775104.63
+2026-03-30 15:20:30,452 - INFO - copy_summary_sheet_to_staging:1257 - Y88822 value: -272820.02506195067
+2026-03-30 15:20:30,479 - INFO - copy_summary_sheet_to_staging:1285 - Opening Supporting Schedule file: Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:30,540 - INFO - copy_summary_sheet_to_staging:1294 - Writing to sheet: Staging
+2026-03-30 15:20:30,540 - INFO - copy_summary_sheet_to_staging:1301 - Cleared cells A10, B10, C10, D10
+2026-03-30 15:20:30,540 - INFO - copy_summary_sheet_to_staging:1305 - Updated A10 with date: 9/1/2025
+2026-03-30 15:20:30,540 - INFO - copy_summary_sheet_to_staging:1309 - Pasted W88822 (3059942299.21) to B10
+2026-03-30 15:20:30,540 - INFO - copy_summary_sheet_to_staging:1312 - Pasted X88822 (28775104.63) to C10
+2026-03-30 15:20:30,541 - INFO - copy_summary_sheet_to_staging:1315 - Pasted Y88822 (-272820.02506195067) to D10
+2026-03-30 15:20:30,606 - INFO - copy_summary_sheet_to_staging:1320 - Successfully saved SUMMARY data to Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:30,607 - INFO - copy_other_pivots_row18_to_staging:1348 - Copying Other Pivots row 18 data to Staging sheet
+2026-03-30 15:20:30,607 - INFO - get_monthly_folder:42 - Searching for monthly folder in: C:\CBSL\Script\working\Supporting Schedules
+2026-03-30 15:20:30,608 - INFO - get_monthly_folder:49 - Found 1 subdirectories: ['03-03-2026']
+2026-03-30 15:20:30,608 - INFO - get_monthly_folder:56 - Selected monthly folder: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:30,608 - INFO - find_summary_file:824 - Searching for Summary file in: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:30,608 - INFO - find_summary_file:840 - Found matching file: 3. Summary_2025-08-31_Final_V2.xlsb
+2026-03-30 15:20:30,608 - INFO - find_summary_file:850 - Selected file: C:\CBSL\Script\working\Supporting Schedules\03-03-2026\3. Summary_2025-08-31_Final_V2.xlsb
+2026-03-30 15:20:30,608 - INFO - find_supporting_schedule_file:239 - Searching for Supporting Schedule file in: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:30,609 - INFO - find_supporting_schedule_file:253 - Found matching file: Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:30,609 - INFO - find_supporting_schedule_file:263 - Selected file: C:\CBSL\Script\working\Supporting Schedules\03-03-2026\Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:30,609 - INFO - copy_other_pivots_row18_to_staging:1366 - Opening Summary file: 3. Summary_2025-08-31_Final_V2.xlsb
+2026-03-30 15:20:30,609 - INFO - copy_other_pivots_row18_to_staging:1377 - Reading .xlsb file using pyxlsb
+2026-03-30 15:20:30,967 - INFO - copy_other_pivots_row18_to_staging:1380 - Available sheets in Summary file: ['Check', 'PBI_Data', 'SUMMARY', 'Exp0', 'Pivot', 'MTD', 'NPA', 'WC_Sheet', 'Chart', 'WC_Chart', 'ECL Provision', 'Stage', 'Yard Provision', 'Auto-Non Auto', 'DP', 'Branch Vs. Reigion', 'NPA Category', 'JEs', 'Other Pivots', 'RPT', 'Staff']
+2026-03-30 15:20:30,969 - INFO - copy_other_pivots_row18_to_staging:1406 - J18 value: 89361050.97
+2026-03-30 15:20:30,969 - INFO - copy_other_pivots_row18_to_staging:1407 - K18 value: 416959.45905499416
+2026-03-30 15:20:30,969 - INFO - copy_other_pivots_row18_to_staging:1408 - L18 value: 89361050.97
+2026-03-30 15:20:30,969 - INFO - copy_other_pivots_row18_to_staging:1409 - M18 value: 0.0
+2026-03-30 15:20:30,969 - INFO - copy_other_pivots_row18_to_staging:1410 - N18 value: 0.0
+2026-03-30 15:20:30,970 - INFO - copy_other_pivots_row18_to_staging:1442 - Opening Supporting Schedule file: Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:31,039 - INFO - copy_other_pivots_row18_to_staging:1451 - Writing to sheet: Staging
+2026-03-30 15:20:31,039 - INFO - copy_other_pivots_row18_to_staging:1459 - Cleared cells B18:F18
+2026-03-30 15:20:31,039 - INFO - copy_other_pivots_row18_to_staging:1463 - Pasted J18 (89361050.97) to B18
+2026-03-30 15:20:31,039 - INFO - copy_other_pivots_row18_to_staging:1466 - Pasted K18 (416959.45905499416) to C18
+2026-03-30 15:20:31,039 - INFO - copy_other_pivots_row18_to_staging:1469 - Pasted L18 (89361050.97) to D18
+2026-03-30 15:20:31,039 - INFO - copy_other_pivots_row18_to_staging:1472 - Pasted M18 (0.0) to E18
+2026-03-30 15:20:31,039 - INFO - copy_other_pivots_row18_to_staging:1475 - Pasted N18 (0.0) to F18
+2026-03-30 15:20:31,104 - INFO - copy_other_pivots_row18_to_staging:1480 - Successfully saved Other Pivots row 18 data to Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:31,105 - INFO - copy_other_pivots_to_new_schedule:1513 - Copying Other Pivots data to New Shcedule sheet
+2026-03-30 15:20:31,105 - INFO - get_monthly_folder:42 - Searching for monthly folder in: C:\CBSL\Script\working\Supporting Schedules
+2026-03-30 15:20:31,105 - INFO - get_monthly_folder:49 - Found 1 subdirectories: ['03-03-2026']
+2026-03-30 15:20:31,105 - INFO - get_monthly_folder:56 - Selected monthly folder: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:31,105 - INFO - find_summary_file:824 - Searching for Summary file in: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:31,106 - INFO - find_summary_file:840 - Found matching file: 3. Summary_2025-08-31_Final_V2.xlsb
+2026-03-30 15:20:31,106 - INFO - find_summary_file:850 - Selected file: C:\CBSL\Script\working\Supporting Schedules\03-03-2026\3. Summary_2025-08-31_Final_V2.xlsb
+2026-03-30 15:20:31,106 - INFO - find_supporting_schedule_file:239 - Searching for Supporting Schedule file in: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:31,106 - INFO - find_supporting_schedule_file:253 - Found matching file: Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:31,106 - INFO - find_supporting_schedule_file:263 - Selected file: C:\CBSL\Script\working\Supporting Schedules\03-03-2026\Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:31,106 - INFO - copy_other_pivots_to_new_schedule:1531 - Opening Summary file: 3. Summary_2025-08-31_Final_V2.xlsb
+2026-03-30 15:20:31,106 - INFO - copy_other_pivots_to_new_schedule:1547 - Reading .xlsb file using pyxlsb
+2026-03-30 15:20:31,481 - INFO - copy_other_pivots_to_new_schedule:1550 - Available sheets in Summary file: ['Check', 'PBI_Data', 'SUMMARY', 'Exp0', 'Pivot', 'MTD', 'NPA', 'WC_Sheet', 'Chart', 'WC_Chart', 'ECL Provision', 'Stage', 'Yard Provision', 'Auto-Non Auto', 'DP', 'Branch Vs. Reigion', 'NPA Category', 'JEs', 'Other Pivots', 'RPT', 'Staff']
+2026-03-30 15:20:31,484 - INFO - copy_other_pivots_to_new_schedule:1598 - L11 value: 38172091802.724144
+2026-03-30 15:20:31,484 - INFO - copy_other_pivots_to_new_schedule:1599 - L12 value: 18364489607.59021
+2026-03-30 15:20:31,484 - INFO - copy_other_pivots_to_new_schedule:1600 - B31 value: 32145182.129626866
+2026-03-30 15:20:31,484 - INFO - copy_other_pivots_to_new_schedule:1601 - B32 value: 198497647.59999993
+2026-03-30 15:20:31,484 - INFO - copy_other_pivots_to_new_schedule:1602 - E31 value: 6242795.75
+2026-03-30 15:20:31,484 - INFO - copy_other_pivots_to_new_schedule:1603 - E32 value: 83118255.22
+2026-03-30 15:20:31,485 - INFO - copy_other_pivots_to_new_schedule:1604 - O11 value: 1697024724.1639237
+2026-03-30 15:20:31,485 - INFO - copy_other_pivots_to_new_schedule:1605 - O12 value: 270944299.7444397
+2026-03-30 15:20:31,485 - INFO - copy_other_pivots_to_new_schedule:1606 - M11 value: 309273957.149999
+2026-03-30 15:20:31,485 - INFO - copy_other_pivots_to_new_schedule:1607 - M12 value: 35959141.87
+2026-03-30 15:20:31,485 - INFO - copy_other_pivots_to_new_schedule:1649 - Opening Supporting Schedule file: Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:31,551 - INFO - copy_other_pivots_to_new_schedule:1658 - Writing to sheet: New Shcedule
+2026-03-30 15:20:31,551 - INFO - copy_other_pivots_to_new_schedule:1671 - Cleared cells B50, B51, C50, C51, D50, D51, F50, F51, G50, G51
+2026-03-30 15:20:31,551 - INFO - copy_other_pivots_to_new_schedule:1675 - Pasted L11 (38172091802.724144) to B50
+2026-03-30 15:20:31,551 - INFO - copy_other_pivots_to_new_schedule:1678 - Pasted L12 (18364489607.59021) to B51
+2026-03-30 15:20:31,551 - INFO - copy_other_pivots_to_new_schedule:1681 - Pasted B31 (32145182.129626866) to C50
+2026-03-30 15:20:31,551 - INFO - copy_other_pivots_to_new_schedule:1684 - Pasted B32 (198497647.59999993) to C51
+2026-03-30 15:20:31,551 - INFO - copy_other_pivots_to_new_schedule:1687 - Pasted E31 (6242795.75) to D50
+2026-03-30 15:20:31,551 - INFO - copy_other_pivots_to_new_schedule:1690 - Pasted E32 (83118255.22) to D51
+2026-03-30 15:20:31,551 - INFO - copy_other_pivots_to_new_schedule:1693 - Pasted O11 (1697024724.1639237) to F50
+2026-03-30 15:20:31,551 - INFO - copy_other_pivots_to_new_schedule:1696 - Pasted O12 (270944299.7444397) to F51
+2026-03-30 15:20:31,551 - INFO - copy_other_pivots_to_new_schedule:1699 - Pasted M11 (309273957.149999) to G50
+2026-03-30 15:20:31,551 - INFO - copy_other_pivots_to_new_schedule:1702 - Pasted M12 (35959141.87) to G51
+2026-03-30 15:20:31,612 - INFO - copy_other_pivots_to_new_schedule:1707 - Successfully saved Other Pivots data to New Shcedule sheet in Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:31,613 - INFO - copy_staging_to_new_schedule:1734 - Copying Staging sheet data to New Shcedule sheet
+2026-03-30 15:20:31,613 - INFO - get_monthly_folder:42 - Searching for monthly folder in: C:\CBSL\Script\working\Supporting Schedules
+2026-03-30 15:20:31,613 - INFO - get_monthly_folder:49 - Found 1 subdirectories: ['03-03-2026']
+2026-03-30 15:20:31,614 - INFO - get_monthly_folder:56 - Selected monthly folder: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:31,614 - INFO - find_supporting_schedule_file:239 - Searching for Supporting Schedule file in: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:31,614 - INFO - find_supporting_schedule_file:253 - Found matching file: Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:31,614 - INFO - find_supporting_schedule_file:263 - Selected file: C:\CBSL\Script\working\Supporting Schedules\03-03-2026\Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:31,614 - INFO - copy_staging_to_new_schedule:1747 - Opening Supporting Schedule file: Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:31,678 - INFO - copy_staging_to_new_schedule:1769 - Read from Staging - C10: 28775104.63
+2026-03-30 15:20:31,678 - INFO - copy_staging_to_new_schedule:1770 - Read from Staging - B10: 3059942299.21
+2026-03-30 15:20:31,678 - INFO - copy_staging_to_new_schedule:1775 - Cleared cells B52 and B53
+2026-03-30 15:20:31,678 - INFO - copy_staging_to_new_schedule:1779 - Pasted C10 (28775104.63) to B52
+2026-03-30 15:20:31,678 - INFO - copy_staging_to_new_schedule:1782 - Pasted B10 (3059942299.21) to B53
+2026-03-30 15:20:31,746 - INFO - copy_staging_to_new_schedule:1787 - Successfully saved Staging data to New Shcedule sheet in Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:31,746 - INFO - copy_summary_sum_to_new_schedule:1812 - Copying and summing SUMMARY sheet data to New Shcedule sheet
+2026-03-30 15:20:31,746 - INFO - get_monthly_folder:42 - Searching for monthly folder in: C:\CBSL\Script\working\Supporting Schedules
+2026-03-30 15:20:31,746 - INFO - get_monthly_folder:49 - Found 1 subdirectories: ['03-03-2026']
+2026-03-30 15:20:31,746 - INFO - get_monthly_folder:56 - Selected monthly folder: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:31,747 - INFO - find_summary_file:824 - Searching for Summary file in: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:31,747 - INFO - find_summary_file:840 - Found matching file: 3. Summary_2025-08-31_Final_V2.xlsb
+2026-03-30 15:20:31,747 - INFO - find_summary_file:850 - Selected file: C:\CBSL\Script\working\Supporting Schedules\03-03-2026\3. Summary_2025-08-31_Final_V2.xlsb
+2026-03-30 15:20:31,747 - INFO - find_supporting_schedule_file:239 - Searching for Supporting Schedule file in: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:31,748 - INFO - find_supporting_schedule_file:253 - Found matching file: Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:31,748 - INFO - find_supporting_schedule_file:263 - Selected file: C:\CBSL\Script\working\Supporting Schedules\03-03-2026\Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:31,748 - INFO - copy_summary_sum_to_new_schedule:1830 - Opening Summary file: 3. Summary_2025-08-31_Final_V2.xlsb
+2026-03-30 15:20:31,748 - INFO - copy_summary_sum_to_new_schedule:1837 - Reading .xlsb file using pyxlsb
+2026-03-30 15:20:32,136 - INFO - copy_summary_sum_to_new_schedule:1840 - Available sheets in Summary file: ['Check', 'PBI_Data', 'SUMMARY', 'Exp0', 'Pivot', 'MTD', 'NPA', 'WC_Sheet', 'Chart', 'WC_Chart', 'ECL Provision', 'Stage', 'Yard Provision', 'Auto-Non Auto', 'DP', 'Branch Vs. Reigion', 'NPA Category', 'JEs', 'Other Pivots', 'RPT', 'Staff']
+2026-03-30 15:20:54,936 - INFO - copy_summary_sum_to_new_schedule:1865 - X88805 value: 56565083694.92
+2026-03-30 15:20:54,936 - INFO - copy_summary_sum_to_new_schedule:1872 - Y88800 value: 3059942299.21
+2026-03-30 15:20:54,966 - INFO - copy_summary_sum_to_new_schedule:1903 - Sum calculated: 56565083694.92 + 3059942299.21 = 59625025994.13
+2026-03-30 15:20:54,967 - INFO - copy_summary_sum_to_new_schedule:1906 - Opening Supporting Schedule file: Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:55,028 - INFO - copy_summary_sum_to_new_schedule:1915 - Writing to sheet: New Shcedule
+2026-03-30 15:20:55,028 - INFO - copy_summary_sum_to_new_schedule:1919 - Cleared cell B56
+2026-03-30 15:20:55,028 - INFO - copy_summary_sum_to_new_schedule:1923 - Pasted sum (59625025994.13) to B56
+2026-03-30 15:20:55,092 - INFO - copy_summary_sum_to_new_schedule:1928 - Successfully saved SUMMARY sum to New Shcedule sheet in Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:55,094 - INFO - copy_summary_range_to_new_schedule:1952 - Copying SUMMARY sheet range X88808:X88813 to New Shcedule sheet
+2026-03-30 15:20:55,094 - INFO - get_monthly_folder:42 - Searching for monthly folder in: C:\CBSL\Script\working\Supporting Schedules
+2026-03-30 15:20:55,094 - INFO - get_monthly_folder:49 - Found 1 subdirectories: ['03-03-2026']
+2026-03-30 15:20:55,094 - INFO - get_monthly_folder:56 - Selected monthly folder: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:55,094 - INFO - find_summary_file:824 - Searching for Summary file in: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:55,095 - INFO - find_summary_file:840 - Found matching file: 3. Summary_2025-08-31_Final_V2.xlsb
+2026-03-30 15:20:55,095 - INFO - find_summary_file:850 - Selected file: C:\CBSL\Script\working\Supporting Schedules\03-03-2026\3. Summary_2025-08-31_Final_V2.xlsb
+2026-03-30 15:20:55,095 - INFO - find_supporting_schedule_file:239 - Searching for Supporting Schedule file in: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:20:55,095 - INFO - find_supporting_schedule_file:253 - Found matching file: Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:55,095 - INFO - find_supporting_schedule_file:263 - Selected file: C:\CBSL\Script\working\Supporting Schedules\03-03-2026\Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:20:55,095 - INFO - copy_summary_range_to_new_schedule:1970 - Opening Summary file: 3. Summary_2025-08-31_Final_V2.xlsb
+2026-03-30 15:20:55,095 - INFO - copy_summary_range_to_new_schedule:1977 - Reading .xlsb file using pyxlsb
+2026-03-30 15:20:55,446 - INFO - copy_summary_range_to_new_schedule:1980 - Available sheets in Summary file: ['Check', 'PBI_Data', 'SUMMARY', 'Exp0', 'Pivot', 'MTD', 'NPA', 'WC_Sheet', 'Chart', 'WC_Chart', 'ECL Provision', 'Stage', 'Yard Provision', 'Auto-Non Auto', 'DP', 'Branch Vs. Reigion', 'NPA Category', 'JEs', 'Other Pivots', 'RPT', 'Staff']
+2026-03-30 15:21:33,591 - INFO - copy_summary_range_to_new_schedule:2011 - X column values (88808-88813): [-274728.55, None, None, 1073.83493804932, 858.32, -23.63]
+2026-03-30 15:21:33,617 - INFO - copy_summary_range_to_new_schedule:2033 - Opening Supporting Schedule file: Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:21:33,682 - INFO - copy_summary_range_to_new_schedule:2042 - Writing to sheet: New Shcedule
+2026-03-30 15:21:33,682 - INFO - copy_summary_range_to_new_schedule:2048 - Cleared cells B60:B65
+2026-03-30 15:21:33,682 - INFO - copy_summary_range_to_new_schedule:2054 - Pasted X88808 (-274728.55) to B60
+2026-03-30 15:21:33,682 - INFO - copy_summary_range_to_new_schedule:2054 - Pasted X88809 (None) to B61
+2026-03-30 15:21:33,683 - INFO - copy_summary_range_to_new_schedule:2054 - Pasted X88810 (None) to B62
+2026-03-30 15:21:33,683 - INFO - copy_summary_range_to_new_schedule:2054 - Pasted X88811 (1073.83493804932) to B63
+2026-03-30 15:21:33,683 - INFO - copy_summary_range_to_new_schedule:2054 - Pasted X88812 (858.32) to B64
+2026-03-30 15:21:33,683 - INFO - copy_summary_range_to_new_schedule:2054 - Pasted X88813 (-23.63) to B65
+2026-03-30 15:21:33,781 - INFO - copy_summary_range_to_new_schedule:2059 - Successfully saved SUMMARY range to New Shcedule sheet in Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:21:33,783 - INFO - export_summary_data_to_excel:2082 - Copying filtered SUMMARY data to RPT List sheet
+2026-03-30 15:21:33,783 - INFO - get_monthly_folder:42 - Searching for monthly folder in: C:\CBSL\Script\working\Supporting Schedules
+2026-03-30 15:21:33,783 - INFO - get_monthly_folder:49 - Found 1 subdirectories: ['03-03-2026']
+2026-03-30 15:21:33,783 - INFO - get_monthly_folder:56 - Selected monthly folder: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:21:33,783 - INFO - find_summary_file:824 - Searching for Summary file in: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:21:33,783 - INFO - find_summary_file:840 - Found matching file: 3. Summary_2025-08-31_Final_V2.xlsb
+2026-03-30 15:21:33,783 - INFO - find_summary_file:850 - Selected file: C:\CBSL\Script\working\Supporting Schedules\03-03-2026\3. Summary_2025-08-31_Final_V2.xlsb
+2026-03-30 15:21:33,784 - INFO - export_summary_data_to_excel:2094 - Reading SUMMARY sheet from: 3. Summary_2025-08-31_Final_V2.xlsb
+2026-03-30 15:21:33,784 - INFO - export_summary_data_to_excel:2101 - Reading .xlsb file using pyxlsb
+2026-03-30 15:21:34,171 - INFO - export_summary_data_to_excel:2104 - Available sheets: ['Check', 'PBI_Data', 'SUMMARY', 'Exp0', 'Pivot', 'MTD', 'NPA', 'WC_Sheet', 'Chart', 'WC_Chart', 'ECL Provision', 'Stage', 'Yard Provision', 'Auto-Non Auto', 'DP', 'Branch Vs. Reigion', 'NPA Category', 'JEs', 'Other Pivots', 'RPT', 'Staff']
+2026-03-30 15:21:57,722 - INFO - export_summary_data_to_excel:2116 - Read 88822 rows from SUMMARY sheet
+2026-03-30 15:21:57,900 - INFO - export_summary_data_to_excel:2129 - Headers from row 3: ['CONTRACT NO', 'CLIENT NO', 'BRANCH', 'OUTSTANDING', 'GROSS OUTSTANDING', 'CLIENT DPD', 'P/NP', 'MODEL PROVISION', '100% PROVIDED REASON', 'FINAL PROVISION', 'YARD CONTRACTS', 'MODEL LEASE/LOAN', 'AGE BUCKET', 'ARREARS', 'EQUIPMENT DESCRIPTION', 'PRODUCT TYPE', 'REIGION', 'PD/LGD CATEGORY', 'PRODUCT CATEGORY', 'IIS', 'GROSS EXPOSURE', 'LOSS RATIO', 'DEFERRED PROMOTION', 'PROVISION FOR DP', 'GROSS EXP + DP', 'IMP + PRO.DP', 'PRODUCT', 'FUTURE CAPITAL', 'TOTAL ARREARS', 'RELATED-PARTY CONTRACT', 'STAFF CONTRACT', 'ACTUAL LEASE/LOAN', 'STAGE']
+2026-03-30 15:22:02,520 - INFO - export_summary_data_to_excel:2138 - Found empty CONTRACT NO at row 88794 (Excel row). Stopping data collection.
+2026-03-30 15:22:02,520 - INFO - export_summary_data_to_excel:2143 - Collected 88790 data rows
+2026-03-30 15:22:02,827 - INFO - export_summary_data_to_excel:2182 - Total rows before filtering: 88790
+2026-03-30 15:22:02,827 - INFO - export_summary_data_to_excel:2191 - Found RELATED-PARTY CONTRACT column: RELATED-PARTY CONTRACT
+2026-03-30 15:22:02,874 - INFO - export_summary_data_to_excel:2201 - Rows after filtering for 'RPT CONTRACT': 17
+2026-03-30 15:22:02,875 - INFO - find_supporting_schedule_file:239 - Searching for Supporting Schedule file in: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:22:02,875 - INFO - find_supporting_schedule_file:253 - Found matching file: Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:22:02,875 - INFO - find_supporting_schedule_file:263 - Selected file: C:\CBSL\Script\working\Supporting Schedules\03-03-2026\Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:22:02,875 - INFO - export_summary_data_to_excel:2213 - Opening Supporting Schedule file: Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:22:02,948 - INFO - export_summary_data_to_excel:2221 - Found RPT List sheet: RPT List-August 25
+2026-03-30 15:22:02,948 - INFO - export_summary_data_to_excel:2230 - Writing to sheet: RPT List-August 25
+2026-03-30 15:22:02,948 - INFO - export_summary_data_to_excel:2233 - Clearing existing data from row 3 onwards
+2026-03-30 15:22:02,949 - INFO - export_summary_data_to_excel:2240 - Cleared 17 rows
+2026-03-30 15:22:02,949 - INFO - export_summary_data_to_excel:2243 - Pasting 17 rows of data starting from row 3, column B
+2026-03-30 15:22:02,952 - INFO - export_summary_data_to_excel:2249 - Successfully pasted 17 RPT CONTRACT rows to RPT List-August 25
+2026-03-30 15:22:03,015 - INFO - export_summary_data_to_excel:2254 - Successfully saved data to Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:22:03,207 - INFO - fill_rpt_list_client_names:2284 - Filling CLIENT NAME in RPT List sheet from Portfolio file
+2026-03-30 15:22:03,207 - INFO - get_monthly_folder:42 - Searching for monthly folder in: C:\CBSL\Script\working\Supporting Schedules
+2026-03-30 15:22:03,208 - INFO - get_monthly_folder:49 - Found 1 subdirectories: ['03-03-2026']
+2026-03-30 15:22:03,208 - INFO - get_monthly_folder:56 - Selected monthly folder: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:22:03,208 - INFO - fill_rpt_list_client_names:2292 - Searching for Portfolio_4_ECL file in: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:22:03,208 - INFO - fill_rpt_list_client_names:2299 - Found Portfolio file: 1. Portfolio_4_ECL_-2025-08-31_Final_V2.xlsb
+2026-03-30 15:22:03,208 - INFO - fill_rpt_list_client_names:2309 - Reading Portfolio sheet from: 1. Portfolio_4_ECL_-2025-08-31_Final_V2.xlsb
+2026-03-30 15:22:03,209 - INFO - fill_rpt_list_client_names:2315 - Reading .xlsb file using pyxlsb
+2026-03-30 15:22:07,966 - INFO - fill_rpt_list_client_names:2318 - Available sheets: ['Guide', 'ToECL', 'ToSummary', 'Portfolio', '1.DPD', '2.NPA List', '3.100%_Provision', '4.YardCalculation', '5.AllConSec', '1.YardList', '2.Legal', '3.Ins_Rec', 'DPD_Con', 'Worst_Data', 'Int_Receivable', 'MOI_Adjustment', 'Refinance', 'Performing Contracts', 'M1 Contracts', 'Lease-Loan', 'PD_Cat', 'Stage', 'Mor.Loan_Cat']
+2026-03-30 15:22:44,518 - INFO - fill_rpt_list_client_names:2330 - Read 88967 rows from Portfolio sheet
+2026-03-30 15:22:44,562 - INFO - fill_rpt_list_client_names:2343 - Loaded 88965 contract mappings
+2026-03-30 15:22:44,597 - INFO - find_supporting_schedule_file:239 - Searching for Supporting Schedule file in: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:22:44,597 - INFO - find_supporting_schedule_file:253 - Found matching file: Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:22:44,597 - INFO - find_supporting_schedule_file:263 - Selected file: C:\CBSL\Script\working\Supporting Schedules\03-03-2026\Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:22:44,597 - INFO - fill_rpt_list_client_names:2373 - Opening Supporting Schedule file: Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:22:44,679 - INFO - fill_rpt_list_client_names:2381 - Found RPT List sheet: RPT List-August 25
+2026-03-30 15:22:44,680 - INFO - fill_rpt_list_client_names:2417 - Matched 17 contracts, 0 unmatched
+2026-03-30 15:22:44,680 - INFO - fill_rpt_list_client_names:2425 - Renaming sheet 'RPT List-August 25' to 'RPT List-September 25'
+2026-03-30 15:22:44,742 - INFO - fill_rpt_list_client_names:2431 - Successfully filled CLIENT NAME and renamed sheet to: RPT List-September 25
+2026-03-30 15:22:44,888 - INFO - rename_supporting_schedule_file:2455 - Renaming Supporting Schedule file with month/year
+2026-03-30 15:22:44,888 - INFO - get_monthly_folder:42 - Searching for monthly folder in: C:\CBSL\Script\working\Supporting Schedules
+2026-03-30 15:22:44,889 - INFO - get_monthly_folder:49 - Found 1 subdirectories: ['03-03-2026']
+2026-03-30 15:22:44,889 - INFO - get_monthly_folder:56 - Selected monthly folder: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:22:44,889 - INFO - find_supporting_schedule_file:239 - Searching for Supporting Schedule file in: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
+2026-03-30 15:22:44,889 - INFO - find_supporting_schedule_file:253 - Found matching file: Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:22:44,889 - INFO - find_supporting_schedule_file:263 - Selected file: C:\CBSL\Script\working\Supporting Schedules\03-03-2026\Supporting Schedules - Aug 2025.xlsx
+2026-03-30 15:22:44,890 - INFO - get_new_supporting_schedule_filename:285 - New filename will be: Supporting Schedules - Sep 2025.xlsx
+2026-03-30 15:22:44,892 - INFO - rename_supporting_schedule_file:2481 - Successfully renamed Supporting Schedules - Aug 2025.xlsx to Supporting Schedules - Sep 2025.xlsx

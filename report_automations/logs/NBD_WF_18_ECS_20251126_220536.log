@@ -1,0 +1,87 @@
+2025-11-26 22:05:36,397 - INFO - Logger initialized
+2025-11-26 22:05:36,397 - INFO - Script started
+2025-11-26 22:05:36,398 - INFO - Report file: C:\CBSL\Script\working\NBD_WF_18_ECS\30-06-2025\Cash-Flow-Forecast-Week_33.xlsm
+2025-11-26 22:05:36,398 - INFO - Daily bank file: C:\CBSL\Script\working\NBD_WF_18_ECS\30-06-2025\Daily Bank Balances - August 2025.xlsx
+2025-11-26 22:05:42,128 - INFO - Current Accounts Balances: extracted 44 rows into dataframe
+2025-11-26 22:05:42,129 - INFO - Savings Accounts Balances: extracted 17 rows into dataframe
+2025-11-26 22:05:42,176 - INFO - df daily bank balances: 
+           Bank Name    GL Account Number  latest_date
+0   Commercial Bank  0000     1415607201          NaN
+1   Commercial Bank  2425     2000010645          NaN
+2   Commercial Bank  0001     1415607202          NaN
+3   Commercial Bank  2307     2000024062          NaN
+4   Commercial Bank  2866     1000928226          NaN
+..              ...   ...            ...          ...
+56             None  None           None          NaN
+57             None  None           None          NaN
+58             None  None           None          NaN
+59             None  None           None          NaN
+60             None  None           None          NaN
+
+[61 rows x 4 columns]
+2025-11-26 22:05:42,178 - INFO - Daily bank dataframe created with 61 rows, sum=-1713550.647362537
+2025-11-26 22:05:42,179 - INFO - df_daily columns: ['Bank Name', 'GL', 'Account Number', 'latest_date']
+2025-11-26 22:05:42,179 - INFO - df_target columns: ['GL', 'Account details', 'Amounts']
+2025-11-26 22:05:42,180 - INFO - df_daily sample (first 5):
+         Bank Name    GL Account Number  latest_date
+0  Commercial Bank  0000     1415607201          NaN
+1  Commercial Bank  2425     2000010645          NaN
+2  Commercial Bank  0001     1415607202          NaN
+3  Commercial Bank  2307     2000024062          NaN
+4  Commercial Bank  2866     1000928226          NaN
+2025-11-26 22:05:42,181 - INFO - df_target sample (first 5):
+     GL                               Account details     Amounts
+0  0000        CURRENT ACCOUNT NO (COMM) - 1415607201  -142573.95
+1  0429  CURRENT ACCOUNT NO (DEUTSCHE) - 0041236-00-0        0.00
+2  1256    CURRENT ACCOUNT NO (DEUTSCHE) 0041236-00-1        0.00
+3  1372    CURRENT ACCOUNT NO (DEUTSCHE) 0041236-00-2        0.00
+4  0003       CURRENT ACCOUNT NO (HNB) - 003010145141 -3223652.84
+2025-11-26 22:05:42,181 - INFO - Lookup dictionary (first 20): {'0000': nan, '2425': nan, '0001': nan, '2307': nan, '2866': nan, '2533': nan, '2534': nan, '0003': nan, '2149': nan, '2421': nan, '2420': nan, '2530': nan, '0126': nan, '2728': nan, '1826': nan, '2795': nan, '2008': nan, '2386': nan, '2359': nan, '0009': nan}
+2025-11-26 22:05:42,182 - INFO - Matched 0 out of 44 GL codes
+2025-11-26 22:05:42,182 - WARNING - Unmatched GL codes: ['0000', '0429', '1256', '1372', '0003', '0002', '1335', '0126', '0127', '1257', '1258', '0009', '1172', '1195', '0008', '1537', '1621', '1826', '1862', '1897', '1796', '1924', '1927', '1932', '1925', '2322', '1926', '2008', '2149', '1173', '0010', '0001', '2494', '2384', '2420', '1538', '2528', '2531', '2533', '2602', '2604', '2530', '2728', '2866']
+2025-11-26 22:05:42,183 - INFO - df target after lookup (first 10):
+     GL                               Account details  Amounts
+0  0000        CURRENT ACCOUNT NO (COMM) - 1415607201      0.0
+1  0429  CURRENT ACCOUNT NO (DEUTSCHE) - 0041236-00-0      0.0
+2  1256    CURRENT ACCOUNT NO (DEUTSCHE) 0041236-00-1      0.0
+3  1372    CURRENT ACCOUNT NO (DEUTSCHE) 0041236-00-2      0.0
+4  0003       CURRENT ACCOUNT NO (HNB) - 003010145141      0.0
+5  0002       CURRENT ACCOUNT NO (HNB) - 003010275997      0.0
+6  1335    CURRENT ACCOUNT NO (HSBC) - 012-161303-001      0.0
+7  0126       CURRENT ACCOUNT NO (NDB) - 101000105172      0.0
+8  0127       CURRENT ACCOUNT NO (NDB) - 101110012218      0.0
+9  1257    CURRENT ACCOUNT NO (PAN ASIA) 100166000923      0.0
+2025-11-26 22:05:42,183 - INFO - df_daily columns: ['Bank Name', 'GL', 'Account Number', 'latest_date']
+2025-11-26 22:05:42,184 - INFO - df_target columns: ['GL', 'Account details', 'Amounts']
+2025-11-26 22:05:42,184 - INFO - df_daily sample (first 5):
+         Bank Name    GL Account Number  latest_date
+0  Commercial Bank  0000     1415607201          NaN
+1  Commercial Bank  2425     2000010645          NaN
+2  Commercial Bank  0001     1415607202          NaN
+3  Commercial Bank  2307     2000024062          NaN
+4  Commercial Bank  2866     1000928226          NaN
+2025-11-26 22:05:42,185 - INFO - df_target sample (first 5):
+     GL                                             Account details    Amounts
+0  1928     SAVING ACCOUNT - DFCC VARDANA (LISVIN) - 001-107019-717       0.00
+1  1929                    SAVINGS ACCOUNT-HNB (LISVIN)-85010010453       0.00
+2  1930  SAVINGS ACCOUNT-NSB BATTARAMULLA (LISVIN)-1-0080-03-3542-8       0.00
+3  1931      SAVINGS ACCOUNT-NSB PANADURA (LISVIN)-1-0043-06-4122-7  164108.08
+4  2255                     SAVINGS ACCOUNT NO (HNB) - 003020725511       0.00
+2025-11-26 22:05:42,185 - INFO - Lookup dictionary (first 20): {'0000': nan, '2425': nan, '0001': nan, '2307': nan, '2866': nan, '2533': nan, '2534': nan, '0003': nan, '2149': nan, '2421': nan, '2420': nan, '2530': nan, '0126': nan, '2728': nan, '1826': nan, '2795': nan, '2008': nan, '2386': nan, '2359': nan, '0009': nan}
+2025-11-26 22:05:42,186 - INFO - Matched 0 out of 17 GL codes
+2025-11-26 22:05:42,186 - WARNING - Unmatched GL codes: ['1928', '1929', '1930', '1931', '2255', '2264', '2421', '2307', '2603', '1196', '2532', '2605', '2534', '2359', '2529', '2425', '2795']
+2025-11-26 22:05:42,187 - INFO - df target after lookup (first 10):
+     GL                                             Account details  Amounts
+0  1928     SAVING ACCOUNT - DFCC VARDANA (LISVIN) - 001-107019-717      0.0
+1  1929                    SAVINGS ACCOUNT-HNB (LISVIN)-85010010453      0.0
+2  1930  SAVINGS ACCOUNT-NSB BATTARAMULLA (LISVIN)-1-0080-03-3542-8      0.0
+3  1931      SAVINGS ACCOUNT-NSB PANADURA (LISVIN)-1-0043-06-4122-7      0.0
+4  2255                     SAVINGS ACCOUNT NO (HNB) - 003020725511      0.0
+5  2264                          SAVINGS ACCOUNT SCB  - 18367112701      0.0
+6  2421              HNB SAVING ACCOUNT (MONEY MARKET)-003020810466      0.0
+7  2307                 SAVING ACCOUNT COMMERCAIL BANK - 8030034806      0.0
+8  2603              SAVING ACCOUNT BANK OF CHINA - 100002800012668      0.0
+9  1196                 SAVINGS ACCOUNT NO (SAMPATH) - 101213591941      0.0
+2025-11-26 22:05:42,188 - INFO - SUM Current: 0.0, SUM Savings: 0.0, Expected: -1713550.647362537
+2025-11-26 22:05:42,188 - WARNING - Validation failed: totals do not match expected sum_latest_date
+2025-11-26 22:05:48,912 - INFO - Workbook saved successfully

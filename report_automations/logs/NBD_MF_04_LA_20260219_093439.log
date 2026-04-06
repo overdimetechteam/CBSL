@@ -1,0 +1,89 @@
+2026-02-19 09:34:39,603 - INFO - Logger initialized
+2026-02-19 09:34:39,608 - INFO - ============================================================
+2026-02-19 09:34:39,608 - INFO - NBD-MF-04-LA Monthly Liquidity Report Generation
+2026-02-19 09:34:39,608 - INFO - Report date: 02/19/2026
+2026-02-19 09:34:39,608 - INFO - ============================================================
+2026-02-19 09:34:39,608 - INFO - 
+Step 1: Finding working folder...
+2026-02-19 09:34:39,609 - INFO - Found single subdirectory: 30-06-2025
+2026-02-19 09:34:39,609 - INFO - Working folder: C:\CBSL\Script\working\NBD_MF_04_LA\30-06-2025
+2026-02-19 09:34:39,609 - INFO - 
+Step 2: Finding monthly report template...
+2026-02-19 09:34:39,610 - INFO - Found template: NBD-MF-04-LA Liquid Assets - Jul 25.xlsm
+2026-02-19 09:34:39,610 - INFO - 
+Step 3: Finding AFL Liquidity files from working folder...
+2026-02-19 09:34:39,610 - INFO - Found 5 AFL files:
+2026-02-19 09:34:39,610 - INFO -   1. AFL Liquidity - Week_7.xlsx (modified: 2026-02-11 13:51:54)
+2026-02-19 09:34:39,610 - INFO -   2. AFL Liquidity - Week_3.xlsx (modified: 2026-02-11 14:06:02)
+2026-02-19 09:34:39,610 - INFO -   3. AFL Liquidity - Week_4.xlsx (modified: 2026-02-11 14:43:14)
+2026-02-19 09:34:39,610 - INFO -   4. AFL Liquidity - Week_5.xlsx (modified: 2026-02-11 15:04:41)
+2026-02-19 09:34:39,611 - INFO -   5. AFL Liquidity - Week_6.xlsx (modified: 2026-02-11 15:13:30)
+2026-02-19 09:34:39,611 - INFO - 
+Using 5 most recent AFL files:
+2026-02-19 09:34:39,611 - INFO -   Week 1: AFL Liquidity - Week_7.xlsx
+2026-02-19 09:34:39,611 - INFO -   Week 2: AFL Liquidity - Week_3.xlsx
+2026-02-19 09:34:39,611 - INFO -   Week 3: AFL Liquidity - Week_4.xlsx
+2026-02-19 09:34:39,611 - INFO -   Week 4: AFL Liquidity - Week_5.xlsx
+2026-02-19 09:34:39,611 - INFO -   Week 5: AFL Liquidity - Week_6.xlsx
+2026-02-19 09:34:39,611 - INFO - 
+Step 4: Populating Week sheets from AFL files...
+2026-02-19 09:34:39,781 - INFO - Template sheets: ['NBD-MF-04-LA', 'Upload', 'Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Average', 'NBD-MF-04-BO']
+2026-02-19 09:34:39,782 - INFO - 
+--- Processing AFL File #1 ---
+2026-02-19 09:34:39,782 - INFO - Source: AFL Liquidity - Week_7.xlsx
+2026-02-19 09:34:39,782 - INFO - Target: Week 1 sheet
+2026-02-19 09:34:39,954 - INFO -   Copying A3:C25 -> starting at A1
+2026-02-19 09:34:39,979 - INFO -   Copied 23 rows x 3 columns
+2026-02-19 09:34:39,979 - INFO -   Successfully copied data to Week 1
+2026-02-19 09:34:39,979 - INFO - 
+--- Processing AFL File #2 ---
+2026-02-19 09:34:39,979 - INFO - Source: AFL Liquidity - Week_3.xlsx
+2026-02-19 09:34:39,979 - INFO - Target: Week 2 sheet
+2026-02-19 09:34:40,158 - INFO -   Copying A3:C25 -> starting at A1
+2026-02-19 09:34:40,180 - INFO -   Copied 23 rows x 3 columns
+2026-02-19 09:34:40,181 - INFO -   Successfully copied data to Week 2
+2026-02-19 09:34:40,181 - INFO - 
+--- Processing AFL File #3 ---
+2026-02-19 09:34:40,181 - INFO - Source: AFL Liquidity - Week_4.xlsx
+2026-02-19 09:34:40,181 - INFO - Target: Week 3 sheet
+2026-02-19 09:34:40,349 - INFO -   Copying A3:C25 -> starting at A1
+2026-02-19 09:34:40,371 - INFO -   Copied 23 rows x 3 columns
+2026-02-19 09:34:40,371 - INFO -   Successfully copied data to Week 3
+2026-02-19 09:34:40,371 - INFO - 
+--- Processing AFL File #4 ---
+2026-02-19 09:34:40,371 - INFO - Source: AFL Liquidity - Week_5.xlsx
+2026-02-19 09:34:40,371 - INFO - Target: Week 4 sheet
+2026-02-19 09:34:40,553 - INFO -   Copying A3:C25 -> starting at A1
+2026-02-19 09:34:40,576 - INFO -   Copied 23 rows x 3 columns
+2026-02-19 09:34:40,576 - INFO -   Successfully copied data to Week 4
+2026-02-19 09:34:40,576 - INFO - 
+--- Processing AFL File #5 ---
+2026-02-19 09:34:40,576 - INFO - Source: AFL Liquidity - Week_6.xlsx
+2026-02-19 09:34:40,576 - INFO - Target: Week 5 sheet
+2026-02-19 09:34:40,789 - INFO -   Copying A3:C25 -> starting at A1
+2026-02-19 09:34:40,814 - INFO -   Copied 23 rows x 3 columns
+2026-02-19 09:34:40,814 - INFO -   Successfully copied data to Week 5
+2026-02-19 09:34:40,814 - INFO - 
+============================================================
+2026-02-19 09:34:40,815 - INFO - Step 5: Filling NBD-MF-04-LA sheet with weekly data...
+2026-02-19 09:34:40,815 - INFO - 
+--- Filling NBD-MF-04-LA Sheet ---
+2026-02-19 09:34:40,815 - INFO -   Processing Week 1 -> Column C (from H column)...
+2026-02-19 09:34:40,815 - INFO -     Week 1 data copied to column C
+2026-02-19 09:34:40,815 - INFO -   Processing Week 2 -> Column D (from H column)...
+2026-02-19 09:34:40,815 - INFO -     Week 2 data copied to column D
+2026-02-19 09:34:40,815 - INFO -   Processing Week 3 -> Column E (from H column)...
+2026-02-19 09:34:40,815 - INFO -     Week 3 data copied to column E
+2026-02-19 09:34:40,815 - INFO -   Processing Week 4 -> Column F (from H column)...
+2026-02-19 09:34:40,815 - INFO -     Week 4 data copied to column F
+2026-02-19 09:34:40,815 - INFO -   Processing Week 5 -> Columns G and H (from J column)...
+2026-02-19 09:34:40,816 - INFO -     Week 5 data (J column) copied to columns G and H
+2026-02-19 09:34:40,816 - INFO - NBD-MF-04-LA sheet filled successfully
+2026-02-19 09:34:40,816 - INFO - 
+Step 6: Saving monthly report...
+2026-02-19 09:34:41,154 - INFO - Saved: NBD-MF-04-LA Liquid Assets - Feb 26.xlsm
+2026-02-19 09:34:41,155 - INFO - 
+============================================================
+2026-02-19 09:34:41,155 - INFO - SUCCESS: Monthly Liquidity Report generated successfully
+2026-02-19 09:34:41,155 - INFO - Output file: C:\CBSL\Script\working\NBD_MF_04_LA\30-06-2025\NBD-MF-04-LA Liquid Assets - Feb 26.xlsm
+2026-02-19 09:34:41,155 - INFO - ============================================================

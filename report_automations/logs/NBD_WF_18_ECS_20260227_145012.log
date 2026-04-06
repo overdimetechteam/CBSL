@@ -1,0 +1,9 @@
+2026-02-27 14:50:12,546 - INFO - Logger initialized
+2026-02-27 14:50:12,548 - INFO - Date parsed using format: %m/%d/%Y
+2026-02-27 14:50:12,549 - INFO - ============================================================
+2026-02-27 14:50:12,549 - INFO - Running TB from ERP Bot for ECS...
+2026-02-27 14:50:12,549 - INFO - ============================================================
+2026-02-27 14:50:12,552 - INFO - Deleted old TB file: 2026_02_26_9_11_Report.xlsx
+2026-02-27 14:50:12,909 - INFO - TB bot attempt #1 for date 27/02/2026...
+2026-02-27 14:52:12,888 - WARNING - There was an error managing chromedriver (error sending request for url (https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json)); using driver found in the cache
+2026-02-27 14:52:12,953 - WARNING - Error sending stats to Plausible: error sending request for url (https://plausible.io/api/event)

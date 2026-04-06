@@ -1,0 +1,715 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Supporting Reports – CBSL Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+      /* ── Theme tokens ──────────────────────────────────────────── */
+      :root {
+        --bg-page:        #0f172a;
+        --bg-surface:     rgba(255,255,255,.05);
+        --bg-surface-2:   rgba(255,255,255,.08);
+        --bg-surface-3:   rgba(255,255,255,.12);
+        --border:         rgba(255,255,255,.10);
+        --border-strong:  rgba(255,255,255,.18);
+        --text-primary:   #f1f5f9;
+        --text-secondary: #94a3b8;
+        --text-muted:     #64748b;
+        --accent-blue:    #36456e;
+        --success-green:  #16a34a;
+        --warning-orange: #f97316;
+        --danger-red:     #ef4444;
+        --shadow-sm:      0 2px 8px rgba(0,0,0,.4);
+        --radius-sm:      .5rem;
+        --radius-md:      .75rem;
+        --radius-lg:      1rem;
+      }
+
+      [data-theme="light"] {
+        --bg-page:        #f0f4f8;
+        --bg-surface:     #ffffff;
+        --bg-surface-2:   #f8fafc;
+        --bg-surface-3:   #f1f5f9;
+        --border:         #e2e8f0;
+        --border-strong:  #cbd5e1;
+        --text-primary:   #0f172a;
+        --text-secondary: #475569;
+        --text-muted:     #94a3b8;
+        --accent-blue:    #36456e;
+        --success-green:  #16a34a;
+        --warning-orange: #ea580c;
+        --danger-red:     #dc2626;
+        --shadow-sm:      0 2px 8px rgba(0,0,0,.07);
+      }
+
+      *, *::before, *::after { box-sizing: border-box; }
+      html { transition: background .25s, color .25s; }
+
+      body {
+        background-color: var(--bg-page);
+        color: var(--text-primary);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0; padding: 0;
+      }
+
+      /* ---- Header ---- */
+      .header {
+        background: var(--bg-surface-2);
+        border-bottom: 1px solid var(--border);
+        padding: 1rem 0;
+        box-shadow: var(--shadow-sm);
+        backdrop-filter: blur(8px);
+        position: sticky; top: 0; z-index: 200;
+      }
+      .header h1 { color: var(--text-primary); }
+      .logo-placeholder { height: 40px; width: auto; max-width: 100px; }
+
+      /* ---- Theme toggle ---- */
+      .theme-toggle-btn {
+        background: var(--bg-surface-3);
+        border: 1px solid var(--border);
+        color: var(--text-primary);
+        border-radius: var(--radius-md);
+        padding: .4rem .8rem;
+        font-size: .85rem;
+        cursor: pointer;
+        transition: background .15s, border-color .15s;
+        display: flex; align-items: center; gap: .4rem;
+        white-space: nowrap;
+      }
+      .theme-toggle-btn:hover { border-color: var(--border-strong); }
+
+      /* ---- Back link ---- */
+      .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: var(--bg-surface-3);
+        border: 1px solid var(--border);
+        color: var(--text-primary);
+        border-radius: var(--radius-md);
+        padding: .4rem .8rem;
+        font-size: .85rem;
+        text-decoration: none;
+        transition: background .15s, border-color .15s;
+        white-space: nowrap;
+      }
+      .back-link:hover { border-color: var(--border-strong); color: var(--text-primary); }
+
+      /* ---- Layout ---- */
+      .main-container {
+        padding: 2rem 0;
+        background: transparent;
+        min-height: calc(100vh - 80px);
+      }
+      .content-wrapper {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 2rem;
+        box-shadow: var(--shadow-sm);
+      }
+      .section-title {
+        color: var(--text-primary);
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        font-size: 1.5rem;
+      }
+
+      /* ---- Action bar ---- */
+      .action-bar {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: var(--bg-surface-2);
+        border-bottom: 1px solid var(--border);
+        padding: 0.75rem 1.5rem;
+        margin: -2rem -2rem 1.5rem -2rem;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        box-shadow: var(--shadow-sm);
+        backdrop-filter: blur(8px);
+      }
+
+      /* ---- Report cards ---- */
+      .report-card {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 1rem 1.25rem;
+        margin-bottom: 0.75rem;
+        background: var(--bg-surface-2);
+        transition: border-color 0.15s, box-shadow 0.15s;
+      }
+      .report-card:hover { border-color: var(--border-strong); box-shadow: 0 2px 6px rgba(13,110,253,0.1); }
+      .report-card.selected { border-color: var(--accent-blue); background: var(--bg-surface-3); }
+
+      .priority-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px; height: 26px;
+        border-radius: 50%;
+        background: var(--accent-blue);
+        color: white;
+        font-size: 0.75rem;
+        font-weight: 700;
+        flex-shrink: 0;
+      }
+
+      .report-label { font-weight: 600; font-size: 0.95rem; color: var(--text-primary); }
+      .report-desc  { font-size: 0.82rem; color: var(--text-muted); margin-top: 0.2rem; }
+      .last-run     { font-size: 0.78rem; color: var(--text-muted); }
+
+      /* ---- Status panel ---- */
+      .status-panel { display: none; }
+
+      .status-badge {
+        display: inline-block;
+        padding: 0.3rem 0.9rem;
+        border-radius: 20px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+      }
+      .badge-idle     { background: var(--bg-surface-3); color: var(--text-muted); }
+      .badge-running  { background:#cfe2ff; color:#084298; }
+      .badge-done     { background:#d1e7dd; color:#0a3622; }
+      .badge-error    { background:#f8d7da; color:#842029; }
+      .badge-stopping { background:#fff3cd; color:#664d03; }
+
+      /* ---- Checklist ---- */
+      .checklist-item {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.5rem 0.75rem;
+        border-radius: var(--radius-sm);
+        margin-bottom: 0.3rem;
+        background: var(--bg-surface-2);
+        color: var(--text-primary);
+        font-size: 0.88rem;
+      }
+      .ci-icon { font-size: 1rem; width: 1.2rem; text-align: center; }
+      .ci-pending  .ci-icon { color: var(--text-muted); }
+      .ci-running  { background: var(--bg-surface-3); }
+      .ci-running  .ci-icon { color: #60a5fa; }
+      .ci-done     .ci-icon { color: var(--success-green); }
+      .ci-failed   .ci-icon { color: var(--danger-red); }
+      .ci-stopped  .ci-icon { color: var(--warning-orange); }
+
+      /* ---- Log viewer ---- */
+      #log-list {
+        max-height: 320px;
+        overflow-y: auto;
+        font-family: 'Consolas', 'Courier New', monospace;
+        font-size: 0.78rem;
+        background: #1e1e2e;
+        color: #cdd6f4;
+        border-radius: var(--radius-sm);
+        padding: 0.75rem 1rem;
+      }
+      #log-list li { list-style: none; padding: 0.1rem 0; border-bottom: 1px solid #2a2a3e; white-space: pre-wrap; word-break: break-all; }
+
+      /* ---- Date controls ---- */
+      .date-controls {
+        background: var(--bg-surface-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.5rem;
+      }
+
+      /* ---- Bootstrap overrides ---- */
+      .form-control, .form-select {
+        background-color: var(--bg-surface-2);
+        border-color: var(--border);
+        color: var(--text-primary);
+      }
+      .form-control:focus, .form-select:focus {
+        background-color: var(--bg-surface-3);
+        border-color: var(--border-strong);
+        color: var(--text-primary);
+        box-shadow: none;
+      }
+      .form-check-input { background-color: var(--bg-surface-3); border-color: var(--border-strong); }
+      .form-check-label { color: var(--text-primary); }
+      .form-label { color: var(--text-secondary); }
+      .text-muted { color: var(--text-muted) !important; }
+      .alert { border-radius: var(--radius-sm); }
+      h1, h2, h3, h4, h5, h6 { color: var(--text-primary); }
+      p, small, .small { color: var(--text-secondary); }
+      /* Buttons */
+      .btn-outline-primary {
+        color: #60a5fa; border-color: #60a5fa;
+      }
+      .btn-outline-primary:hover {
+        background-color: #60a5fa; color: #0f172a;
+      }
+      [data-theme="light"] .btn-outline-primary {
+        color: var(--accent-blue); border-color: var(--accent-blue);
+      }
+      [data-theme="light"] .btn-outline-primary:hover {
+        background-color: var(--accent-blue); color: #fff;
+      }
+      .btn-outline-secondary {
+        color: var(--text-secondary); border-color: var(--border-strong);
+      }
+      .btn-outline-secondary:hover {
+        background-color: var(--bg-surface-3); color: var(--text-primary); border-color: var(--border-strong);
+      }
+      .btn-outline-danger { color: var(--danger-red); border-color: var(--danger-red); }
+      .btn-outline-danger:hover { background-color: var(--danger-red); color: #fff; }
+
+      /* ---- Progress bar ---- */
+      .progress {
+        height: 6px;
+        border-radius: 3px;
+        background: var(--bg-surface-3);
+      }
+
+      /* ---- Select All ---- */
+      .select-all-btn { font-size: 0.8rem; cursor: pointer; color: #60a5fa; text-decoration: underline; }
+      .select-all-btn:hover { color: #93c5fd; }
+    </style>
+  </head>
+  <body>
+
+    <!-- Header -->
+    <header class="header">
+      <div class="container">
+        <div class="d-flex align-items-center justify-content-between w-100">
+          <div class="d-flex align-items-center">
+            <img src="{{ url_for('static', filename='logo/logo.png') }}" alt="Logo" class="logo-placeholder me-3" onerror="this.style.display='none'">
+            <div>
+              <h1 class="h3 mb-0" style="color:var(--text-primary)">CBSL Report Automation Portal</h1>
+              <p class="mb-0 small" style="color:var(--text-secondary)">ASSETLINE FINANCE PLC</p>
+            </div>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <a href="{{ url_for('index') }}" class="back-link">&#8592; Back to Main Portal</a>
+            <button class="theme-toggle-btn" onclick="toggleTheme()" id="theme-btn" title="Toggle light/dark theme">&#9680; Theme</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="main-container">
+      <div class="container">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="mb-3">
+            {% for category, message in messages %}
+              <div class="alert alert-{{ 'warning' if category == 'warning' else ('danger' if category == 'error' else 'success') }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <div class="row g-4">
+
+          <!-- ============================================================
+               LEFT COLUMN – Report selection + run controls
+               ============================================================ -->
+          <div class="col-lg-7">
+            <div class="content-wrapper">
+
+              <!-- Sticky action bar -->
+              <div class="action-bar">
+                <div class="d-flex align-items-center gap-3 flex-wrap">
+                  <span class="text-muted small fw-semibold">Supporting Reports</span>
+                  <button type="button" class="btn btn-outline-danger btn-sm" id="stop-btn" onclick="requestStop()" style="display:none;">
+                    &#9724; Stop
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary btn-sm" id="reset-btn" onclick="resetState()" style="display:none;">
+                    &#8635; Reset
+                  </button>
+                  <div class="ms-auto">
+                    <span id="running-label" class="text-muted small"></span>
+                  </div>
+                </div>
+              </div>
+
+              <h2 class="section-title">Supporting Reports</h2>
+
+              <!-- Date controls -->
+              <div class="date-controls">
+                <div class="row g-2 align-items-end">
+                  <div class="col-sm-5">
+                    <label for="sel-date" class="form-label form-label-sm fw-semibold mb-1">Report Date</label>
+                    <input type="date" id="sel-date" class="form-control form-control-sm" value="{{ today_iso }}">
+                  </div>
+                  <div class="col-sm-7 d-flex align-items-end">
+                    <small class="text-muted">Select a date, then click Run on a report.</small>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Report list — each report runs independently -->
+              <div id="report-list">
+                {% for report in reports %}
+                <div class="report-card" id="card-{{ report.id }}">
+                  <div class="d-flex align-items-start gap-3">
+                    <div class="priority-badge flex-shrink-0">{{ report.priority }}</div>
+                    <div class="flex-grow-1">
+                      <div class="report-label">{{ report.label }}</div>
+                      <div class="report-desc">{{ report.description }}</div>
+                      {% if last_runs.get(report.id) %}
+                        <div class="last-run mt-1">Last run: {{ last_runs[report.id] }}</div>
+                      {% endif %}
+                    </div>
+                    <button type="button"
+                            class="btn btn-sm btn-outline-primary flex-shrink-0 run-single-btn"
+                            id="runbtn-{{ report.id }}"
+                            onclick="runSingle('{{ report.id }}')">
+                      &#9654; Run
+                    </button>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+
+            </div><!-- /content-wrapper -->
+          </div><!-- /col-lg-7 -->
+
+          <!-- ============================================================
+               RIGHT COLUMN – Status + logs
+               ============================================================ -->
+          <div class="col-lg-5">
+
+            <!-- Status card -->
+            <div class="content-wrapper mb-4" id="status-card">
+              <h5 class="fw-semibold mb-3">Run Status</h5>
+              <div class="d-flex align-items-center gap-3 mb-3">
+                <div id="status-badge" class="status-badge badge-idle">Idle</div>
+                <div id="status-spinner" class="spinner-border spinner-border-sm text-primary" role="status" style="display:none!important;">
+                  <span class="visually-hidden">Running…</span>
+                </div>
+              </div>
+              <div class="progress mb-3" style="display:none;" id="progress-wrap">
+                <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" style="width:0%"></div>
+              </div>
+              <div id="status-msg" class="text-muted small"></div>
+            </div>
+
+            <!-- Checklist card -->
+            <div class="content-wrapper mb-4" id="checklist-card" style="display:none;">
+              <h5 class="fw-semibold mb-3">Report Checklist</h5>
+              <div id="checklist-body"></div>
+            </div>
+
+            <!-- Log card -->
+            <div class="content-wrapper" id="log-card" style="display:none;">
+              <h5 class="fw-semibold mb-2">Live Log</h5>
+              <ul id="log-list"></ul>
+            </div>
+
+          </div><!-- /col-lg-5 -->
+
+        </div><!-- /row -->
+      </div><!-- /container -->
+    </div><!-- /main-container -->
+
+    <!-- Hidden form for POST submission -->
+    <form id="run-form" method="post" action="{{ url_for('sup.run') }}" style="display:none;">
+      <input type="hidden" name="date" id="form-date">
+      <div id="form-ids"></div>
+    </form>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // ----------------------------------------------------------------
+      // Run a single report
+      // ----------------------------------------------------------------
+      function runSingle(reportId) {
+        const date = document.getElementById('sel-date').value;
+
+        if (!date) { alert('Please select a date before running.'); return; }
+
+        // Disable all run buttons while a report is in progress
+        _autoDownloaded = false;
+        _cbslDownloaded = false;
+        _uclDownloaded  = false;
+        setRunBtnsDisabled(true);
+
+        document.getElementById('form-date').value = date;
+
+        const container = document.getElementById('form-ids');
+        container.innerHTML = '';
+        const inp = document.createElement('input');
+        inp.type  = 'hidden';
+        inp.name  = 'report_ids';
+        inp.value = reportId;
+        container.appendChild(inp);
+
+        document.getElementById('run-form').submit();
+      }
+
+      function setRunBtnsDisabled(disabled) {
+        document.querySelectorAll('.run-single-btn').forEach(btn => {
+          btn.disabled = disabled;
+          btn.classList.toggle('disabled', disabled);
+        });
+      }
+
+      // ----------------------------------------------------------------
+      // Stop / Reset
+      // ----------------------------------------------------------------
+      function requestStop() {
+        fetch("{{ url_for('sup.stop') }}", { method: 'POST' });
+      }
+
+      function resetState() {
+        fetch("{{ url_for('sup.reset') }}", { method: 'POST' })
+          .then(() => {
+            document.getElementById('status-badge').className = 'status-badge badge-idle';
+            document.getElementById('status-badge').textContent = 'Idle';
+            document.getElementById('status-msg').textContent = '';
+            document.getElementById('running-label').textContent = '';
+            document.getElementById('progress-wrap').style.display = 'none';
+            document.getElementById('checklist-card').style.display = 'none';
+            document.getElementById('log-card').style.display = 'none';
+            document.getElementById('stop-btn').style.display = 'none';
+            document.getElementById('reset-btn').style.display = 'none';
+            setRunBtnsDisabled(false);
+          });
+      }
+
+      // ----------------------------------------------------------------
+      // Polling
+      // ----------------------------------------------------------------
+      let _statusInterval    = null;
+      let _logsInterval      = null;
+      let _checklistInterval = null;
+      let _lastLogLen        = 0;
+      let _autoDownloaded    = false;
+      let _cbslDownloaded    = false;
+      let _uclDownloaded     = false;
+
+      function startPolling() {
+        _statusInterval    = setInterval(pollStatus,    2000);
+        _logsInterval      = setInterval(pollLogs,      1500);
+        _checklistInterval = setInterval(pollChecklist, 1000);
+      }
+
+      function stopPolling() {
+        clearInterval(_statusInterval);
+        clearInterval(_logsInterval);
+        clearInterval(_checklistInterval);
+      }
+
+      // -- Status --
+      function pollStatus() {
+        fetch("{{ url_for('sup.status') }}")
+          .then(r => r.json())
+          .then(data => {
+            const badge = document.getElementById('status-badge');
+            const spin  = document.getElementById('status-spinner');
+            const msg   = document.getElementById('status-msg');
+            const prog  = document.getElementById('progress-wrap');
+            const bar   = document.getElementById('progress-bar');
+            const lbl   = document.getElementById('running-label');
+
+            msg.textContent = data.message || '';
+
+            const stageMap = {
+              'idle':     ['Idle',     'badge-idle'],
+              'running':  ['Running',  'badge-running'],
+              'done':     ['Done',     'badge-done'],
+              'error':    ['Error',    'badge-error'],
+              'stopping': ['Stopping', 'badge-stopping'],
+            };
+            const [stageLbl, cls] = stageMap[data.stage] || ['Idle', 'badge-idle'];
+            badge.textContent = stageLbl;
+            badge.className   = 'status-badge ' + cls;
+
+            if (data.running) {
+              spin.style.setProperty('display', 'inline-block', 'important');
+              prog.style.display = '';
+              bar.style.width = '100%';
+              lbl.textContent = data.current_report ? 'Running: ' + data.current_report : 'Running…';
+              document.getElementById('stop-btn').style.display  = '';
+              document.getElementById('reset-btn').style.display = 'none';
+              setRunBtnsDisabled(true);
+            } else {
+              spin.style.setProperty('display', 'none', 'important');
+              lbl.textContent = '';
+              document.getElementById('stop-btn').style.display = 'none';
+              if (['done', 'error', 'stopping'].includes(data.stage)) {
+                prog.style.display = 'none';
+                document.getElementById('reset-btn').style.display = '';
+                setRunBtnsDisabled(false);
+                if (data.stage === 'done' && data.ss_download_ready && !_autoDownloaded) {
+                  _autoDownloaded = true;
+                  // Acknowledge on server first so refreshes don't re-trigger
+                  fetch("{{ url_for('sup.download_ack') }}", { method: 'POST' }).finally(() => {
+                    const a = document.createElement('a');
+                    a.href = "{{ url_for('sup.download') }}";
+                    a.download = '';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                  });
+                }
+                if (data.stage === 'done' && data.cbsl_download_ready && !_cbslDownloaded) {
+                  _cbslDownloaded = true;
+                  fetch("{{ url_for('sup.download_cbsl_ack') }}", { method: 'POST' }).finally(() => {
+                    const a = document.createElement('a');
+                    a.href = "{{ url_for('sup.download_cbsl') }}";
+                    a.download = '';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                  });
+                }
+                if (data.stage === 'done' && data.ucl_download_ready && !_uclDownloaded) {
+                  _uclDownloaded = true;
+                  fetch("{{ url_for('sup.download_ucl_ack') }}", { method: 'POST' }).finally(() => {
+                    const a = document.createElement('a');
+                    a.href = "{{ url_for('sup.download_ucl') }}";
+                    a.download = '';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                  });
+                }
+              } else {
+                setRunBtnsDisabled(false);
+              }
+            }
+          })
+          .catch(() => {});
+      }
+
+      // -- Logs --
+      function pollLogs() {
+        fetch("{{ url_for('sup.logs') }}")
+          .then(r => r.text())
+          .then(text => {
+            if (!text.trim()) return;
+            const lines = text.split('\n').filter(l => l);
+            if (lines.length === _lastLogLen) return;
+            _lastLogLen = lines.length;
+
+            document.getElementById('log-card').style.display = '';
+            const ul = document.getElementById('log-list');
+            ul.innerHTML = '';
+            lines.slice(-100).forEach(line => {
+              const li = document.createElement('li');
+              li.textContent = line;
+              ul.appendChild(li);
+            });
+            ul.scrollTop = ul.scrollHeight;
+          })
+          .catch(() => {});
+      }
+
+      // -- Checklist --
+      const CI_ICONS = { pending:'●', running:'▶', done:'✓', failed:'✗', stopped:'◉' };
+
+      function pollChecklist() {
+        fetch("{{ url_for('sup.checklist') }}")
+          .then(r => r.json())
+          .then(items => {
+            if (!items.length) return;
+            document.getElementById('checklist-card').style.display = '';
+            const body = document.getElementById('checklist-body');
+            body.innerHTML = '';
+            items.forEach(item => {
+              const div = document.createElement('div');
+              div.className = 'checklist-item ci-' + item.status;
+
+              const icon = document.createElement('span');
+              icon.className   = 'ci-icon';
+              icon.textContent = CI_ICONS[item.status] || '●';
+
+              const lbl = document.createElement('span');
+              lbl.className   = 'flex-grow-1';
+              lbl.textContent = item.label;
+
+              const right = document.createElement('span');
+              right.className   = 'ms-auto text-muted small';
+              right.textContent = item.elapsed ? item.elapsed + 's' : (item.status === 'running' ? '…' : '');
+
+              div.appendChild(icon);
+              div.appendChild(lbl);
+              div.appendChild(right);
+              body.appendChild(div);
+            });
+          })
+          .catch(() => {});
+      }
+
+      // ----------------------------------------------------------------
+      // Boot
+      // ----------------------------------------------------------------
+      document.addEventListener('DOMContentLoaded', () => {
+        startPolling();
+      });
+
+      // Pause polling when tab is hidden
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) stopPolling(); else startPolling();
+      });
+    </script>
+  
+  <!-- ── Inactivity timeout (10 min) ── -->
+  <script>
+  (function(){
+    var TIMEOUT = 15 * 60 * 1000;
+    var WARN_BEFORE = 60 * 1000;
+    var timer, warnTimer, toast;
+    function resetTimer() {
+      clearTimeout(timer); clearTimeout(warnTimer);
+      if (toast) { toast.remove(); toast = null; }
+      warnTimer = setTimeout(showWarning, TIMEOUT - WARN_BEFORE);
+      timer     = setTimeout(function(){ window.location.href = '/logout?reason=timeout'; }, TIMEOUT);
+    }
+    function showWarning() {
+      toast = document.createElement('div');
+      toast.id = 'inactivity-toast';
+      toast.style.cssText = 'position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;background:#1e293b;border:1px solid rgba(249,115,22,.5);color:#fdba74;padding:.85rem 1.25rem;border-radius:.75rem;font-size:.88rem;font-family:Segoe UI,system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.5);max-width:320px;line-height:1.5;';
+      toast.innerHTML = '&#9888; You will be signed out in <strong id="toast-countdown">60</strong>s due to inactivity. <a href="#" onclick="resetTimer();return false;" style="color:#60a5fa;text-decoration:underline;margin-left:.5rem;">Stay signed in</a>';
+      document.body.appendChild(toast);
+      var secs = 60;
+      var interval = setInterval(function(){
+        secs--;
+        var el = document.getElementById('toast-countdown');
+        if (el) el.textContent = secs;
+        if (secs <= 0) clearInterval(interval);
+      }, 1000);
+    }
+    ['mousemove','mousedown','keydown','touchstart','scroll','click'].forEach(function(e){
+      document.addEventListener(e, resetTimer, { passive: true });
+    });
+    resetTimer();
+  })();
+  </script>
+
+  <script>
+    // ── Theme toggle ─────────────────────────────────────────────
+    function updateThemeBtn(theme) {
+      const btn = document.getElementById('theme-btn');
+      if (btn) btn.innerHTML = theme === 'dark' ? '&#9728; Light' : '&#9790; Dark';
+    }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('cbsl-theme', next);
+      updateThemeBtn(next);
+    }
+
+    (function() {
+      const saved = localStorage.getItem('cbsl-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', saved);
+      updateThemeBtn(saved);
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+2025-12-18 18:36:13,478 - INFO - Logger initialized
+2025-12-18 18:36:21,593 - INFO - Current Accounts Balances: extracted 44 rows
+2025-12-18 18:36:21,594 - INFO - Savings Accounts Balances: extracted 17 rows
+2025-12-18 18:36:21,674 - INFO - Found 31 date columns: ['2025-08-01', '2025-08-02', '2025-08-03', '2025-08-04', '2025-08-05', '2025-08-06', '2025-08-07', '2025-08-08', '2025-08-09', '2025-08-10', '2025-08-11', '2025-08-12', '2025-08-13', '2025-08-14', '2025-08-15', '2025-08-16', '2025-08-17', '2025-08-18', '2025-08-19', '2025-08-20', '2025-08-21', '2025-08-22', '2025-08-23', '2025-08-24', '2025-08-25', '2025-08-26', '2025-08-27', '2025-08-28', '2025-08-29', '2025-08-30', '2025-08-31']
+2025-12-18 18:36:21,676 - INFO - Using latest available date: 2025-08-31
+2025-12-18 18:36:21,678 - INFO - Daily bank balances total: -1713550.647362537
+2025-12-18 18:36:21,683 - WARNING - Validation failed: totals do not match
+2025-12-18 18:36:21,683 - INFO - Processing Weekly Distributions for 2025-11-03 (WeekOfMonth=1, WeekOfYear=45)
+2025-12-18 18:36:29,562 - INFO - Opened Payments file: C:\CBSL\Script\working\NBD_WF_18_ECS\22-06-2025\Payments and Receipts.xlsx, sheet: Sheet1
+2025-12-18 18:36:29,593 - INFO - Read source values from Weekly Distributions G18:G22: ["=SUMIFS('Payment 08-18'!F:F,'Payment 08-18'!H:H,F18)/1000+C63/1000", "=SUMIFS('Payment 08-18'!F:F,'Payment 08-18'!H:H,F19)/1000+C62/1000", "=SUMIFS('Payment 08-18'!F:F,'Payment 08-18'!H:H,F20)/1000", "=SUMIFS('Payment 08-18'!F:F,'Payment 08-18'!H:H,F21)/1000", "=SUMIFS('Payment 08-18'!F:F,'Payment 08-18'!H:H,F22)/1000+C60/1000"]
+2025-12-18 18:36:29,594 - INFO - Pasting Weekly Distributions values into Payments B2:B6 and updating header B1 to Week 45
+2025-12-18 18:36:36,661 - INFO - Saved updated report: C:\CBSL\Script\working\NBD_WF_18_ECS\22-06-2025\Cash-Flow-Forecast-Week_33.xlsm
+2025-12-18 18:36:36,667 - INFO - Saved updated Payments file: C:\CBSL\Script\working\NBD_WF_18_ECS\22-06-2025\Payments and Receipts.xlsx

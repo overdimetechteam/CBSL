@@ -1,0 +1,219 @@
+2026-02-09 11:02:27,453 - INFO - Logger initialized
+2026-02-09 11:02:27,453 - INFO - Date parsed using format: %d/%m/%Y
+2026-02-09 11:02:27,454 - INFO - [START] Main report header and account updates
+2026-02-09 11:02:35,351 - INFO - [START] process_accounts
+2026-02-09 11:02:35,367 - INFO - Current Accounts Balances: extracted 44 rows
+2026-02-09 11:02:35,367 - INFO - [END] process_accounts - Elapsed: 0.02s
+2026-02-09 11:02:35,367 - INFO - [START] process_accounts
+2026-02-09 11:02:35,369 - INFO - Savings Accounts Balances: extracted 17 rows
+2026-02-09 11:02:35,369 - INFO - [END] process_accounts - Elapsed: 0.00s
+2026-02-09 11:02:35,370 - INFO - [START] process_daily_bank_balances
+2026-02-09 11:02:35,426 - INFO - Found 31 date columns
+2026-02-09 11:02:35,426 - INFO - Using latest available date: 2025-08-31
+2026-02-09 11:02:35,432 - INFO - Daily bank balances total: -1713550.647362537
+2026-02-09 11:02:35,432 - INFO - [END] process_daily_bank_balances - Elapsed: 0.06s
+2026-02-09 11:02:35,432 - INFO - [START] apply_vlookup
+2026-02-09 11:02:35,435 - INFO - [END] apply_vlookup - Elapsed: 0.00s
+2026-02-09 11:02:35,435 - INFO - [START] apply_vlookup
+2026-02-09 11:02:35,436 - INFO - [END] apply_vlookup - Elapsed: 0.00s
+2026-02-09 11:02:35,438 - WARNING - Validation failed: totals do not match
+2026-02-09 11:02:43,865 - INFO - Saved main report updates
+2026-02-09 11:02:43,865 - INFO - [END] Main report header and account updates - Elapsed: 16.41s
+2026-02-09 11:02:43,865 - INFO - [START] process_weekly_distributions
+2026-02-09 11:02:43,865 - INFO - Processing Weekly Distributions (WeekOfMonth=1, WeekOfYear=14)
+2026-02-09 11:02:46,007 - INFO - [START] xlwings batch read
+2026-02-09 11:02:46,301 - INFO - Read Payments B2:B6: [22453.07914, 1109592.9283000005, 2901.80188, 652.82077, 57279.07654000002]
+2026-02-09 11:02:46,309 - INFO - Read Payments C2:C6: [22453.07914, 1109592.9283000005, 2901.80188, 652.82077, 57279.07654000002]
+2026-02-09 11:02:46,317 - INFO - Read Payments D2:D6: [22453.07914, 1109592.9283000005, 2901.80188, 652.82077, 57279.07654000002]
+2026-02-09 11:02:46,323 - INFO - Read Payments E2:E6: [22453.07914, 1109592.9283000005, 2901.80188, 652.82077, 57279.07654000002]
+2026-02-09 11:02:49,962 - INFO - Read Weekly Distributions G18:G22: [22453.07914, 1109592.9283000005, 2901.80188, 652.82077, 57279.07654000002]
+2026-02-09 11:02:50,077 - INFO - [END] xlwings batch read - Elapsed: 4.07s
+2026-02-09 11:02:50,603 - INFO - [START] Write Weekly Distributions (Week 1)
+2026-02-09 11:03:04,739 - INFO - Wrote G50 = 22453.07914
+2026-02-09 11:03:04,739 - INFO - Wrote G51 = 1109592.9283000005
+2026-02-09 11:03:04,739 - INFO - Wrote G52 = 2901.80188
+2026-02-09 11:03:04,739 - INFO - Wrote G53 = 652.82077
+2026-02-09 11:03:04,739 - INFO - Wrote G54 = 57279.07654000002
+2026-02-09 11:03:04,739 - INFO - Wrote I50 = 22453.07914
+2026-02-09 11:03:04,739 - INFO - Wrote I51 = 1109592.9283000005
+2026-02-09 11:03:04,740 - INFO - Wrote I52 = 2901.80188
+2026-02-09 11:03:04,740 - INFO - Wrote I53 = 652.82077
+2026-02-09 11:03:04,740 - INFO - Wrote I54 = 57279.07654000002
+2026-02-09 11:03:04,740 - INFO - Wrote K50 = 22453.07914
+2026-02-09 11:03:04,740 - INFO - Wrote K51 = 1109592.9283000005
+2026-02-09 11:03:04,740 - INFO - Wrote K52 = 2901.80188
+2026-02-09 11:03:04,740 - INFO - Wrote K53 = 652.82077
+2026-02-09 11:03:04,740 - INFO - Wrote K54 = 57279.07654000002
+2026-02-09 11:03:04,740 - INFO - Wrote M50 = 22453.07914
+2026-02-09 11:03:04,741 - INFO - Wrote M51 = 1109592.9283000005
+2026-02-09 11:03:04,741 - INFO - Wrote M52 = 2901.80188
+2026-02-09 11:03:04,741 - INFO - Wrote M53 = 652.82077
+2026-02-09 11:03:04,741 - INFO - Wrote M54 = 57279.07654000002
+2026-02-09 11:03:14,739 - INFO - Saved Weekly Distributions updates
+2026-02-09 11:03:14,739 - INFO - [END] Write Weekly Distributions (Week 1) - Elapsed: 24.14s
+2026-02-09 11:03:14,739 - INFO - [START] Write to Payments file
+2026-02-09 11:03:14,745 - INFO - Pasted Payments B2: 22453.07914
+2026-02-09 11:03:14,746 - INFO - Pasted Payments B3: 1109592.9283000005
+2026-02-09 11:03:14,746 - INFO - Pasted Payments B4: 2901.80188
+2026-02-09 11:03:14,746 - INFO - Pasted Payments B5: 652.82077
+2026-02-09 11:03:14,746 - INFO - Pasted Payments B6: 57279.07654000002
+2026-02-09 11:03:14,755 - INFO - Saved Payments file
+2026-02-09 11:03:14,755 - INFO - [END] Write to Payments file - Elapsed: 0.02s
+2026-02-09 11:03:14,755 - INFO - [START] Process DM Deposit Liability
+2026-02-09 11:03:15,197 - INFO - DM Week 1: Total Payable 0.0 -> B7
+2026-02-09 11:03:15,197 - INFO - [END] Process DM Deposit Liability - Elapsed: 0.44s
+2026-02-09 11:03:15,198 - INFO - [END] process_weekly_distributions - Elapsed: 31.33s
+2026-02-09 11:03:15,198 - INFO - [START] copy_cash_flow_to_weekly_distributions
+2026-02-09 11:03:15,198 - INFO - Processing Cash Flow to Weekly Distributions mapping
+2026-02-09 11:03:15,223 - INFO - Found 'APIT': 19913800
+2026-02-09 11:03:15,224 - INFO - Found 'Central Bank': 497480
+2026-02-09 11:03:15,224 - INFO - Found 'Taxes': 391126896.66
+2026-02-09 11:03:15,224 - INFO - Found 'Outsource staff': 416500
+2026-02-09 11:03:25,544 - INFO - Updated 'CBSL': 497480
+2026-02-09 11:03:25,544 - INFO - Updated 'Outsource Staff': 416500
+2026-02-09 11:03:25,544 - INFO - Updated 'APIIT': 19913800
+2026-02-09 11:03:25,545 - INFO - Updated 'Taxes': 391126896.66
+2026-02-09 11:03:34,110 - INFO - Cash Flow mapping complete: 4 cells updated
+2026-02-09 11:03:34,110 - INFO - [END] copy_cash_flow_to_weekly_distributions - Elapsed: 18.91s
+2026-02-09 11:03:34,110 - INFO - [START] update_treasury_input_sheet
+2026-02-09 11:03:34,110 - INFO - Processing Treasury Input sheet update
+2026-02-09 11:03:36,354 - INFO - [START] xlwings read Treasury Input
+2026-02-09 11:03:39,501 - INFO - Read D8 ('Securitization Loans - Capital'): 778156679.4400002
+2026-02-09 11:03:39,508 - INFO - Read D9 ('Securitization Loans - Interest Payable'): 2223229.700342466
+2026-02-09 11:03:39,515 - INFO - Read D18 ('Cost of Investment (Cost + Price Accrued)'): 4364127971.69
+2026-02-09 11:03:39,523 - INFO - Read D19 ('Interest Receivable (Coupon Accrued Interest)'): 257232716.26
+2026-02-09 11:03:39,530 - INFO - Read D20 ('M2M Gain'): 1455114172.76
+2026-02-09 11:03:39,635 - INFO - [END] xlwings read Treasury Input - Elapsed: 3.28s
+2026-02-09 11:03:40,031 - INFO - [START] openpyxl write Treasury Input
+2026-02-09 11:03:50,451 - INFO - 'Securitization Loans - Capital': Moved D->C: 778156679.4400002
+2026-02-09 11:03:50,451 - INFO - 'Securitization Loans - Interest Payable': Moved D->C: 2223229.700342466
+2026-02-09 11:03:50,451 - INFO - 'Cost of Investment (Cost + Price Accrued)': Moved D->C: 4364127971.69
+2026-02-09 11:03:50,451 - INFO - 'Interest Receivable (Coupon Accrued Interest)': Moved D->C: 257232716.26
+2026-02-09 11:03:50,451 - INFO - 'M2M Gain': Moved D->C: 1455114172.76
+2026-02-09 11:03:59,244 - INFO - [END] openpyxl write Treasury Input - Elapsed: 19.21s
+2026-02-09 11:03:59,244 - INFO - [END] update_treasury_input_sheet - Elapsed: 25.13s
+2026-02-09 11:03:59,244 - INFO - [START] update_tb_sheets
+2026-02-09 11:03:59,244 - INFO - Processing Opening TB and Close TB sheet updates
+2026-02-09 11:04:09,770 - INFO - Close TB dimensions: 2783 rows x 16384 columns
+2026-02-09 11:04:09,770 - INFO - [START] Read Close TB into DataFrame
+2026-02-09 11:07:53,230 - INFO - Read 2783 rows into DataFrame
+2026-02-09 11:07:53,243 - INFO - [END] Read Close TB into DataFrame - Elapsed: 223.47s
+2026-02-09 11:07:53,244 - INFO - [START] Clear Opening TB
+2026-02-09 11:07:53,447 - INFO - [END] Clear Opening TB - Elapsed: 0.20s
+2026-02-09 11:07:53,447 - INFO - [START] Write DataFrame to Opening TB
+2026-02-09 11:07:59,365 - INFO - [END] Write DataFrame to Opening TB - Elapsed: 5.92s
+2026-02-09 11:07:59,365 - INFO - [START] Copy dimensions
+2026-02-09 11:07:59,366 - INFO - [END] Copy dimensions - Elapsed: 0.00s
+2026-02-09 11:07:59,367 - INFO - Renamed: Opening TB-10-Aug -> Opening TB-17-Aug
+2026-02-09 11:13:40,424 - INFO - TB sheet updates complete
+2026-02-09 11:13:41,251 - INFO - [END] update_tb_sheets - Elapsed: 582.01s
+2026-02-09 11:13:41,253 - INFO - [START] update_fd_sheet
+2026-02-09 11:13:41,255 - INFO - Processing FD sheet update
+2026-02-09 11:13:41,255 - INFO - [START] Read DM Portfolio data
+2026-02-09 11:13:41,667 - INFO - [END] Read DM Portfolio data - Elapsed: 0.41s
+2026-02-09 11:13:41,797 - INFO - Read 799 rows from Portfolio sheet
+2026-02-09 11:13:41,863 - INFO - [START] Write to FD sheet
+2026-02-09 11:13:58,537 - INFO - FD update complete: 799 rows, 0 moved to column D
+2026-02-09 11:13:58,537 - INFO - [END] Write to FD sheet - Elapsed: 16.67s
+2026-02-09 11:13:58,537 - INFO - [END] update_fd_sheet - Elapsed: 17.28s
+2026-02-09 11:13:58,539 - INFO - [START] update_utilized_credit_lines
+2026-02-09 11:13:58,539 - INFO - Processing Utilized Credit Lines sheet update
+2026-02-09 11:14:06,903 - WARNING - Utilized Credit Lines sheet not found - skipping
+2026-02-09 11:14:06,903 - INFO - [END] update_utilized_credit_lines - Elapsed: 8.36s
+2026-02-09 11:14:06,904 - INFO - [START] update_receipt_sheet
+2026-02-09 11:14:06,904 - INFO - Processing Receipt sheet update
+2026-02-09 11:14:06,904 - INFO - [START] Read Audit Receipt data
+2026-02-09 11:14:09,388 - INFO - Read 19502 rows from Audit Receipt
+2026-02-09 11:14:09,388 - INFO - [END] Read Audit Receipt data - Elapsed: 2.48s
+2026-02-09 11:14:09,389 - INFO - [START] Write to Receipt sheet
+2026-02-09 11:14:18,140 - WARNING - Receipt sheet not found - skipping
+2026-02-09 11:14:18,140 - INFO - [END] Write to Receipt sheet - Elapsed: 8.75s
+2026-02-09 11:14:18,144 - INFO - [END] update_receipt_sheet - Elapsed: 11.24s
+2026-02-09 11:14:18,145 - INFO - ================================================================================
+2026-02-09 11:14:18,145 - INFO - MANUAL PROCESS REQUIRED: Audit Receipt File Download
+2026-02-09 11:14:18,145 - INFO - ================================================================================
+2026-02-09 11:14:18,146 - INFO - Audit Receipt file must be downloaded manually from ERP
+2026-02-09 11:14:18,146 - INFO - INSTRUCTIONS FOR AUDIT RECEIPT FILE DOWNLOAD:
+2026-02-09 11:14:18,146 - INFO - 
+2026-02-09 11:14:18,146 - INFO - 1. Open ERP system
+2026-02-09 11:14:18,146 - INFO - 2. Navigate to: ERP > Report > Reports > Audit Receipts - Internal
+2026-02-09 11:14:18,146 - INFO - 3. Generate the report
+2026-02-09 11:14:18,146 - INFO - 4. Download/Export the file
+2026-02-09 11:14:18,146 - INFO - 5. Save the file in the working folder with 'Audit Receipt' in the filename
+2026-02-09 11:14:18,146 - INFO - ================================================================================
+2026-02-09 11:14:18,146 - INFO - Please ensure the Audit Receipt file is available before running the script
+2026-02-09 11:14:18,146 - INFO - ================================================================================
+2026-02-09 11:14:18,146 - INFO - ================================================================================
+2026-02-09 11:14:18,146 - INFO - MANUAL PROCESS REQUIRED: SasiaNet Cashflow Data Entry
+2026-02-09 11:14:18,146 - INFO - ================================================================================
+2026-02-09 11:14:18,146 - INFO - SasiaNet sheet must be updated manually
+2026-02-09 11:14:18,146 - INFO - INSTRUCTIONS FOR SASIANET DATA ENTRY:
+2026-02-09 11:14:18,146 - INFO - 
+2026-02-09 11:14:18,146 - INFO - 1. Login to SasiaNet
+2026-02-09 11:14:18,146 - INFO - 2. Go to Cashflow
+2026-02-09 11:14:18,146 - INFO - 3. Select the required date (starting from 04/01/2026)
+2026-02-09 11:14:18,146 - INFO - 4. Copy the data
+2026-02-09 11:14:18,146 - INFO - 5. Paste to the SasiaNet sheet in Cash-Flow-Forecast file
+2026-02-09 11:14:18,146 - INFO - 6. Repeat steps 3-5 for each date until the final date
+2026-02-09 11:14:18,146 - INFO - ================================================================================
+2026-02-09 11:14:18,147 - INFO - Please complete the manual SasiaNet data entry process
+2026-02-09 11:14:18,147 - INFO - ================================================================================
+2026-02-09 11:14:18,147 - INFO - ================================================================================
+2026-02-09 11:14:18,147 - INFO - MANUAL PROCESS REQUIRED: Treasury Input Data Entry
+2026-02-09 11:14:18,147 - INFO - ================================================================================
+2026-02-09 11:14:18,147 - INFO - Treasury Input Column D data must be entered manually for date: 08/25/2025
+2026-02-09 11:14:18,147 - INFO - INSTRUCTIONS FOR TREASURY INPUT DATA ENTRY:
+2026-02-09 11:14:18,147 - INFO - 
+2026-02-09 11:14:18,147 - INFO - Date to process: 08/25/2025
+2026-02-09 11:14:18,147 - INFO - 
+2026-02-09 11:14:18,147 - INFO - 1. Open SasiaNet
+2026-02-09 11:14:18,147 - INFO - 2. Navigate to: Front Office --> Reports --> M2M Report - Debt
+2026-02-09 11:14:18,147 - INFO - 3. Enter the required date: 08/25/2025
+2026-02-09 11:14:18,147 - INFO - 4. Set Instrument type --> TBOND
+2026-02-09 11:14:18,147 - INFO - 5. Set Portfolio Code --> ALCL
+2026-02-09 11:14:18,147 - INFO - 6. Run the file
+2026-02-09 11:14:18,147 - INFO - 
+2026-02-09 11:14:18,147 - INFO - COLLECT THE FOLLOWING VALUES:
+2026-02-09 11:14:18,147 - INFO - 7. M2M Gain --> Net M2M Gain / (Loss) - Total
+2026-02-09 11:14:18,147 - INFO - 8. Interest Receivable (Coupon Accrued Interest) --> Coupon Accrued Interest (Total)
+2026-02-09 11:14:18,147 - INFO - 9. Cost of Investment (Cost + Price Accrued) --> Cost (Total) + Price Accrued (Total)
+2026-02-09 11:14:18,147 - INFO - ================================================================================
+2026-02-09 11:14:18,147 - INFO - Please complete the manual Treasury Input data entry process
+2026-02-09 11:14:18,147 - INFO - ================================================================================
+2026-02-09 11:14:18,147 - INFO - ================================================================================
+2026-02-09 11:14:18,148 - INFO - MANUAL PROCESS REQUIRED: Close TB Data Entry
+2026-02-09 11:14:18,148 - INFO - ================================================================================
+2026-02-09 11:14:18,148 - INFO - Close TB sheet must be updated manually from ERP
+2026-02-09 11:14:18,148 - INFO - INSTRUCTIONS FOR CLOSE TB DATA ENTRY:
+2026-02-09 11:14:18,148 - INFO - 
+2026-02-09 11:14:18,148 - INFO - 1. Open ERP system
+2026-02-09 11:14:18,148 - INFO - 2. Navigate to: Finance --> Management Account --> TB-COA
+2026-02-09 11:14:18,148 - INFO - 3. Select the required date
+2026-02-09 11:14:18,148 - INFO - 4. Generate the report
+2026-02-09 11:14:18,148 - INFO - 5. Copy the entire sheet from the report
+2026-02-09 11:14:18,148 - INFO - 6. Open the Cash-Flow-Forecast file
+2026-02-09 11:14:18,148 - INFO - 7. Go to the 'Close TB-17-Aug' sheet
+2026-02-09 11:14:18,148 - INFO - 8. Paste the copied data into the Close TB sheet
+2026-02-09 11:14:18,148 - INFO - ================================================================================
+2026-02-09 11:14:18,148 - INFO - Please complete the manual Close TB data entry process
+2026-02-09 11:14:18,148 - INFO - ================================================================================
+2026-02-09 11:14:18,148 - INFO - ================================================================================
+2026-02-09 11:14:18,148 - INFO - MANUAL PROCESS REQUIRED: M2M Sheet Update
+2026-02-09 11:14:18,148 - INFO - ================================================================================
+2026-02-09 11:14:18,148 - INFO - M2M sheet must be updated manually from SasiaNet for the next 7 days
+Dates to process: 04/02/2026, 04/03/2026, 04/04/2026, 04/05/2026, 04/06/2026, 04/07/2026, 04/08/2026
+2026-02-09 11:14:18,148 - INFO - INSTRUCTIONS FOR M2M SHEET UPDATE:
+2026-02-09 11:14:18,154 - INFO - 
+2026-02-09 11:14:18,154 - INFO - For each of the 7 dates listed above:
+2026-02-09 11:14:18,154 - INFO - 1. Open SasiaNet
+2026-02-09 11:14:18,154 - INFO - 2. Navigate to: Front Office --> Reports --> M2M Report - Debt
+2026-02-09 11:14:18,154 - INFO - 3. Enter the required date
+2026-02-09 11:14:18,154 - INFO - 4. Set Instrument type --> TBOND
+2026-02-09 11:14:18,155 - INFO - 5. Set Portfolio Code --> ALCL
+2026-02-09 11:14:18,155 - INFO - 6. Go to 'Net M2M Gain / (Loss)' column
+2026-02-09 11:14:18,155 - INFO - 7. Scroll to the bottom and record the total
+2026-02-09 11:14:18,155 - INFO - 8. Repeat steps 3-7 for each remaining date
+2026-02-09 11:14:18,155 - INFO - ================================================================================
+2026-02-09 11:14:18,155 - INFO - Please complete the manual M2M update process
+2026-02-09 11:14:18,155 - INFO - ================================================================================
+2026-02-09 11:14:18,157 - INFO - TOTAL EXECUTION TIME: 710.71s

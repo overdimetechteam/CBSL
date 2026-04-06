@@ -1,0 +1,44 @@
+2025-12-18 18:48:36,599 - INFO - Logger initialized
+2025-12-18 18:48:45,198 - INFO - Current Accounts Balances: extracted 44 rows
+2025-12-18 18:48:45,200 - INFO - Savings Accounts Balances: extracted 17 rows
+2025-12-18 18:48:45,248 - INFO - Found 31 date columns: ['2025-08-01', '2025-08-02', '2025-08-03', '2025-08-04', '2025-08-05', '2025-08-06', '2025-08-07', '2025-08-08', '2025-08-09', '2025-08-10', '2025-08-11', '2025-08-12', '2025-08-13', '2025-08-14', '2025-08-15', '2025-08-16', '2025-08-17', '2025-08-18', '2025-08-19', '2025-08-20', '2025-08-21', '2025-08-22', '2025-08-23', '2025-08-24', '2025-08-25', '2025-08-26', '2025-08-27', '2025-08-28', '2025-08-29', '2025-08-30', '2025-08-31']
+2025-12-18 18:48:45,250 - INFO - Using latest available date: 2025-08-31
+2025-12-18 18:48:45,252 - INFO - Daily bank balances total: -1713550.647362537
+2025-12-18 18:48:45,255 - WARNING - Validation failed: totals do not match
+2025-12-18 18:48:45,255 - INFO - Processing Weekly Distributions for 2025-11-03 (WeekOfMonth=1, WeekOfYear=45)
+2025-12-18 18:48:45,255 - INFO - First week of the month - copying Payments - Weekly Distributions
+2025-12-18 18:48:53,692 - INFO - Copied Payments B2 - Weekly Distributions G50: None
+2025-12-18 18:48:53,692 - INFO - Copied Payments B3 - Weekly Distributions G51: None
+2025-12-18 18:48:53,693 - INFO - Copied Payments B4 - Weekly Distributions G52: None
+2025-12-18 18:48:53,693 - INFO - Copied Payments B5 - Weekly Distributions G53: None
+2025-12-18 18:48:53,693 - INFO - Copied Payments B6 - Weekly Distributions G54: None
+2025-12-18 18:48:53,694 - INFO - Copied Payments C2 - Weekly Distributions I50: 22453.07914
+2025-12-18 18:48:53,694 - INFO - Copied Payments C3 - Weekly Distributions I51: 1109592.9283
+2025-12-18 18:48:53,694 - INFO - Copied Payments C4 - Weekly Distributions I52: 2901.80188
+2025-12-18 18:48:53,695 - INFO - Copied Payments C5 - Weekly Distributions I53: 652.82077
+2025-12-18 18:48:53,695 - INFO - Copied Payments C6 - Weekly Distributions I54: 57279.07654000002
+2025-12-18 18:48:53,696 - INFO - Copied Payments D2 - Weekly Distributions K50: 22453.07914
+2025-12-18 18:48:53,696 - INFO - Copied Payments D3 - Weekly Distributions K51: 1109592.9283
+2025-12-18 18:48:53,696 - INFO - Copied Payments D4 - Weekly Distributions K52: 2901.80188
+2025-12-18 18:48:53,697 - INFO - Copied Payments D5 - Weekly Distributions K53: 652.82077
+2025-12-18 18:48:53,697 - INFO - Copied Payments D6 - Weekly Distributions K54: 57279.07654000002
+2025-12-18 18:48:53,697 - INFO - Copied Payments E2 - Weekly Distributions M50: 22453.07914
+2025-12-18 18:48:53,697 - INFO - Copied Payments E3 - Weekly Distributions M51: 1109592.9283
+2025-12-18 18:48:53,698 - INFO - Copied Payments E4 - Weekly Distributions M52: 2901.80188
+2025-12-18 18:48:53,698 - INFO - Copied Payments E5 - Weekly Distributions M53: 652.82077
+2025-12-18 18:48:53,698 - INFO - Copied Payments E6 - Weekly Distributions M54: 57279.07654000002
+2025-12-18 18:49:01,086 - INFO - Saved Weekly Distributions updates
+2025-12-18 18:49:01,087 - INFO - Reading calculated values from Weekly Distributions G18:G22
+2025-12-18 18:49:08,543 - INFO - Read Weekly Distributions G18: None
+2025-12-18 18:49:08,544 - INFO - Read Weekly Distributions G19: None
+2025-12-18 18:49:08,544 - INFO - Read Weekly Distributions G20: None
+2025-12-18 18:49:08,545 - INFO - Read Weekly Distributions G21: None
+2025-12-18 18:49:08,545 - INFO - Read Weekly Distributions G22: None
+2025-12-18 18:49:08,545 - INFO - Pasting Weekly Distributions values - Payments B2:B6 and updating header B1 to Week 45
+2025-12-18 18:49:08,550 - INFO - Pasted Payments B2: None
+2025-12-18 18:49:08,550 - INFO - Pasted Payments B3: None
+2025-12-18 18:49:08,551 - INFO - Pasted Payments B4: None
+2025-12-18 18:49:08,551 - INFO - Pasted Payments B5: None
+2025-12-18 18:49:08,551 - INFO - Pasted Payments B6: None
+2025-12-18 18:49:08,552 - INFO - Updated Payments header B1 to Week 45
+2025-12-18 18:49:08,560 - INFO - Saved Payments file

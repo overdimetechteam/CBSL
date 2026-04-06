@@ -1,0 +1,1119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CBSL Report Automation Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+      :root {
+        --primary-red: #dc3545;
+        --secondary-red: #c82333;
+        --success-green: #198754;
+        --warning-orange: #fd7e14;
+        --danger-red: #dc3545;
+        --light-gray: #f8f9fa;
+        --border-gray: #e9ecef;
+        --text-muted: #6c757d;
+      }
+
+      body { 
+        background-color: #ffffff;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 0;
+      }
+
+      .header {
+        background-color: white;
+        color: #333;
+        padding: 1rem 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        border-bottom: 1px solid var(--border-gray);
+      }
+
+      .logo-placeholder {
+        height: 40px;
+        width: auto;
+        max-width: 100px;
+      }
+
+      .main-container {
+        padding: 2rem 0;
+        background-color: var(--light-gray);
+        min-height: calc(100vh - 160px);
+      }
+
+      .content-wrapper {
+        background-color: white;
+        border-radius: 0;
+        padding: 2rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        margin: 0 1rem;
+      }
+
+      .section-title { 
+        color: #333;
+        font-weight: 600;
+        margin-top: 2rem; 
+        margin-bottom: 1.5rem;
+        font-size: 1.5rem;
+      }
+
+      .section-title:first-child {
+        margin-top: 0;
+      }
+
+      .card { 
+        border: 1px solid var(--border-gray);
+        border-radius: 0;
+        transition: all 0.2s ease;
+        background-color: white;
+        margin-bottom: 1rem;
+      }
+
+      .card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        transform: translateY(-2px);
+      }
+
+      .card-title {
+        color: #333;
+        font-weight: 600;
+        font-size: 1.1rem;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #36456e 0%, #414a5f 100%);
+        border: none;
+        border-radius: 0;
+        font-weight: 500;
+        padding: 0.6rem 1rem;
+        transition: all 0.2s ease;
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+        background: linear-gradient(135deg, #36456e 0%, #414a5f 100%);
+      }
+
+      .btn-success {
+        background: linear-gradient(135deg, var(--success-green) 0%, #20c997 100%);
+        border: none;
+        border-radius: 0;
+        font-weight: 500;
+        padding: 0.6rem 1rem;
+        transition: all 0.2s ease;
+      }
+
+      .btn-success:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(25, 135, 84, 0.3);
+        background: linear-gradient(135deg, #20c997 0%, var(--success-green) 100%);
+      }
+
+      .btn-outline-danger {
+        color: var(--danger-red);
+        border: 2px solid var(--danger-red);
+        background: transparent;
+        border-radius: 0;
+        font-weight: 500;
+        padding: 0.6rem 1rem;
+        transition: all 0.2s ease;
+      }
+
+      .btn-outline-danger:hover {
+        background-color: var(--danger-red);
+        border-color: var(--danger-red);
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+      }
+
+      .form-control {
+        border: 2px solid var(--border-gray);
+        border-radius: 8px;
+        padding: 0.6rem 0.75rem;
+        transition: all 0.2s ease;
+        background-color: white;
+      }
+
+      .form-control:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
+        background-color: white;
+      }
+
+      .alert {
+        border: none;
+        border-radius: 10px;
+        border-left: 4px solid;
+        font-weight: 500;
+      }
+
+      .alert-success {
+        background-color: rgba(25, 135, 84, 0.1);
+        border-left-color: var(--success-green);
+        color: var(--success-green);
+      }
+
+      .alert-warning {
+        background-color: rgba(253, 126, 20, 0.1);
+        border-left-color: var(--warning-orange);
+        color: #b45309;
+      }
+
+      .alert-danger {
+        background-color: rgba(220, 53, 69, 0.1);
+        border-left-color: var(--danger-red);
+        color: var(--danger-red);
+      }
+
+      #status-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border: 1px solid var(--border-gray);
+      }
+
+      .progress {
+        height: 8px;
+        border-radius: 4px;
+        background-color: rgba(0,0,0,0.1);
+      }
+
+      .progress-bar {
+        border-radius: 4px;
+        transition: width 0.3s ease;
+      }
+
+      .badge {
+        font-weight: 500;
+        padding: 0.4em 0.8em;
+        border-radius: 6px;
+      }
+
+      .border-primary {
+        border-color: #36456e !important;
+        box-shadow: 0 0 0 0.2rem rgba(54, 69, 110, 0.1) !important;
+      }
+
+      .accordion-button {
+        background-color: white;
+        color: #333;
+        border: none;
+        font-weight: 500;
+      }
+
+      .accordion-button:not(.collapsed) {
+        background-color: rgba(54, 69, 110, 0.05);
+        color: #36456e;
+        box-shadow: none;
+      }
+
+      .accordion-button:focus {
+        box-shadow: 0 0 0 0.25rem rgba(54, 69, 110, 0.1);
+      }
+
+      .list-group-item {
+        border-color: var(--border-gray);
+        background-color: white;
+      }
+
+      .list-group-item:first-child {
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+      }
+
+      .list-group-item:last-child {
+        border-bottom-left-radius: 8px;
+        border-bottom-right-radius: 8px;
+      }
+
+      .footer {
+        background-color: white;
+        border-top: 1px solid var(--border-gray);
+        padding: 1.5rem 0;
+        margin-top: 2rem;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+      }
+
+      .footer a {
+        color: var(--primary-red);
+        text-decoration: none;
+        font-weight: 500;
+      }
+
+      .footer a:hover {
+        color: var(--secondary-red);
+        text-decoration: underline;
+      }
+
+      @media (max-width: 768px) {
+        .content-wrapper {
+          margin: 0 0.5rem;
+          padding: 1.5rem;
+        }
+        
+        .header h1 {
+          font-size: 1.5rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Header -->
+    <header class="header">
+      <div class="container">
+        <div class="d-flex align-items-center justify-content-between w-100">
+          <div class="d-flex align-items-center">
+            <img src="{{ url_for('static', filename='logo/logo.png') }}" alt="ASSETLINE Logo" class="logo-placeholder me-3">
+            <div>
+              <h1 class="h3 mb-0">CBSL Report Automation Portal</h1>
+              <p class="mb-0 opacity-75 small">ASSETLINE FINANCE PLC</p>
+            </div>
+          </div>
+          <div class="text-end">
+            <div id="live-datetime" class="fw-bold text-primary"></div>
+          </div>
+        </div>
+      </div>
+    </header>
+    
+    <!-- History button moved outside header -->
+    <div class="container mt-3">
+      <div class="d-flex justify-content-end">
+        <div class="position-relative">
+          <button id="history-toggle" class="btn btn-outline-secondary btn-sm">History</button>
+          <!-- History popover card -->
+          <div id="history-popover" class="card shadow" style="display:none; position:absolute; right:0; top:40px; width: 420px; z-index: 1050;">
+            <div class="card-body py-2">
+              <div class="d-flex align-items-center justify-content-between">
+                <h6 class="card-title mb-0">Last Runs</h6>
+                <button type="button" class="btn-close" id="history-popover-close" aria-label="Close"></button>
+              </div>
+            </div>
+            <ul id="history-popover-list" class="list-group list-group-flush" style="max-height: 360px; overflow: auto;"></ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-container">
+      <div class="container">
+        <div class="content-wrapper">
+          <h2 class="section-title">Start Automation</h2>
+          
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              <div class="mb-4">
+              {% for category, message in messages %}
+                <div class="alert alert-{{ 'warning' if category == 'warning' else ('danger' if category == 'error' else 'success') }} alert-dismissible fade show" role="alert">
+                  {{ message }}
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+              {% endfor %}
+              </div>
+            {% endif %}
+          {% endwith %}
+
+          <div class="row g-4">
+            {% for freq in ['Weekly','Monthly','Quarterly','Annually'] %}
+            <div class="col-12 col-md-6 col-lg-3">
+              <div class="card h-100" data-freq="{{ freq.lower() }}">
+                <div class="card-body d-flex flex-column">
+                  <h5 class="card-title">{{ freq }}</h5>
+                  <form method="post" action="{{ url_for('start_automation') }}" onsubmit="return confirmStart(this)" class="flex-grow-1 d-flex flex-column">
+                    <input type="hidden" name="frequency" value="{{ freq.lower() }}">
+                    <div class="mb-3 flex-grow-1">
+                      <label class="form-label text-muted small">Select Date:</label>
+                      <input type="date" class="form-control" name="date" value="{{ today_iso }}">
+                    </div>
+                    <div class="mt-auto">
+                      <button class="btn btn-primary w-100 mb-2" type="submit">Start Automation</button>
+                      <button class="btn btn-outline-danger w-100" type="button" onclick="requestStop()">Stop Process</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+
+          <h2 class="section-title">Mark Report Completion</h2>
+
+          <div class="card">
+            <div class="card-body p-0">
+              <div class="list-group list-group-flush">
+                <!-- Set 1: SOFP -->
+                <div class="list-group-item py-3">
+                  <form method="post" action="{{ url_for('mark_completed') }}" onsubmit="return confirmSetComplete(this, 1)" class="d-flex align-items-center justify-content-between">
+                    <input type="hidden" name="set_num" value="1">
+                    <div class="fw-semibold">Set 1: SOFP/SOCI</div>
+                    <div class="d-flex align-items-center gap-2">
+                      <input type="date" class="form-control form-control-sm" name="date" value="{{ today_iso }}" style="width:160px;" required>
+                      <button class="btn btn-success btn-sm px-3" type="submit">Mark as Completed</button>
+                    </div>
+                  </form>
+                </div>
+
+                <!-- Set 2: Weekly Reports (with steps) -->
+                <div class="list-group-item py-3">
+                  <form method="post" action="{{ url_for('mark_completed') }}" onsubmit="return confirmSetComplete(this, 2)" class="d-flex align-items-center justify-content-between">
+                    <input type="hidden" name="set_num" value="2">
+                    <div class="fw-semibold">Set 2: Weekly Reports</div>
+                    <div class="d-flex align-items-center gap-2">
+                      <select class="form-select form-select-sm" name="step_num" style="width:150px;">
+                        <option value="">All Steps</option>
+                        <option value="1">Step 1: DM</option>
+                        <option value="2">Step 2: LA</option>
+                        <option value="3">Step 3: ECS</option>
+                        <option value="4">Step 4: MF-04-LA</option>
+                      </select>
+                      <input type="date" class="form-control form-control-sm" name="date" value="{{ today_iso }}" style="width:160px;" required>
+                      <button class="btn btn-success btn-sm px-3" type="submit">Mark as Completed</button>
+                    </div>
+                  </form>
+                </div>
+
+                <!-- Set 3: GA & IS -->
+                <div class="list-group-item py-3">
+                  <form method="post" action="{{ url_for('mark_completed') }}" onsubmit="return confirmSetComplete(this, 3)" class="d-flex align-items-center justify-content-between">
+                    <input type="hidden" name="set_num" value="3">
+                    <div class="fw-semibold">Set 3: GA & IS</div>
+                    <div class="d-flex align-items-center gap-2">
+                      <input type="date" class="form-control form-control-sm" name="date" value="{{ today_iso }}" style="width:160px;" required>
+                      <button class="btn btn-success btn-sm px-3" type="submit">Mark as Completed</button>
+                    </div>
+                  </form>
+                </div>
+
+                <!-- Set 4: IA -->
+                <div class="list-group-item py-3">
+                  <form method="post" action="{{ url_for('mark_completed') }}" onsubmit="return confirmSetComplete(this, 4)" class="d-flex align-items-center justify-content-between">
+                    <input type="hidden" name="set_num" value="4">
+                    <div class="fw-semibold">Set 4: IA</div>
+                    <div class="d-flex align-items-center gap-2">
+                      <input type="date" class="form-control form-control-sm" name="date" value="{{ today_iso }}" style="width:160px;" required>
+                      <button class="btn btn-success btn-sm px-3" type="submit">Mark as Completed</button>
+                    </div>
+                  </form>
+                </div>
+
+                <!-- Set 5: C1-C6 Forms -->
+                <div class="list-group-item py-3">
+                  <form method="post" action="{{ url_for('mark_completed') }}" onsubmit="return confirmSetComplete(this, 5)" class="d-flex align-items-center justify-content-between">
+                    <input type="hidden" name="set_num" value="5">
+                    <div class="fw-semibold">Set 5: C1-C6 Forms</div>
+                    <div class="d-flex align-items-center gap-2">
+                      <input type="date" class="form-control form-control-sm" name="date" value="{{ today_iso }}" style="width:160px;" required>
+                      <button class="btn btn-success btn-sm px-3" type="submit">Mark as Completed</button>
+                    </div>
+                  </form>
+                </div>
+
+                <!-- Set 6: C4 -->
+                <div class="list-group-item py-3">
+                  <form method="post" action="{{ url_for('mark_completed') }}" onsubmit="return confirmSetComplete(this, 6)" class="d-flex align-items-center justify-content-between">
+                    <input type="hidden" name="set_num" value="6">
+                    <div class="fw-semibold">Set 6: C4</div>
+                    <div class="d-flex align-items-center gap-2">
+                      <input type="date" class="form-control form-control-sm" name="date" value="{{ today_iso }}" style="width:160px;" required>
+                      <button class="btn btn-success btn-sm px-3" type="submit">Mark as Completed</button>
+                    </div>
+                  </form>
+                </div>
+
+                <!-- Set 7: QF Reports -->
+                <div class="list-group-item py-3">
+                  <form method="post" action="{{ url_for('mark_completed') }}" onsubmit="return confirmSetComplete(this, 7)" class="d-flex align-items-center justify-content-between">
+                    <input type="hidden" name="set_num" value="7">
+                    <div class="fw-semibold">Set 7: QF C3-C10-SF-FI</div>
+                    <div class="d-flex align-items-center gap-2">
+                      <input type="date" class="form-control form-control-sm" name="date" value="{{ today_iso }}" style="width:160px;" required>
+                      <button class="btn btn-success btn-sm px-3" type="submit">Mark as Completed</button>
+                    </div>
+                  </form>
+                </div>
+
+                <!-- Set 8: C7 -->
+                <div class="list-group-item py-3">
+                  <form method="post" action="{{ url_for('mark_completed') }}" onsubmit="return confirmSetComplete(this, 8)" class="d-flex align-items-center justify-content-between">
+                    <input type="hidden" name="set_num" value="8">
+                    <div class="fw-semibold">Set 8: C7</div>
+                    <div class="d-flex align-items-center gap-2">
+                      <input type="date" class="form-control form-control-sm" name="date" value="{{ today_iso }}" style="width:160px;" required>
+                      <button class="btn btn-success btn-sm px-3" type="submit">Mark as Completed</button>
+                    </div>
+                  </form>
+                </div>
+
+                <!-- Set 9: C8 -->
+                <div class="list-group-item py-3">
+                  <form method="post" action="{{ url_for('mark_completed') }}" onsubmit="return confirmSetComplete(this, 9)" class="d-flex align-items-center justify-content-between">
+                    <input type="hidden" name="set_num" value="9">
+                    <div class="fw-semibold">Set 9: C8</div>
+                    <div class="d-flex align-items-center gap-2">
+                      <input type="date" class="form-control form-control-sm" name="date" value="{{ today_iso }}" style="width:160px;" required>
+                      <button class="btn btn-success btn-sm px-3" type="submit">Mark as Completed</button>
+                    </div>
+                  </form>
+                </div>
+
+                <!-- Set 10: Annual SOFP -->
+                <div class="list-group-item py-3">
+                  <form method="post" action="{{ url_for('mark_completed') }}" onsubmit="return confirmSetComplete(this, 10)" class="d-flex align-items-center justify-content-between">
+                    <input type="hidden" name="set_num" value="10">
+                    <div class="fw-semibold">Set 10: Annual SOFP</div>
+                    <div class="d-flex align-items-center gap-2">
+                      <input type="date" class="form-control form-control-sm" name="date" value="{{ today_iso }}" style="width:160px;" required>
+                      <button class="btn btn-success btn-sm px-3" type="submit">Mark as Completed</button>
+                    </div>
+                  </form>
+                </div>
+
+                <!-- Set 11: Annual C1-C6 -->
+                <div class="list-group-item py-3">
+                  <form method="post" action="{{ url_for('mark_completed') }}" onsubmit="return confirmSetComplete(this, 11)" class="d-flex align-items-center justify-content-between">
+                    <input type="hidden" name="set_num" value="11">
+                    <div class="fw-semibold">Set 11: Annual C1-C6</div>
+                    <div class="d-flex align-items-center gap-2">
+                      <input type="date" class="form-control form-control-sm" name="date" value="{{ today_iso }}" style="width:160px;" required>
+                      <button class="btn btn-success btn-sm px-3" type="submit">Mark as Completed</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="status-card" class="card mb-4" style="display:none;">
+            <div class="card-body">
+              <div class="d-flex align-items-center mb-3">
+                <div id="status-spinner" class="spinner-border text-primary me-3" role="status" style="display:none;width:1.5rem;height:1.5rem;">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+                <h5 class="card-title mb-0">Process Status</h5>
+                <span id="status-badge" class="badge bg-secondary ms-auto">Idle</span>
+              </div>
+              <div id="status-subtitle" class="text-muted mb-3"></div>
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <small id="eta-text" class="text-muted"></small>
+                <small id="eta-remaining" class="text-muted"></small>
+              </div>
+              <div class="progress">
+                <div id="status-progress" class="progress-bar" role="progressbar" style="width: 0%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <div id="history-row" class="row g-3 mb-4" style="display:none;">
+            <div class="col-12 col-lg-5 ms-auto">
+              <div class="card">
+                <div class="card-body">
+                  <h5 class="card-title mb-2">Last Runs</h5>
+                </div>
+                <ul id="history-list" class="list-group list-group-flush"></ul>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="container">
+          <div class="d-flex justify-content-between align-items-center flex-wrap">
+          <div>
+            <span>Developed by Overdime Technologies</span>
+          </div>
+            <div class="d-flex align-items-center gap-2">
+              <a href="https://overdimetechnologies.com" target="_blank">Help and Support</a>
+            </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      const statusCard = document.getElementById('status-card');
+      const statusSpinner = document.getElementById('status-spinner');
+      const statusBadge = document.getElementById('status-badge');
+      const statusSubtitle = document.getElementById('status-subtitle');
+      const statusProgress = document.getElementById('status-progress');
+      let downloadTriggered = false;
+
+      const logListCard = document.createElement('div');
+      logListCard.className = 'card mt-4';
+      const logListBody = document.createElement('div');
+      logListBody.className = 'card-body';
+      const logListTitle = document.createElement('h5');
+      logListTitle.className = 'card-title mb-3';
+      logListTitle.textContent = 'Status History';
+      const logList = document.createElement('ul');
+      logList.id = 'live-logs';
+      logList.className = 'list-group list-group-flush';
+      logListBody.appendChild(logListTitle);
+      logListCard.appendChild(logListBody);
+      logListCard.appendChild(logList);
+
+      // Bot checklist accordion (shows bot logs)
+      const botAcc = document.createElement('div');
+      botAcc.className = 'accordion mt-4';
+      botAcc.id = 'bot-accordion';
+      // Report checklist accordion (shows report logs)
+      const reportsAcc = document.createElement('div');
+      reportsAcc.className = 'accordion mt-3';
+      reportsAcc.id = 'report-accordion';
+      // Placeholder banner shown between bot and reports
+      const reportsBanner = document.createElement('div');
+      reportsBanner.id = 'reports-banner';
+      reportsBanner.className = 'alert alert-info d-none mt-3';
+      reportsBanner.innerHTML = '<div class="d-flex align-items-center"><div class="spinner-border spinner-border-sm me-2" role="status"></div><div>Starting Reports Automation...</div></div>';
+      const contentWrapper = document.querySelector('.content-wrapper');
+      contentWrapper.appendChild(botAcc);
+      contentWrapper.appendChild(reportsBanner);
+      contentWrapper.appendChild(reportsAcc);
+      // Ensure status history stays at the bottom
+      document.querySelector('.content-wrapper').appendChild(logListCard);
+
+      // History toggle logic (inline panel)
+      const historyToggle = document.getElementById('history-toggle');
+      const historyRow = document.getElementById('history-row');
+      const historyList = document.getElementById('history-list');
+      const historyPopover = document.getElementById('history-popover');
+      const historyPopoverList = document.getElementById('history-popover-list');
+      const historyPopoverClose = document.getElementById('history-popover-close');
+      historyToggle.addEventListener('click', async () => {
+        // Toggle popup under the button
+        const visible = historyPopover.style.display !== 'none';
+        historyPopover.style.display = visible ? 'none' : '';
+        if (!visible) {
+          try {
+            const res = await fetch('/history');
+            if (!res.ok) return;
+            const data = await res.json();
+            // Fill both the inline list (if panel used) and popover list
+            const render = (ul) => {
+              ul.innerHTML = '';
+              (data || []).slice(-8).reverse().forEach(rec => {
+                // Defensive defaults for undefined fields
+                const timestamp = rec && rec.timestamp ? rec.timestamp : '';
+                const frequency = rec && rec.frequency ? rec.frequency : '';
+                const picked_date = rec && rec.picked_date ? rec.picked_date : '';
+                const statusesStr = rec && rec.statuses ? rec.statuses : '';
+                const li = document.createElement('li');
+                li.className = 'list-group-item';
+                const name = `${frequency} | ${picked_date} | ${timestamp}`;
+                const statuses = statusesStr.split(',').map(s => s.trim()).filter(Boolean);
+                const outer = document.createElement('div');
+                outer.className = 'd-flex justify-content-between align-items-center';
+                const left = document.createElement('div');
+                left.innerHTML = `<div>${name}</div><small class='text-muted'>${statuses.join(' | ')}</small>`;
+                outer.appendChild(left);
+                li.appendChild(outer);
+                ul.appendChild(li);
+              });
+            };
+            render(historyPopoverList);
+            if (historyList) render(historyList);
+          } catch (e) {}
+        }
+      });
+      historyPopoverClose.addEventListener('click', () => { historyPopover.style.display = 'none'; });
+      document.addEventListener('click', (e) => {
+        const btn = document.getElementById('history-toggle');
+        if (!historyPopover.contains(e.target) && e.target !== btn) {
+          historyPopover.style.display = 'none';
+        }
+      });
+
+      function stageToProgress(stage) {
+        switch ((stage || '').toLowerCase()) {
+          case 'starting': return 10;
+          case 'copying': return 35;
+          case 'running': return 65;
+          case 'saving': return 85;
+          case 'stopping': return 50;
+          case 'done': return 100;
+          case 'error': return 100;
+          default: return 0;
+        }
+      }
+
+      function stageToBadge(stage) {
+        const s = (stage || '').toLowerCase();
+        if (s === 'done') return { text: 'Completed', cls: 'bg-success' };
+        if (s === 'error') return { text: 'Error', cls: 'bg-danger' };
+        if (s === 'stopping') return { text: 'Stopping', cls: 'bg-warning text-dark' };
+        if (s === 'running') return { text: 'Running', cls: 'bg-primary' };
+        if (s === 'copying') return { text: 'Copying', cls: 'bg-info text-dark' };
+        if (s === 'saving') return { text: 'Saving', cls: 'bg-secondary' };
+        if (s === 'starting') return { text: 'Starting', cls: 'bg-secondary' };
+        return { text: 'Idle', cls: 'bg-secondary' };
+      }
+
+      async function pollStatus() {
+        try {
+          const res = await fetch("{{ url_for('status') }}", { cache: 'no-store' });
+          if (!res.ok) return;
+          const data = await res.json();
+          if (!data) return;
+          const running = !!data.running;
+          const stage = data.stage || 'idle';
+          const freq = data.frequency || '';
+          const date = data.date || '';
+          const message = data.message || '';
+          const etaTotal = Number(data.eta_total_secs || 0);
+          const etaStartIso = data.eta_started_iso || '';
+          const badge = stageToBadge(stage);
+          if (running || stage !== 'idle') {
+            statusCard.style.display = '';
+            statusBadge.className = `badge ${badge.cls} ms-auto`;
+            statusBadge.textContent = badge.text;
+            statusSubtitle.textContent = [freq && `Frequency: ${freq}`, date && `Date: ${date}`, message].filter(Boolean).join(' | ');
+            const pct = stageToProgress(stage);
+            statusProgress.style.width = pct + '%';
+            statusProgress.className = 'progress-bar ' + (stage === 'error' ? 'bg-danger' : (stage === 'done' ? 'bg-success' : ''));
+            statusSpinner.style.display = (running && (stage !== 'done' && stage !== 'error')) ? '' : 'none';
+            // ETA display
+            const etaText = document.getElementById('eta-text');
+            const etaRemaining = document.getElementById('eta-remaining');
+            if (etaTotal > 0 && etaStartIso && (running || stage === 'running')) {
+              const started = new Date(etaStartIso + 'Z');
+              const now = new Date();
+              const elapsed = Math.max(0, Math.floor((now - started) / 1000));
+              const remain = Math.max(0, etaTotal - elapsed);
+              const fmt = s => {
+                const m = Math.floor(s / 60); const ss = s % 60; return `${m}m ${ss}s`;
+              };
+              etaText.textContent = `Estimated: ${fmt(etaTotal)}`;
+              etaRemaining.textContent = `Remaining: ${fmt(remain)}`;
+            } else {
+              etaText.textContent = '';
+              etaRemaining.textContent = '';
+            }
+            // Auto-trigger download once when backend signals ready
+            if (stage.toLowerCase() === 'download_ready' && !downloadTriggered) {
+              downloadTriggered = true;
+              // Trigger a file download without navigating away
+              const a = document.createElement('a');
+              a.href = '/download-latest';
+              a.download = '';
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+            }
+          } else {
+            statusCard.style.display = 'none';
+            downloadTriggered = false; // reset for next run
+          }
+
+          // Highlight active frequency cards
+          document.querySelectorAll('.card[data-freq]').forEach(card => {
+            const cfreq = card.getAttribute('data-freq') || '';
+            if (running && cfreq === (freq || '')) {
+              card.classList.add('border', 'border-2', 'border-primary');
+              card.classList.add('shadow');
+            } else {
+              card.classList.remove('border', 'border-2', 'border-primary');
+              card.classList.remove('shadow');
+            }
+          });
+        } catch (e) {
+          // ignore transient errors
+        }
+      }
+      async function pollLogs() {
+        try {
+          // Show status history instead of raw terminal output
+          const res = await fetch("{{ url_for('status_feed') }}", { cache: 'no-store' });
+          if (!res.ok) return;
+          const text = await res.text();
+          const lines = (text || '').split('\n').filter(Boolean);
+          // Keep only last ~20 important entries for cleaner display
+          const recent = lines.slice(-20);
+          // Render as list-group items with better formatting
+          logList.innerHTML = '';
+          recent.forEach(line => {
+            const item = document.createElement('li');
+            item.className = 'list-group-item d-flex align-items-center';
+            
+            // Extract timestamp and message
+            const timestampMatch = line.match(/^\[(.*?)\]\s*(.*)/);
+            if (timestampMatch) {
+              const timestamp = timestampMatch[1];
+              const message = timestampMatch[2];
+              
+              // Create timestamp badge
+              const timeBadge = document.createElement('span');
+              timeBadge.className = 'badge bg-light text-dark me-2';
+              timeBadge.style.fontSize = '0.75rem';
+              timeBadge.textContent = timestamp;
+              
+              // Create message with status indicators
+              const messageSpan = document.createElement('span');
+              messageSpan.className = 'flex-grow-1';
+              
+              // Add status indicators based on message content
+              if (message.includes('🚀') || message.includes('Starting')) {
+                messageSpan.innerHTML = `<span class="text-primary">${message}</span>`;
+              } else if (message.includes('✅') || message.includes('completed')) {
+                messageSpan.innerHTML = `<span class="text-success">${message}</span>`;
+              } else if (message.includes('❌') || message.includes('failed') || message.includes('error')) {
+                messageSpan.innerHTML = `<span class="text-danger">${message}</span>`;
+              } else if (message.includes('⚠️') || message.includes('warning')) {
+                messageSpan.innerHTML = `<span class="text-warning">${message}</span>`;
+              } else {
+                messageSpan.textContent = message;
+              }
+              
+              item.appendChild(timeBadge);
+              item.appendChild(messageSpan);
+            } else {
+              // Fallback for lines without timestamp
+              const textNode = document.createElement('span');
+              textNode.textContent = line;
+              item.appendChild(textNode);
+            }
+            
+            logList.appendChild(item);
+          });
+        } catch (e) {
+          // ignore
+        }
+      }
+      setInterval(pollStatus, 2000);
+      setInterval(pollLogs, 1000);
+      pollStatus();
+      pollLogs();
+
+      async function requestStop() {
+        try {
+          if (!confirm('Are you sure you want to stop the current process?')) return;
+          const response = await fetch("{{ url_for('stop') }}", { method: 'POST' });
+          const result = await response.json();
+          if (result.ok && result.refresh) {
+            // Refresh the page to restart session
+            window.location.reload();
+          }
+        } catch (e) {}
+      }
+
+      async function stopIndividualScript(reportName) {
+        try {
+          if (!confirm(`Are you sure you want to stop ${reportName}?`)) return;
+          const response = await fetch("{{ url_for('stop_individual_script') }}", { 
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ report_name: reportName })
+          });
+          const result = await response.json();
+          if (result.success) {
+            // The status will be updated by the next poll
+            console.log(result.message);
+          } else {
+            alert(result.message);
+          }
+        } catch (e) {
+          console.error('Error stopping script:', e);
+        }
+      }
+
+      function confirmStart(form) {
+        const freq = (form.querySelector('input[name="frequency"]').value || '').toLowerCase();
+        const date = form.querySelector('input[name="date"]').value || '';
+        return confirm(`Start ${freq} automation for ${date}?`);
+      }
+
+      function confirmSetComplete(form, setNum) {
+        const date = form.querySelector('input[name="date"]').value || '';
+        const stepSelect = form.querySelector('select[name="step_num"]');
+        let setName = `Set ${setNum}`;
+
+        if (stepSelect) {
+          const stepNum = stepSelect.value;
+          if (stepNum) {
+            const stepText = stepSelect.options[stepSelect.selectedIndex].text;
+            setName += ` - ${stepText}`;
+          }
+        }
+
+        return confirm(`Mark ${setName} as completed for ${date}?`);
+      }
+
+      const checklistItemMap = new Map(); // name -> {badgeEl, preEl}
+      const botChecklistItemMap = new Map();
+      const reportChecklistItemMap = new Map();
+      let reportsBannerShown = false;
+      let reportSetInfo = {}; // Store set information for each report
+
+      // Fetch report set information once on load
+      async function loadReportSetInfo() {
+        try {
+          const res = await fetch('/report-set-info');
+          if (res.ok) {
+            reportSetInfo = await res.json();
+          }
+        } catch (e) {
+          console.error('Failed to load report set info:', e);
+        }
+      }
+      loadReportSetInfo();
+
+      async function pollChecklist() {
+        try {
+          const res = await fetch("{{ url_for('report_checklist') }}", { cache: 'no-store' });
+          if (!res.ok) return;
+          const items = await res.json();
+          const botItems = (items || []).filter(i => i.name === 'Download_Bot');
+          const reportItems = (items || []).filter(i => i.name !== 'Download_Bot');
+          const botCompleted = botItems.some(i => (i.status||'').toLowerCase() === 'completed');
+          const hasReports = reportItems.length > 0;
+          // Show the banner exactly once upon transition from bot to reports, for 3 seconds
+          if (botCompleted && hasReports && reportsBanner.dataset.shown !== '1') {
+            reportsBanner.dataset.shown = '1';
+            reportsBannerShown = true;
+            reportsBanner.classList.remove('d-none');
+            // Keep reports accordion hidden until banner finishes
+            reportsAcc.classList.add('d-none');
+            setTimeout(() => {
+              reportsBanner.classList.add('d-none');
+              reportsAcc.classList.remove('d-none');
+            }, 3000);
+          }
+          // Render Bot accordion (structure rebuild if changed)
+          const botNames = botItems.map(it => it.name).join('|');
+          const botExisting = Array.from(botChecklistItemMap.keys()).join('|');
+          if (botNames !== botExisting) {
+            botAcc.innerHTML = '';
+            botChecklistItemMap.clear();
+            botItems.forEach((it, idx) => {
+              const st = (it.status || '').toLowerCase();
+              const headingId = `bot-acc-h-${idx}`;
+              const collapseId = `bot-acc-c-${idx}`;
+              const card = document.createElement('div');
+              card.className = 'accordion-item';
+              const header = document.createElement('h2');
+              header.className = 'accordion-header';
+              header.id = headingId;
+              const btn = document.createElement('button');
+              btn.className = 'accordion-button collapsed';
+              btn.type = 'button';
+              btn.setAttribute('data-bs-toggle', 'collapse');
+              btn.setAttribute('data-bs-target', `#${collapseId}`);
+              btn.setAttribute('aria-controls', collapseId);
+              btn.innerHTML = `<div class="d-flex align-items-center w-100 justify-content-between">
+                <div class="d-flex align-items-center">
+                  <span>${it.name}</span>
+                  <small class="text-muted ms-2">Click for more details</small>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                  <span class="badge ${st==='completed' ? 'bg-success' : st==='running' ? 'bg-primary' : st==='failed' ? 'bg-danger' : st==='stopped' ? 'bg-warning' : 'bg-secondary'}">${st==='completed' ? 'Done' : st==='running' ? 'Running' : st==='failed' ? 'Failed' : st==='stopped' ? 'Stopped' : 'Pending'}</span>
+                  ${st==='running' ? `<button class="btn btn-sm btn-outline-danger" onclick="stopIndividualScript('${it.name}')" title="Stop this script">Stop</button>` : ''}
+                </div>
+              </div>`;
+              header.appendChild(btn);
+              const collapse = document.createElement('div');
+              collapse.id = collapseId;
+              collapse.className = 'accordion-collapse collapse';
+              collapse.setAttribute('aria-labelledby', headingId);
+              collapse.setAttribute('data-bs-parent', '#bot-accordion');
+              const body = document.createElement('div');
+              body.className = 'accordion-body';
+              const pre = document.createElement('pre');
+              pre.className = 'mb-0 small';
+              pre.style.whiteSpace = 'pre-wrap';
+              pre.id = `log-${it.name}`;
+              const box = document.createElement('div');
+              box.className = 'border rounded bg-light p-3';
+              box.style.height = '240px';
+              box.style.overflow = 'auto';
+              box.appendChild(pre);
+              body.appendChild(box);
+              collapse.appendChild(body);
+              card.appendChild(header);
+              card.appendChild(collapse);
+              botAcc.appendChild(card);
+              // cache refs
+              const badgeEl = btn.querySelector('.badge');
+              botChecklistItemMap.set(it.name, { badgeEl, preEl: pre });
+            });
+          }
+          // Render Reports accordion: visible immediately (bot disabled)
+          // Always show reports accordion since bot is disabled
+          reportsAcc.classList.remove('d-none');
+          const reportNames = reportItems.map(it => it.name).join('|');
+          const reportExisting = Array.from(reportChecklistItemMap.keys()).join('|');
+          if (reportNames !== reportExisting) {
+            reportsAcc.innerHTML = '';
+            reportChecklistItemMap.clear();
+            reportItems.forEach((it, idx) => {
+              const st = (it.status || '').toLowerCase();
+              const headingId = `rep-acc-h-${idx}`;
+              const collapseId = `rep-acc-c-${idx}`;
+              const card = document.createElement('div');
+              card.className = 'accordion-item';
+              const header = document.createElement('h2');
+              header.className = 'accordion-header';
+              header.id = headingId;
+              const btn = document.createElement('button');
+              btn.className = 'accordion-button collapsed';
+              btn.type = 'button';
+              btn.setAttribute('data-bs-toggle', 'collapse');
+              btn.setAttribute('data-bs-target', `#${collapseId}`);
+              btn.setAttribute('aria-controls', collapseId);
+
+              // Get set info for this report
+              const setInfo = reportSetInfo[it.name] || {};
+              const setNum = setInfo.set;
+              const stepNum = setInfo.step;
+              const setLabel = setNum ? `Set ${setNum}${stepNum ? ` Step ${stepNum}` : ''}` : '';
+
+              btn.innerHTML = `<div class="d-flex align-items-center w-100 justify-content-between">
+                <div class="d-flex align-items-center">
+                  <span>${it.name}</span>
+                  ${setLabel ? `<small class="text-muted ms-2">(${setLabel})</small>` : ''}
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                  <span class="badge ${st==='completed' ? 'bg-success' : st==='running' ? 'bg-primary' : st==='failed' ? 'bg-danger' : st==='stopped' ? 'bg-warning' : 'bg-secondary'}">${st==='completed' ? 'Done' : st==='running' ? 'Running' : st==='failed' ? 'Failed' : st==='stopped' ? 'Stopped' : 'Pending'}</span>
+                  ${st==='running' ? `<button class="btn btn-sm btn-outline-danger" onclick="stopIndividualScript('${it.name}')" title="Stop this script">Stop</button>` : ''}
+                </div>
+              </div>`;
+
+              header.appendChild(btn);
+              const collapse = document.createElement('div');
+              collapse.id = collapseId;
+              collapse.className = 'accordion-collapse collapse';
+              collapse.setAttribute('aria-labelledby', headingId);
+              collapse.setAttribute('data-bs-parent', '#report-accordion');
+              const body = document.createElement('div');
+              body.className = 'accordion-body';
+
+              const pre = document.createElement('pre');
+              pre.className = 'mb-0 small';
+              pre.style.whiteSpace = 'pre-wrap';
+              pre.id = `log-${it.name}`;
+              const box = document.createElement('div');
+              box.className = 'border rounded bg-light p-3';
+              box.style.height = '240px';
+              box.style.overflow = 'auto';
+              box.appendChild(pre);
+              body.appendChild(box);
+              collapse.appendChild(body);
+              card.appendChild(header);
+              card.appendChild(collapse);
+              reportsAcc.appendChild(card);
+              const badgeEl = btn.querySelector('.badge');
+              reportChecklistItemMap.set(it.name, { badgeEl, preEl: pre });
+            });
+          }
+          // Update badges and messages in-place (bots)
+          for (const it of botItems) {
+            const refs = botChecklistItemMap.get(it.name);
+            if (!refs) continue;
+            const st = (it.status || '').toLowerCase();
+            refs.badgeEl.className = 'badge ' + (st==='completed' ? 'bg-success' : st==='running' ? 'bg-primary' : st==='failed' ? 'bg-danger' : st==='stopped' ? 'bg-warning' : 'bg-secondary');
+            refs.badgeEl.textContent = st==='completed' ? 'Done' : st==='running' ? 'Running' : st==='failed' ? 'Failed' : st==='stopped' ? 'Stopped' : 'Pending';
+            try {
+              const res2 = await fetch(`/report-messages/${encodeURIComponent(it.name)}`);
+              if (res2.ok) refs.preEl.textContent = await res2.text();
+            } catch (e) {}
+          }
+          // Update badges and messages in-place (reports)
+          for (const it of reportItems) {
+            const refs = reportChecklistItemMap.get(it.name);
+            if (!refs) continue;
+            const st = (it.status || '').toLowerCase();
+            refs.badgeEl.className = 'badge ' + (st==='completed' ? 'bg-success' : st==='running' ? 'bg-primary' : st==='failed' ? 'bg-danger' : st==='stopped' ? 'bg-warning' : 'bg-secondary');
+            refs.badgeEl.textContent = st==='completed' ? 'Done' : st==='running' ? 'Running' : st==='failed' ? 'Failed' : st==='stopped' ? 'Stopped' : 'Pending';
+            try {
+              const res3 = await fetch(`/report-messages/${encodeURIComponent(it.name)}`);
+              if (res3.ok) refs.preEl.textContent = await res3.text();
+            } catch (e) {}
+          }
+        } catch (e) {}
+      }
+      setInterval(pollChecklist, 1500);
+      pollChecklist();
+      // Auto-dismiss success alerts after 5 seconds; keep warnings/errors until closed
+      setInterval(() => {
+        document.querySelectorAll('.alert.alert-success').forEach(el => {
+          if (!el.dataset.autoclose) {
+            el.dataset.autoclose = '1';
+            setTimeout(() => {
+              try { new bootstrap.Alert(el).close(); } catch (e) { el.remove(); }
+            }, 5000);
+          }
+        });
+      }, 1000);
+
+      // Live Date and Time
+      function updateLiveDateTime() {
+        const now = new Date();
+        const options = {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        };
+        const timeOptions = {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        };
+        
+        const dateStr = now.toLocaleDateString('en-US', options);
+        const timeStr = now.toLocaleTimeString('en-US', timeOptions);
+        
+        document.getElementById('live-datetime').innerHTML = `
+          <div>${dateStr}</div>
+          <div class="small">${timeStr}</div>
+        `;
+      }
+
+      // Update immediately and then every second
+      updateLiveDateTime();
+      setInterval(updateLiveDateTime, 1000);
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- ── Inactivity timeout (10 min) ── -->
+  <script>
+  (function(){
+    var TIMEOUT = 15 * 60 * 1000;
+    var WARN_BEFORE = 60 * 1000;
+    var timer, warnTimer, toast;
+    function resetTimer() {
+      clearTimeout(timer); clearTimeout(warnTimer);
+      if (toast) { toast.remove(); toast = null; }
+      warnTimer = setTimeout(showWarning, TIMEOUT - WARN_BEFORE);
+      timer     = setTimeout(function(){ window.location.href = '/logout?reason=timeout'; }, TIMEOUT);
+    }
+    function showWarning() {
+      toast = document.createElement('div');
+      toast.id = 'inactivity-toast';
+      toast.style.cssText = 'position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;background:#1e293b;border:1px solid rgba(249,115,22,.5);color:#fdba74;padding:.85rem 1.25rem;border-radius:.75rem;font-size:.88rem;font-family:Segoe UI,system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.5);max-width:320px;line-height:1.5;';
+      toast.innerHTML = '&#9888; You will be signed out in <strong id="toast-countdown">60</strong>s due to inactivity. <a href="#" onclick="resetTimer();return false;" style="color:#60a5fa;text-decoration:underline;margin-left:.5rem;">Stay signed in</a>';
+      document.body.appendChild(toast);
+      var secs = 60;
+      var interval = setInterval(function(){
+        secs--;
+        var el = document.getElementById('toast-countdown');
+        if (el) el.textContent = secs;
+        if (secs <= 0) clearInterval(interval);
+      }, 1000);
+    }
+    ['mousemove','mousedown','keydown','touchstart','scroll','click'].forEach(function(e){
+      document.addEventListener(e, resetTimer, { passive: true });
+    });
+    resetTimer();
+  })();
+  </script>
+</body>
+</html>
