@@ -294,56 +294,82 @@ class AFLLiquidityAutomation:
     
     def find_deposit_liability_file(self):
         """
-        Find the Deposit Liability Excel file in working folder
-        Pattern: NBD-WF-18-DM Deposit Liability (dd-mm-yyyy).xlsx or NBD-WF-18-DM*.xlsx
+        Find the Deposit Liability Excel file.
+
+        Primary location: C:\\CBSL\\Script\\outputs\\NBD-WF-18-DM\\<dd-mm-yyyy>[(N)]\\
+        This is where the NBD-WF-18-DM automation actually publishes its dated output
+        (e.g. "07-12-2025(7)"), which may contain a "(N)" suffix when the report for
+        that date was run more than once - in that case the most recently modified
+        matching folder is used.
+
+        Fallback location: the NBD_WF_15_LA working folder (legacy behaviour), only
+        used if nothing is found in the primary location.
+
+        Only a file whose filename date exactly matches the report date is accepted.
+        We deliberately do NOT fall back to "first file found" on a date mismatch -
+        that previously caused a wrong-period file's balance to be used silently.
         """
         try:
             import re
 
             # Get expected date string from report_date (format: dd-mm-yyyy)
             expected_date_str = self.report_date.strftime("%d-%m-%Y")
+            expected_filename = f"NBD-WF-18-DM Deposit Liability ({expected_date_str}).xlsx"
 
-            # Try specific pattern first: NBD-WF-18-DM Deposit Liability (dd-mm-yyyy).xlsx
-            specific_pattern = f"NBD-WF-18-DM Deposit Liability ({expected_date_str}).xlsx"
-            files = list(self.working_folder.glob(specific_pattern))
-
-            # Fallback to generic pattern if specific not found
-            if not files:
-                logger.info(f"Specific pattern not found: {specific_pattern}, trying generic pattern...")
-                generic_pattern = "NBD-WF-18-DM*.xlsx"
-                files = list(self.working_folder.glob(generic_pattern))
-
-            if not files:
-                logger.error(f"No Deposit Liability file found in {self.working_folder}")
-                logger.info(f"Expected: NBD-WF-18-DM Deposit Liability ({expected_date_str}).xlsx or NBD-WF-18-DM*.xlsx")
+            def find_exact_match(folder):
+                """Return the exact-dated file inside folder, if present."""
+                candidate = folder / expected_filename
+                if candidate.exists():
+                    return candidate
                 return None
 
-            # Validate date in filename matches expected date
+            # --- Primary: C:\CBSL\Script\outputs\NBD-WF-18-DM\<dd-mm-yyyy>[(N)]\ ---
+            dm_outputs_base = self.base_dir / "outputs" / "NBD-WF-18-DM"
             matching_file = None
-            for file in files:
-                filename = file.name
-                # Extract date from filename pattern like "NBD-WF-18-DM Deposit Liability (27-01-2026).xlsx"
-                date_match = re.search(r'\((\d{2}-\d{2}-\d{4})\)', filename)
-                if date_match:
-                    file_date_str = date_match.group(1)
-                    if file_date_str == expected_date_str:
-                        matching_file = file
-                        logger.info(f"Found Deposit Liability file with matching date: {filename}")
+
+            if dm_outputs_base.exists():
+                folder_pattern = re.compile(
+                    r'^' + re.escape(expected_date_str) + r'(\(\d+\))?$'
+                )
+                date_folders = [
+                    d for d in dm_outputs_base.iterdir()
+                    if d.is_dir() and folder_pattern.match(d.name)
+                ]
+                # Most recently modified matching folder first (latest re-run wins)
+                date_folders.sort(key=lambda d: d.stat().st_mtime, reverse=True)
+
+                for folder in date_folders:
+                    found = find_exact_match(folder)
+                    if found:
+                        matching_file = found
+                        logger.info(f"Found Deposit Liability file in outputs: {folder.name}\\{found.name}")
                         break
                     else:
-                        logger.warning(f"Found file {filename} but date {file_date_str} does not match expected {expected_date_str}")
+                        logger.warning(f"Folder {folder.name} does not contain {expected_filename}")
 
-            # If no exact match, use first file found
-            if not matching_file and files:
-                matching_file = files[0]
-                logger.warning(f"Using first available file: {matching_file.name}")
+                if not date_folders:
+                    logger.warning(f"No dated subfolder matching '{expected_date_str}[(N)]' found under {dm_outputs_base}")
+            else:
+                logger.warning(f"NBD-WF-18-DM outputs folder not found: {dm_outputs_base}")
+
+            # --- Fallback: legacy working folder, exact date match only ---
+            if not matching_file:
+                logger.info(f"Falling back to working folder search: {self.working_folder}")
+                found = find_exact_match(self.working_folder)
+                if found:
+                    matching_file = found
+                    logger.info(f"Found Deposit Liability file in working folder: {found.name}")
 
             if not matching_file:
-                logger.error(f"No Deposit Liability file found in {self.working_folder}")
+                logger.error(
+                    f"No Deposit Liability file found for {expected_date_str}. "
+                    f"Checked {dm_outputs_base}\\{expected_date_str}[(N)] and {self.working_folder}. "
+                    f"Expected filename: {expected_filename}"
+                )
                 return None
 
             self.deposit_liability_file = matching_file
-            logger.info(f"Found Deposit Liability file: {matching_file.name}")
+            logger.info(f"Using Deposit Liability file: {matching_file}")
             return matching_file
 
         except Exception as e:
@@ -1528,6 +1554,27 @@ class AFLLiquidityAutomation:
                            if not f.name.startswith("working_")]
 
             if not all_afl_files:
+                # Month-end completion moves that month's week files into an
+                # "AFL <Mon>-<Year> Expand" folder instead of deleting them (see cbsl.py's
+                # LA post-processing step), so a new month can start with no top-level
+                # Week_*.xlsx file. Fall back to the last recorded week file in there,
+                # copied up (never edited in place, so the archived history stays intact).
+                import re
+                expand_dirs = list(self.working_folder.glob("AFL * Expand"))
+                if expand_dirs:
+                    expand_files = [f for f in expand_dirs[0].glob("AFL Liquidity - Week_*.xlsx")
+                                     if not f.name.startswith("working_")]
+                    if expand_files:
+                        source_file = max(
+                            expand_files,
+                            key=lambda f: int(re.search(r'Week_(\d+)', f.name).group(1))
+                        )
+                        restored_file = self.working_folder / source_file.name
+                        shutil.copy2(source_file, restored_file)
+                        logger.info(f"No top-level Week_*.xlsx found; restored carry-forward "
+                                    f"seed from '{expand_dirs[0].name}': {restored_file.name}")
+                        return restored_file
+
                 logger.info("No AFL Liquidity files found in working folder")
                 return None
 

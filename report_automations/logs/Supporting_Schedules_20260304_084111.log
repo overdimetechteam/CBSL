@@ -1,7 +1,0 @@
-2026-03-04 08:41:11,752 - INFO - setup_logging:32 - Logging initialized. Log file: C:\CBSL\Script\report_automations\logs\Supporting_Schedules_20260304_084111.log
-2026-03-04 08:41:11,752 - INFO - <module>:2553 - Working directory: C:\CBSL\Script\working\Supporting Schedules
-2026-03-04 08:41:11,754 - INFO - <module>:2573 - Input date: 03/04/2026
-2026-03-04 08:41:11,754 - INFO - <module>:2574 - Month start date: 01/04/2026
-2026-03-04 08:41:11,754 - INFO - <module>:2575 - Month name: April
-2026-03-04 08:41:11,755 - INFO - clear_new_schedule_for_april:2508 - April detected — clearing New Shcedule ranges before processing.
-2026-03-04 08:41:11,756 - INFO - get_monthly_folder:42 - Searching for monthly folder in: C:\CBSL\Script\working\Supporting Schedules

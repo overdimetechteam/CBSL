@@ -112,38 +112,38 @@ class ERPLoginBot:
             print(f"Error during login: {str(e)}")
             return False
     
-    def select_premises(self):
-        """
-        Just click the SELECT button to proceed
-        """
-        try:
-            wait = WebDriverWait(self.driver, 20)
+    # def select_premises(self):
+    #     """
+    #     Just click the SELECT button to proceed
+    #     """
+    #     try:
+    #         wait = WebDriverWait(self.driver, 20)
             
-            # Wait a bit for the page/modal to load
-            time.sleep(3)
+    #         # Wait a bit for the page/modal to load
+    #         time.sleep(3)
             
-            # Just click the Select button directly
-            print("Clicking Select button...")
-            select_button = wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[2]/div[3]/form/div/button')))
-            select_button.click()
+    #         # Just click the Select button directly
+    #         print("Clicking Select button...")
+    #         select_button = wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[2]/div[3]/form/div/button')))
+    #         select_button.click()
             
-            # Wait for page to load after selection
-            time.sleep(3)
+    #         # Wait for page to load after selection
+    #         time.sleep(3)
             
-            # Refresh the page
-            print("Refreshing the page...")
-            self.driver.refresh()
+    #         # Refresh the page
+    #         print("Refreshing the page...")
+    #         self.driver.refresh()
             
-            # Wait for page to fully reload
-            print("Waiting for page to fully reload...")
-            time.sleep(3)
+    #         # Wait for page to fully reload
+    #         print("Waiting for page to fully reload...")
+    #         time.sleep(3)
             
-            print("Premises selection completed!")
-            return True
+    #         print("Premises selection completed!")
+    #         return True
             
-        except Exception as e:
-            print(f"Error clicking Select button: {str(e)}")
-            return False
+    #     except Exception as e:
+    #         print(f"Error clicking Select button: {str(e)}")
+    #         return False
     
     def wait_for_download_completion(self):
         """
@@ -340,10 +340,10 @@ class ERPLoginBot:
                 print("Login failed!")
                 return False
             
-            # Step 3: Click Select button only
-            if not self.select_premises():
-                print("Premises selection failed!")
-                return False
+            # # Step 3: Click Select button only
+            # if not self.select_premises():
+            #     print("Premises selection failed!")
+            #     return False
             
             # Step 4: Navigate to TB report
             if not self.navigate_to_tb_report():

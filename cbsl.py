@@ -848,9 +848,10 @@ def _append_report_message(report_id: str, message: str) -> None:
     buf.append(f"[{ts}] {message.strip()}")
 
 
-def save_master_data(sofp_data: dict | None, ia_data: dict | None, c1c6_data: dict | None = None, sofp_sheet: str | None = None, c1c6_sheet: str | None = None, ga_is_data: dict | None = None, ecs_m2m_data: dict | None = None, ecs_treasury_data: dict | None = None, ecs_manual_payments_data: dict | None = None) -> tuple[bool, str]:
+def save_master_data(sofp_data: dict | None, ia_data: dict | None, c1c6_data: dict | None = None, sofp_sheet: str | None = None, c1c6_sheet: str | None = None, ga_is_data: dict | None = None, ecs_m2m_data: dict | None = None, ecs_treasury_data: dict | None = None, ecs_manual_payments_data: dict | None = None, ecs_ucl_adj_data: dict | None = None) -> tuple[bool, str]:
     """Save master data to Master_Data.xlsx"""
     try:
+        _emit_log(f"save_master_data: opening {MASTER_DATA_XLSX.resolve()} (exists={MASTER_DATA_XLSX.exists()})", important=True)
         wb = openpyxl.load_workbook(MASTER_DATA_XLSX)
 
         # Generate current timestamp
@@ -927,40 +928,21 @@ def save_master_data(sofp_data: dict | None, ia_data: dict | None, c1c6_data: di
                 ws[f"F{next_row}"] = ga_is_data.get("deferred_tax_3_5y", "")
                 ws[f"G{next_row}"] = ga_is_data.get("deferred_tax_over_5y", "")
 
-        # Save ECS M2M data (7 daily Net M2M Gain/Loss values) and Treasury Input values
-        if (ecs_m2m_data is not None or ecs_treasury_data is not None) and "NBD_WF_18_ECS" in wb.sheetnames:
-            ws = wb["NBD_WF_18_ECS"]
-            if ecs_m2m_data is not None:
-                has_m2m_values = any(ecs_m2m_data.get(f"day{i}") not in (None, "") for i in range(1, 8))
-                if has_m2m_values:
-                    next_row = ws.max_row + 1
-                    ws[f"A{next_row}"] = ecs_m2m_data.get("day1", "")
-                    ws[f"B{next_row}"] = ecs_m2m_data.get("day2", "")
-                    ws[f"C{next_row}"] = ecs_m2m_data.get("day3", "")
-                    ws[f"D{next_row}"] = ecs_m2m_data.get("day4", "")
-                    ws[f"E{next_row}"] = ecs_m2m_data.get("day5", "")
-                    ws[f"F{next_row}"] = ecs_m2m_data.get("day6", "")
-                    ws[f"G{next_row}"] = ecs_m2m_data.get("day7", "")
-            if ecs_treasury_data is not None:
-                _treasury_cols = {
-                    "com_paper_cap":     "H",
-                    "com_paper_int_pay": "I",
-                    "sec_loan_cap":      "J",
-                    "sec_loan_int_pay":  "K",
-                    "repo_cap":          "L",
-                    "repo_int_rec":      "M",
-                    "cost_of_inv":       "N",
-                    "int_rec":           "O",
-                    "m2m_gain":          "P",
-                }
-                has_treasury_values = any(ecs_treasury_data.get(k) not in (None, "") for k in _treasury_cols)
-                if has_treasury_values:
-                    # Write to the same last row (or a new row if no M2M was written)
-                    target_row = ws.max_row if ws.max_row > 1 else ws.max_row + 1
-                    for field, col in _treasury_cols.items():
-                        ws[f"{col}{target_row}"] = ecs_treasury_data.get(field, "")
-
-        # Save ECS Manual Payments data (cols Q-Y)
+        # Save ECS M2M data, Treasury Input, and Manual Payments values.
+        # All three sections write to the SAME new row (one row per submission)
+        # so a single form save always produces exactly one row instead of
+        # fragmenting across rows — col AA records when that row was written.
+        _treasury_cols = {
+            "com_paper_cap":     "H",
+            "com_paper_int_pay": "I",
+            "sec_loan_cap":      "J",
+            "sec_loan_int_pay":  "K",
+            "repo_cap_ecs":      "L",
+            "repo_int_rec":      "M",
+            "cost_of_inv":       "N",
+            "int_rec":           "O",
+            "m2m_gain":          "P",
+        }
         _manual_payments_cols = {
             "current_week":      "Q",
             "cbsl":              "R",
@@ -971,23 +953,70 @@ def save_master_data(sofp_data: dict | None, ia_data: dict | None, c1c6_data: di
             "taxes":             "W",
             "dividend_payment":  "X",
             "sscl":              "Y",
+            "mt_loan_payment":   "Z",
         }
-        if ecs_manual_payments_data is not None and "NBD_WF_18_ECS" in wb.sheetnames:
-            has_values = any(ecs_manual_payments_data.get(k) not in (None, "") for k in _manual_payments_cols)
-            if has_values:
-                ws = wb["NBD_WF_18_ECS"]
+        # Adjustments from cashflows (+/-) — Movement in Unutilized Liquid Assets
+        # (NBD-WF-18-ECS sheet, code 18.9.1.2.0.0, cols D-G). AA is already used
+        # for the row timestamp, so these start at AB.
+        _ucl_adj_cols = {
+            "ecs_ucl_adj_0_7":   "AB",
+            "ecs_ucl_adj_8_14":  "AC",
+            "ecs_ucl_adj_15_21": "AD",
+            "ecs_ucl_adj_22_28": "AE",
+        }
+        if (ecs_m2m_data is not None or ecs_treasury_data is not None or ecs_manual_payments_data is not None
+                or ecs_ucl_adj_data is not None) \
+                and "NBD_WF_18_ECS" in wb.sheetnames:
+            ws = wb["NBD_WF_18_ECS"]
+
+            has_m2m_values = ecs_m2m_data is not None and any(
+                ecs_m2m_data.get(f"day{i}") not in (None, "") for i in range(1, 8))
+            has_treasury_values = ecs_treasury_data is not None and any(
+                ecs_treasury_data.get(k) not in (None, "") for k in _treasury_cols)
+            has_manual_values = ecs_manual_payments_data is not None and any(
+                ecs_manual_payments_data.get(k) not in (None, "") for k in _manual_payments_cols)
+            has_ucl_adj_values = ecs_ucl_adj_data is not None and any(
+                ecs_ucl_adj_data.get(k) not in (None, "") for k in _ucl_adj_cols)
+
+            _emit_log(f"save_master_data: has_m2m_values={has_m2m_values}, has_treasury_values={has_treasury_values}, has_manual_values={has_manual_values}, has_ucl_adj_values={has_ucl_adj_values}, ecs_manual_payments_data={ecs_manual_payments_data}", important=True)
+
+            if has_m2m_values or has_treasury_values or has_manual_values or has_ucl_adj_values:
                 next_row = ws.max_row + 1
-                for field, col in _manual_payments_cols.items():
-                    ws[f"{col}{next_row}"] = ecs_manual_payments_data.get(field, "")
+
+                if has_m2m_values:
+                    ws[f"A{next_row}"] = ecs_m2m_data.get("day1", "")
+                    ws[f"B{next_row}"] = ecs_m2m_data.get("day2", "")
+                    ws[f"C{next_row}"] = ecs_m2m_data.get("day3", "")
+                    ws[f"D{next_row}"] = ecs_m2m_data.get("day4", "")
+                    ws[f"E{next_row}"] = ecs_m2m_data.get("day5", "")
+                    ws[f"F{next_row}"] = ecs_m2m_data.get("day6", "")
+                    ws[f"G{next_row}"] = ecs_m2m_data.get("day7", "")
+
+                if has_treasury_values:
+                    for field, col in _treasury_cols.items():
+                        ws[f"{col}{next_row}"] = ecs_treasury_data.get(field, "")
+
+                if has_manual_values:
+                    for field, col in _manual_payments_cols.items():
+                        ws[f"{col}{next_row}"] = ecs_manual_payments_data.get(field, "")
+
+                if has_ucl_adj_values:
+                    for field, col in _ucl_adj_cols.items():
+                        ws[f"{col}{next_row}"] = ecs_ucl_adj_data.get(field, "")
+
+                ws[f"AA{next_row}"] = current_timestamp
+                _emit_log(f"save_master_data: wrote NBD_WF_18_ECS row {next_row} (M2M={has_m2m_values}, Treasury={has_treasury_values}, Manual={has_manual_values}, UCL Adj={has_ucl_adj_values}), timestamp={current_timestamp}", important=True)
 
         wb.save(MASTER_DATA_XLSX)
         wb.close()
+        _emit_log(f"save_master_data: saved successfully to {MASTER_DATA_XLSX.resolve()}", important=True)
         return True, "Master data saved successfully"
     except Exception as e:
+        _emit_log(f"save_master_data: EXCEPTION: {e}", important=True)
         return False, f"Failed to save master data: {e}"
 
 
-def get_latest_master_data() -> tuple[dict, dict, dict, dict, dict]:
+def get_latest_master_data() -> tuple[dict, dict, dict, dict, dict, dict, dict, dict]:
     """Get latest master data from Excel sheets for pre-filling form"""
     sofp_data = {"timestamp": "", "bank_loans": "", "securitization_loans": "", "foreign_funding": "",
                  "interest_on_lease_liabilities": "", "depreciation_of_right_of_use_assets": "",
@@ -999,7 +1028,13 @@ def get_latest_master_data() -> tuple[dict, dict, dict, dict, dict]:
     ga_is_data = {"timestamp": "", "deferred_tax_0_3m": "", "deferred_tax_3_6m": "", "deferred_tax_6_12m": "",
                   "deferred_tax_1_3y": "", "deferred_tax_3_5y": "", "deferred_tax_over_5y": ""}
     ecs_treasury_data = {"com_paper_cap": "", "com_paper_int_pay": "", "sec_loan_cap": "", "sec_loan_int_pay": "",
-                         "repo_cap": "", "repo_int_rec": "", "cost_of_inv": "", "int_rec": "", "m2m_gain": ""}
+                         "repo_cap_ecs": "", "repo_int_rec": "", "cost_of_inv": "", "int_rec": "", "m2m_gain": ""}
+    ecs_ucl_adj_data = {"ecs_ucl_adj_0_7": "", "ecs_ucl_adj_8_14": "", "ecs_ucl_adj_15_21": "", "ecs_ucl_adj_22_28": ""}
+    ecs_m2m_data = {f"ecs_m2m_day{i}": "" for i in range(1, 8)}
+    ecs_manual_payments_data = {"ecs_mp_current_week": "", "ecs_mp_cbsl": "", "ecs_mp_epf_etf_ot": "",
+                                "ecs_mp_outsource_staff": "", "ecs_mp_apiit": "", "ecs_mp_fd": "",
+                                "ecs_mp_taxes": "", "ecs_mp_dividend_payment": "", "ecs_mp_sscl": "",
+                                "ecs_mp_mt_loan_payment": ""}
 
     try:
         wb = openpyxl.load_workbook(MASTER_DATA_XLSX)
@@ -1094,11 +1129,33 @@ def get_latest_master_data() -> tuple[dict, dict, dict, dict, dict]:
                     "com_paper_int_pay": str(ws[f"I{last_row}"].value or ""),
                     "sec_loan_cap":      str(ws[f"J{last_row}"].value or ""),
                     "sec_loan_int_pay":  str(ws[f"K{last_row}"].value or ""),
-                    "repo_cap":          str(ws[f"L{last_row}"].value or ""),
+                    "repo_cap_ecs":      str(ws[f"L{last_row}"].value or ""),
                     "repo_int_rec":      str(ws[f"M{last_row}"].value or ""),
                     "cost_of_inv":       str(ws[f"N{last_row}"].value or ""),
                     "int_rec":           str(ws[f"O{last_row}"].value or ""),
                     "m2m_gain":          str(ws[f"P{last_row}"].value or ""),
+                }
+                ecs_ucl_adj_data = {
+                    "ecs_ucl_adj_0_7":   str(ws[f"AB{last_row}"].value or ""),
+                    "ecs_ucl_adj_8_14":  str(ws[f"AC{last_row}"].value or ""),
+                    "ecs_ucl_adj_15_21": str(ws[f"AD{last_row}"].value or ""),
+                    "ecs_ucl_adj_22_28": str(ws[f"AE{last_row}"].value or ""),
+                }
+                ecs_m2m_data = {
+                    f"ecs_m2m_day{i}": str(ws[f"{col}{last_row}"].value or "")
+                    for i, col in enumerate("ABCDEFG", start=1)
+                }
+                ecs_manual_payments_data = {
+                    "ecs_mp_current_week":     str(ws[f"Q{last_row}"].value or ""),
+                    "ecs_mp_cbsl":             str(ws[f"R{last_row}"].value or ""),
+                    "ecs_mp_epf_etf_ot":       str(ws[f"S{last_row}"].value or ""),
+                    "ecs_mp_outsource_staff":  str(ws[f"T{last_row}"].value or ""),
+                    "ecs_mp_apiit":            str(ws[f"U{last_row}"].value or ""),
+                    "ecs_mp_fd":               str(ws[f"V{last_row}"].value or ""),
+                    "ecs_mp_taxes":            str(ws[f"W{last_row}"].value or ""),
+                    "ecs_mp_dividend_payment": str(ws[f"X{last_row}"].value or ""),
+                    "ecs_mp_sscl":             str(ws[f"Y{last_row}"].value or ""),
+                    "ecs_mp_mt_loan_payment":  str(ws[f"Z{last_row}"].value or ""),
                 }
 
         wb.close()
@@ -1106,7 +1163,7 @@ def get_latest_master_data() -> tuple[dict, dict, dict, dict, dict]:
         # Return empty data if file doesn't exist or can't be read
         pass
 
-    return sofp_data, ia_data, c1c6_data, ga_is_data, ecs_treasury_data
+    return sofp_data, ia_data, c1c6_data, ga_is_data, ecs_treasury_data, ecs_ucl_adj_data, ecs_m2m_data, ecs_manual_payments_data
 
 
 def get_la_treasury_amounts() -> dict:
@@ -1167,7 +1224,17 @@ def get_latest_uploaded_files() -> dict:
         "Information Request from IT",
         "Client Available Limits 1",
         "Client Available Limits 2",
-        "Client Available Limits 3"
+        "Client Available Limits 3",
+        "MT Client Codes",
+        "1611",
+        "2128",
+        "Assetline Related Party",
+        "CadreSUM",
+        "Insurance Premium",
+        "Litigation Report",
+        "Mediation Detail Report",
+        "Moratorium Contracts Details",
+        "Yard Final",
     ]
 
     for category in categories:
@@ -1574,17 +1641,18 @@ def validate_deposit_liability_file_for_ecs(report_ids_with_dates: dict) -> tupl
         expected_date_str = selected_date.strftime("%d-%m-%Y")
         expected_filename = f"NBD-WF-18-DM Deposit Liability ({expected_date_str}).xlsx"
 
-        # Check ECS outputs folder for the DM file
-        ecs_outputs_dir = OUTPUTS_DIR / "NBD_WF_18_ECS"
-        search_folder = None
+        # Check the actual NBD-WF-18-DM outputs folder for a date folder matching the
+        # selected date (there can be multiple runs for the same date, e.g. "07-12-2025(7)";
+        # find_date_folder_with_variations picks the highest-numbered / latest one).
+        dm_outputs_dir = OUTPUTS_DIR / "NBD-WF-18-DM"
 
-        if ecs_outputs_dir.exists():
-            _, date_folder = find_latest_completed_date(ecs_outputs_dir)
-            if date_folder and date_folder.exists():
-                search_folder = date_folder
+        if not dm_outputs_dir.exists():
+            return False, f"NBD-WF-18-DM outputs folder not found. Please run the DM report for {expected_date_str} first to generate: {expected_filename}"
+
+        search_folder = find_date_folder_with_variations(dm_outputs_dir, expected_date_str)
 
         if search_folder is None:
-            return False, f"No ECS outputs folder found. Please run the DM report for {expected_date_str} first to generate: {expected_filename}"
+            return False, f"No NBD-WF-18-DM output found for {expected_date_str}. Please run the DM report for {expected_date_str} first to generate: {expected_filename}"
 
         dm_files = list(search_folder.glob("NBD-WF-18-DM Deposit Liability*.xlsx"))
 
@@ -1640,30 +1708,20 @@ def validate_deposit_liability_file_for_la(report_ids_with_dates: dict) -> tuple
         # Expected date string format in filename: dd-mm-yyyy
         expected_date_str = selected_date.strftime("%d-%m-%Y")
 
-        # Check LA working folder for NBD-WF-18-DM file
-        # If working folder is empty, check outputs folder instead (will be copied during run)
-        la_working_dir = WORKING_DIR / "NBD_WF_15_LA"
-        la_outputs_dir = OUTPUTS_DIR / "NBD_WF_15_LA"
+        # Check the actual NBD-WF-18-DM outputs folder for a date folder matching the
+        # selected date (there can be multiple runs for the same date, e.g. "07-12-2025(7)";
+        # find_date_folder_with_variations picks the highest-numbered / latest one).
+        dm_outputs_dir = OUTPUTS_DIR / "NBD-WF-18-DM"
 
-        working_folder = None
+        if not dm_outputs_dir.exists():
+            return False, "NBD-WF-18-DM outputs folder not found. Please ensure NBD-WF-18-DM has been run at least once."
 
-        # First try working folder
-        if la_working_dir.exists():
-            date_folders = [p for p in la_working_dir.iterdir() if p.is_dir()]
-            if date_folders:
-                working_folder = date_folders[0]
-
-        # If working folder is empty, check outputs folder
-        if working_folder is None:
-            _emit_log("LA working folder is empty, checking outputs folder for validation...", important=True)
-            if la_outputs_dir.exists():
-                last_date, date_folder = find_latest_completed_date(la_outputs_dir)
-                if date_folder and date_folder.exists():
-                    working_folder = date_folder
-                    _emit_log(f"Using LA outputs folder for validation: {date_folder.name}", important=True)
+        working_folder = find_date_folder_with_variations(dm_outputs_dir, expected_date_str)
 
         if working_folder is None:
-            return False, "No date folder found in LA working or outputs directory. Please ensure LA has been run at least once."
+            return False, f"No NBD-WF-18-DM output found for {expected_date_str}. Please run NBD-WF-18-DM automation for {expected_date_str} first."
+
+        _emit_log(f"Using NBD-WF-18-DM outputs folder for validation: {working_folder.name}", important=True)
 
         # Find NBD-WF-18-DM files
         dm_files = list(working_folder.glob("NBD-WF-18-DM*.xlsx"))
@@ -2180,6 +2238,69 @@ def copy_uploaded_files_to_la_outputs(uploaded_files: dict, months: dict, dates:
         _emit_log(f"Failed to copy uploaded files to LA outputs: {e}", important=True)
 
 
+def _find_summary_working_input() -> Path | None:
+    """Return the Input subfolder inside the single date folder in working/Summary, or None."""
+    summary_base = WORKING_DIR / "Summary"
+    if summary_base.is_dir():
+        subfolders = [d for d in summary_base.iterdir() if d.is_dir()]
+        if subfolders:
+            return subfolders[0] / "Input"
+    return None
+
+
+def copy_summary_files_to_working(summary_uploads: dict) -> None:
+    """Copy uploaded Summary master-data files to working/Summary/<date>/Input with cleanup."""
+    input_dir = _find_summary_working_input()
+    if not input_dir:
+        _emit_log("working/Summary date folder not found — skipping Summary file copy", important=True)
+        return
+    input_dir.mkdir(parents=True, exist_ok=True)
+
+    cleanup_patterns = {
+        "1611":                      "1611-*.xlsx",
+        "2128":                      "2128-*.xlsx",
+        "CadreSUM":                  "Cadre as at *.xlsx",
+        "Insurance Premium":         "Insurance Premium *.xlsx",
+        "Litigation Report":         "Litigation Report - *.xlsx",
+        "Mediation Detail Report":   "Mediation Detail Report - *.xlsx",
+        "Moratorium Contracts Details": "Moratorium Contracts details-*.xlsx",
+        "Yard Final":                "Yard Final - *.xlsx",
+    }
+    fixed_names = {
+        "Assetline Related Party": "Assetline Finance Limited - Related Party Register_All.xlsb",
+    }
+
+    for category, file_path_str in summary_uploads.items():
+        file_path = Path(file_path_str)
+        if not file_path.exists():
+            continue
+
+        new_name = file_path.name
+
+        # Remove old file(s)
+        if category in fixed_names:
+            old = input_dir / fixed_names[category]
+            if old.exists():
+                try:
+                    old.unlink()
+                    _emit_log(f"Removed old {category} file: {old.name}", important=True)
+                except Exception as e:
+                    _emit_log(f"Failed to remove {old.name}: {e}", important=True)
+        elif category in cleanup_patterns:
+            import glob as _glob
+            for old in input_dir.glob(cleanup_patterns[category]):
+                if old.name != new_name:
+                    try:
+                        old.unlink()
+                        _emit_log(f"Removed old {category} file: {old.name}", important=True)
+                    except Exception as e:
+                        _emit_log(f"Failed to remove {old.name}: {e}", important=True)
+
+        dest = input_dir / new_name
+        shutil.copy2(file_path, dest)
+        _emit_log(f"Copied {category} → {dest}", important=True)
+
+
 def copy_uploaded_files_to_qf_outputs(uploaded_files: dict, months: dict, years: dict, dates: dict) -> None:
     """Copy uploaded QF files to QF outputs folder with specific subfolder routing"""
     try:
@@ -2517,6 +2638,39 @@ def auto_download_files() -> None:
     # DO NOT clean up working directories here - files are still needed for zip
     # Cleanup will happen later after download is complete or on next run
     _emit_log("Zip file created successfully. Working directories will be cleaned up on next run.", important=True)
+
+
+def _write_download_manifest(output_path: Path, queued_files: list) -> None:
+    """
+    Record, inside the archived outputs folder, which files were queued for
+    download for this run — matched by filename against what's now sitting
+    in output_path (the file may have already been renamed/moved between
+    when it was queued and when this is called; this only records names
+    that actually made it there).
+
+    Lets the standalone "download last run" button (download_report())
+    reuse the exact same file-selection each report's own post-processing
+    already computed, instead of falling back to grabbing every file in
+    the folder.
+
+    Call this BEFORE auto_download_files(), which replaces _download_files
+    with a single zip path when there's more than one file — after that,
+    the original per-file names are gone.
+    """
+    try:
+        if output_path is None or not queued_files:
+            return
+        names = []
+        for f in queued_files:
+            candidate = output_path / f.name
+            if candidate.is_file():
+                names.append(f.name)
+        if not names:
+            return
+        manifest_path = output_path / ".download_manifest.json"
+        manifest_path.write_text(json.dumps({"files": names}), encoding="utf-8")
+    except Exception:
+        pass  # best-effort only — download_report() falls back to rglob("*") if this is missing
 
 
 def copy_folder_from_outputs_to_working(source_report_id: str, dest_report_id: str) -> tuple[bool, str, Path | None]:
@@ -3782,7 +3936,6 @@ def run_selected_reports(report_ids_with_dates: dict) -> tuple[bool, str]:
 
                         # Remove existing working folder if it exists
                         if dm_working_dir.exists():
-                            import shutil
                             shutil.rmtree(dm_working_dir)
                             _emit_log("Removed existing DM working folder", important=True)
 
@@ -3819,7 +3972,6 @@ def run_selected_reports(report_ids_with_dates: dict) -> tuple[bool, str]:
 
             # Always clear working folder and copy fresh from outputs
             try:
-                import shutil
                 if la_working_dir.exists():
                     shutil.rmtree(la_working_dir)
                     _emit_log("Cleared existing LA working folder", important=True)
@@ -3832,6 +3984,29 @@ def run_selected_reports(report_ids_with_dates: dict) -> tuple[bool, str]:
                         target_working_folder = la_working_dir / date_folder.name
                         shutil.copytree(date_folder, target_working_folder)
                         _emit_log(f"Copied latest LA date folder from outputs to working: {date_folder.name}", important=True)
+
+                        # A month-end completion moves that month's week files into an
+                        # "AFL <Mon>-<Year> Expand" folder instead of deleting them (see the
+                        # LA post-processing step above), so a fresh copy of the latest
+                        # completed date can end up with no top-level Week_*.xlsx file - only
+                        # the month-end file and the Expand folder. Restore the last recorded
+                        # week file as this new run's carry-forward seed. Copied (not moved)
+                        # so the archived copy inside Expand is never touched.
+                        if not list(target_working_folder.glob("AFL Liquidity - Week_*.xlsx")):
+                            expand_dirs = list(target_working_folder.glob("AFL * Expand"))
+                            if expand_dirs:
+                                expand_week_files = list(expand_dirs[0].glob("AFL Liquidity - Week_*.xlsx"))
+                                if expand_week_files:
+                                    last_week_file = max(
+                                        expand_week_files,
+                                        key=lambda f: int(re.search(r'Week_(\d+)', f.name).group(1))
+                                    )
+                                    shutil.copy2(last_week_file, target_working_folder / last_week_file.name)
+                                    _emit_log(
+                                        f"LA: restored carry-forward seed from '{expand_dirs[0].name}': "
+                                        f"{last_week_file.name}",
+                                        important=True
+                                    )
                     else:
                         _emit_log("No completed LA date folder found in outputs", important=True)
                         return False, "No LA date folder found in outputs. Please ensure LA outputs folder has completed runs."
@@ -3869,7 +4044,6 @@ def run_selected_reports(report_ids_with_dates: dict) -> tuple[bool, str]:
                                         _emit_log(f"Could not remove {existing.name}: {e}", important=True)
 
                                 # Copy the file
-                                import shutil
                                 dest_path = working_date_folder / latest_file.name
                                 shutil.copy2(latest_file, dest_path)
                                 _emit_log(f"✓ Copied Daily Bank Balances to LA working: {latest_file.name}", important=True)
@@ -3896,7 +4070,6 @@ def run_selected_reports(report_ids_with_dates: dict) -> tuple[bool, str]:
 
                         # Remove existing working folder if it exists
                         if mf04_working_dir.exists():
-                            import shutil
                             shutil.rmtree(mf04_working_dir)
                             _emit_log("Removed existing MF-04-LA working folder", important=True)
 
@@ -4204,6 +4377,7 @@ def run_selected_reports(report_ids_with_dates: dict) -> tuple[bool, str]:
         if ok and output_path:
             _emit_log(f"Saved C1–C6: {msg}", important=True)
             _last_output_dirs["NBD-MF-20-C1"] = output_path
+            _write_download_manifest(output_path, _download_files)
     elif is_annual_c_flow:
         # Rename the Annual C2–C6 Excel file in working to GUI month/year
         try:
@@ -4243,6 +4417,7 @@ def run_selected_reports(report_ids_with_dates: dict) -> tuple[bool, str]:
         if ok and output_path:
             _emit_log(f"Saved Annual C2–C6: {msg}", important=True)
             _last_output_dirs["NBD-AF-20-C2"] = output_path
+            _write_download_manifest(output_path, _download_files)
     elif is_ga_is_set8:
         # Post-processing for GA & IS: rename files, queue downloads, archive working folder
         try:
@@ -4331,6 +4506,7 @@ def run_selected_reports(report_ids_with_dates: dict) -> tuple[bool, str]:
                     
                     _download_files = updated_download_files
                     _emit_log(f"Updated download files after move: {len(_download_files)} files", important=True)
+                    _write_download_manifest(output_path, _download_files)
 
                 # Prepare downloads
                 _set_status(stage="saving", message="Preparing files for download")
@@ -4417,6 +4593,7 @@ def run_selected_reports(report_ids_with_dates: dict) -> tuple[bool, str]:
 
                     _download_files = updated_download_files
                     _emit_log(f"Updated download files after move: {len(_download_files)} files", important=True)
+                    _write_download_manifest(output_path, _download_files)
 
                 # Prepare downloads
                 _set_status(stage="saving", message="Preparing files for download")
@@ -4528,6 +4705,7 @@ def run_selected_reports(report_ids_with_dates: dict) -> tuple[bool, str]:
 
                     _download_files = updated_download_files
                     _emit_log(f"Updated download files after move: {len(_download_files)} files", important=True)
+                    _write_download_manifest(output_path, _download_files)
 
                 # Prepare downloads
                 _set_status(stage="saving", message="Preparing files for download")
@@ -4611,6 +4789,7 @@ def run_selected_reports(report_ids_with_dates: dict) -> tuple[bool, str]:
 
                     _download_files = updated_download_files
                     _emit_log(f"Updated download files after move: {len(_download_files)} files", important=True)
+                    _write_download_manifest(output_path, _download_files)
             else:
                 _emit_log("Unexpected working folder structure for C4; skipping post-processing", important=True)
         except Exception as e:
@@ -4710,6 +4889,15 @@ def run_selected_reports(report_ids_with_dates: dict) -> tuple[bool, str]:
                 if ok and output_path:
                     _emit_log(f"Saved DM: {msg}", important=True)
                     _last_output_dirs["NBD-WF-18-DM"] = output_path
+
+                    # Remove any *_Report.xlsx files copied into the DM output folder —
+                    # these are raw TB downloads and should not be kept in outputs
+                    for _tb_file in output_path.glob("*_Report.xlsx"):
+                        try:
+                            _tb_file.unlink()
+                            _emit_log(f"Removed TB download from DM outputs: {_tb_file.name}", important=True)
+                        except Exception as _e:
+                            _emit_log(f"Could not remove {_tb_file.name} from DM outputs: {_e}", important=True)
                     
                     # Update file paths in _download_files to point to the new output location
                     updated_download_files = []
@@ -4768,6 +4956,8 @@ def run_selected_reports(report_ids_with_dates: dict) -> tuple[bool, str]:
                         _emit_log("ECS latest completed date folder not found; skipping ECS copy", important=True)
                 except Exception as e:
                     _emit_log(f"ECS Deposit Liability copy failed (continuing): {e}", important=True)
+
+                _write_download_manifest(output_path, _download_files)
 
                 # Prepare downloads
                 _set_status(stage="saving", message="Preparing files for download")
@@ -4832,9 +5022,23 @@ def run_selected_reports(report_ids_with_dates: dict) -> tuple[bool, str]:
                     _download_files.append(src)
                     _emit_log(f"Added AFL file to download queue: {src.name}", important=True)
 
-                    # Remove all other AFL files, keep only the latest one
-                    for old_afl in date_folder.glob("AFL Liquidity - Week_*.xlsx"):
-                        if old_afl != src:
+                    # Move all other week files into an "Expand" archive folder instead of
+                    # deleting them - on month-end this is the only remaining record of the
+                    # month's individual weeks, and it also becomes the seed the next new
+                    # month's run restores its carry-forward file from (see is_la_flow setup
+                    # and NBD_WF_15_LA.py/NBD_MF_04_LA.py's find_latest_afl_file_across_all_folders).
+                    other_week_files = [f for f in date_folder.glob("AFL Liquidity - Week_*.xlsx") if f != src]
+                    if _la_month_end and other_week_files:
+                        expand_dir = date_folder / f"AFL {dt.strftime('%b')}-{dt.year} Expand"
+                        expand_dir.mkdir(exist_ok=True)
+                        for old_afl in other_week_files:
+                            try:
+                                old_afl.rename(expand_dir / old_afl.name)
+                                _emit_log(f"Moved old AFL file into {expand_dir.name}: {old_afl.name}", important=True)
+                            except Exception as e:
+                                _emit_log(f"Failed to move old AFL file {old_afl.name} into {expand_dir.name}: {e}", important=True)
+                    else:
+                        for old_afl in other_week_files:
                             try:
                                 old_afl.unlink()
                                 _emit_log(f"Removed old AFL file: {old_afl.name}", important=True)
@@ -4910,6 +5114,7 @@ def run_selected_reports(report_ids_with_dates: dict) -> tuple[bool, str]:
 
                     _download_files = updated_download_files
                     _emit_log(f"Updated download files after move: {len(_download_files)} files", important=True)
+                    _write_download_manifest(output_path, _download_files)
 
                 # Prepare downloads
                 _set_status(stage="saving", message="Preparing files for download")
@@ -5131,6 +5336,19 @@ def run_selected_reports(report_ids_with_dates: dict) -> tuple[bool, str]:
                         except Exception as e:
                             _emit_log(f"Cashflow Movement export failed: {e}", important=True)
 
+                # Record which of these actually made it into the outputs folder (the
+                # base xlsm via save_folder_to_outputs, Tax Payments/Cashflow Movement via
+                # their own explicit copy2 above — Types_of_Receipt is never copied to
+                # outputs, so it won't appear in the manifest, matching reality)
+                if output_path:
+                    _write_download_manifest(
+                        output_path,
+                        list(_download_files) + [
+                            p for p in [types_of_receipt_path, tax_payments_export_path, cashflow_movement_export_path]
+                            if p and p.exists()
+                        ],
+                    )
+
                 # Zip ECS xlsm + Types_of_Receipt.xlsx + Tax Payments + Cashflow Movement together
                 zip_extras = [p for p in [types_of_receipt_path, tax_payments_export_path, cashflow_movement_export_path] if p and p.exists()]
                 if zip_extras:
@@ -5217,6 +5435,7 @@ def run_selected_reports(report_ids_with_dates: dict) -> tuple[bool, str]:
                 if ok and output_path:
                     _emit_log(f"Saved MF-04-LA: {msg}", important=True)
                     _last_output_dirs["NBD-MF-04-LA"] = output_path
+                    _write_download_manifest(output_path, _download_files)
 
                 # Prepare downloads
                 _set_status(stage="saving", message="Preparing MF-04-LA files for download")
@@ -5335,6 +5554,7 @@ def run_selected_reports(report_ids_with_dates: dict) -> tuple[bool, str]:
                         _emit_log(f"Saved IA/C1-C2 working folder to IA outputs: {msg}", important=True)
                         _last_output_dirs["NBD-MF-23-IA"] = output_path
                         _last_output_dirs["NBD-MF-23-C1-C2"] = output_path
+                        _write_download_manifest(output_path, _download_files)
                     else:
                         _emit_log(f"Warning: Could not save working folder to outputs: {msg}", important=True)
 
@@ -5385,6 +5605,8 @@ def run_selected_reports(report_ids_with_dates: dict) -> tuple[bool, str]:
                             _emit_log(f"Added IFRS code file for download: {ifrs_path.name}", important=True)
                         else:
                             _emit_log("IFRS code file not found in SOFP working directory", important=True)
+
+                        _write_download_manifest(output_path, _download_files)
     
     if _stop_requested:
         return False, "Process stopped by user"
@@ -5452,6 +5674,20 @@ def run_selected_reports(report_ids_with_dates: dict) -> tuple[bool, str]:
                             _emit_log(f"Added Missing_Records file to download: {missing_file.name}", important=True)
                         else:
                             _emit_log(f"Missing_Records file not found. Pattern: {missing_pattern}", important=True)
+
+                        # Archive the finished QF working folder to outputs (one shared folder for all QF reports)
+                        if report_ids_with_dates:
+                            _set_status(stage="saving", message="Saving QF reports to outputs")
+                            qf_gui_date_str = list(report_ids_with_dates.values())[0][0]
+                            ok, msg, output_path = save_folder_to_outputs("NBD-QF-23-C3", qf_gui_date_str)
+                            if ok and output_path:
+                                _emit_log(f"Saved QF reports: {msg}", important=True)
+                                for qf_id in qf_reports_group:
+                                    if qf_id in report_ids_with_dates:
+                                        _last_output_dirs[qf_id] = output_path
+                                _write_download_manifest(output_path, _download_files)
+                            else:
+                                _emit_log(f"Warning: Could not save QF working folder to outputs: {msg}", important=True)
                     else:
                         _emit_log(f"Expected exactly one date folder in {qf_working_dir}, found {len(date_folders)}", important=True)
 
@@ -5777,6 +6013,15 @@ def ensure_directories_exist() -> None:
     (MASTER_INPUTS_DIR / "SasiaNet").mkdir(parents=True, exist_ok=True)
     (MASTER_INPUTS_DIR / "Tax Payments").mkdir(parents=True, exist_ok=True)
     (MASTER_INPUTS_DIR / "Cashflow Movement").mkdir(parents=True, exist_ok=True)
+    (MASTER_INPUTS_DIR / "1611").mkdir(parents=True, exist_ok=True)
+    (MASTER_INPUTS_DIR / "2128").mkdir(parents=True, exist_ok=True)
+    (MASTER_INPUTS_DIR / "Assetline Related Party").mkdir(parents=True, exist_ok=True)
+    (MASTER_INPUTS_DIR / "CadreSUM").mkdir(parents=True, exist_ok=True)
+    (MASTER_INPUTS_DIR / "Insurance Premium").mkdir(parents=True, exist_ok=True)
+    (MASTER_INPUTS_DIR / "Litigation Report").mkdir(parents=True, exist_ok=True)
+    (MASTER_INPUTS_DIR / "Mediation Detail Report").mkdir(parents=True, exist_ok=True)
+    (MASTER_INPUTS_DIR / "Moratorium Contracts Details").mkdir(parents=True, exist_ok=True)
+    (MASTER_INPUTS_DIR / "Yard Final").mkdir(parents=True, exist_ok=True)
 
     # Ensure Master_Data.xlsx exists with required sheets
     if not MASTER_DATA_XLSX.exists():
@@ -6101,7 +6346,7 @@ def master_data_form():
     """Display master data input form with latest data pre-filled."""
     _emit_log(f"*** MASTER DATA FORM ROUTE REACHED ***", important=True)
     from flask import session
-    sofp_data, ia_data, c1c6_data, ga_is_data, ecs_treasury_data = get_latest_master_data()
+    sofp_data, ia_data, c1c6_data, ga_is_data, ecs_treasury_data, ecs_ucl_adj_data, ecs_m2m_data, ecs_manual_payments_data = get_latest_master_data()
     uploaded_files = get_latest_uploaded_files()
     la_treasury_amounts = get_la_treasury_amounts()
     report_ids_with_dates = session.get('report_ids_with_dates', {})
@@ -6153,6 +6398,19 @@ def master_data_form():
 
     # Merge ECS treasury data into form_data for pre-filling
     for key, value in ecs_treasury_data.items():
+        if key not in form_data:
+            form_data[key] = value
+
+    # Merge ECS unutilized-credit-lines cashflow adjustment data into form_data for pre-filling
+    for key, value in ecs_ucl_adj_data.items():
+        if key not in form_data:
+            form_data[key] = value
+
+    # Merge ECS M2M and Manual Payments data into form_data for pre-filling
+    for key, value in ecs_m2m_data.items():
+        if key not in form_data:
+            form_data[key] = value
+    for key, value in ecs_manual_payments_data.items():
         if key not in form_data:
             form_data[key] = value
 
@@ -7417,10 +7675,11 @@ def submit_master_data():
                     c1c2_months[month_field] = month
                     c1c2_years[year_field] = year
 
-    # Collect ECS M2M, treasury and manual payments data
+    # Collect ECS M2M, treasury, manual payments, and UCL adjustment data
     ecs_m2m_data = None
     ecs_treasury_data = None
     ecs_manual_payments_data = None
+    ecs_ucl_adj_data = None
     if show_ecs:
         def _parse_m2m(val):
             try:
@@ -7434,7 +7693,7 @@ def submit_master_data():
             "com_paper_int_pay": request.form.get("com_paper_int_pay", ""),
             "sec_loan_cap": request.form.get("sec_loan_cap", ""),
             "sec_loan_int_pay": request.form.get("sec_loan_int_pay", ""),
-            "repo_cap": request.form.get("repo_cap", ""),
+            "repo_cap_ecs": request.form.get("repo_cap_ecs", ""),
             "repo_int_rec": request.form.get("repo_int_rec", ""),
             "cost_of_inv": request.form.get("cost_of_inv", ""),
             "int_rec": request.form.get("int_rec", ""),
@@ -7457,10 +7716,18 @@ def submit_master_data():
             "taxes":            _parse_num(request.form.get("ecs_mp_taxes", "")),
             "dividend_payment": _parse_num(request.form.get("ecs_mp_dividend_payment", "")),
             "sscl":             _parse_num(request.form.get("ecs_mp_sscl", "")),
+            "mt_loan_payment":  _parse_num(request.form.get("ecs_mp_mt_loan_payment", "")),
+        }
+
+        ecs_ucl_adj_data = {
+            "ecs_ucl_adj_0_7":   _parse_num(request.form.get("ecs_ucl_adj_0_7", "")),
+            "ecs_ucl_adj_8_14":  _parse_num(request.form.get("ecs_ucl_adj_8_14", "")),
+            "ecs_ucl_adj_15_21": _parse_num(request.form.get("ecs_ucl_adj_15_21", "")),
+            "ecs_ucl_adj_22_28": _parse_num(request.form.get("ecs_ucl_adj_22_28", "")),
         }
 
     # Save to Master_Data.xlsx
-    success, msg = save_master_data(sofp_data, ia_data, c1c6_data, sofp_sheet=sofp_sheet, c1c6_sheet=c1c6_sheet, ga_is_data=ga_is_data, ecs_m2m_data=ecs_m2m_data, ecs_treasury_data=ecs_treasury_data, ecs_manual_payments_data=ecs_manual_payments_data)
+    success, msg = save_master_data(sofp_data, ia_data, c1c6_data, sofp_sheet=sofp_sheet, c1c6_sheet=c1c6_sheet, ga_is_data=ga_is_data, ecs_m2m_data=ecs_m2m_data, ecs_treasury_data=ecs_treasury_data, ecs_manual_payments_data=ecs_manual_payments_data, ecs_ucl_adj_data=ecs_ucl_adj_data)
     if not success:
         flash(f"Failed to save master data: {msg}", "error")
         return redirect(url_for("master_data_form"))
@@ -7853,10 +8120,206 @@ def submit_master_data():
                     qf_uploaded_files[f"Client Available Limits {i}"] = str(file_path)
                     _emit_log(f"Uploaded Client Available Limits file {i}: {filename}", important=True)
 
+        # 9. MT Client Codes (ICAM Code -> MT No.) - optional; the latest upload
+        # stays in Master Inputs and is reused by every run until replaced.
+        if "mt_client_codes_file" in request.files:
+            file = request.files["mt_client_codes_file"]
+            if file and file.filename:
+                category_dir = MASTER_INPUTS_DIR / "MT Client Codes"
+                category_dir.mkdir(parents=True, exist_ok=True)
+                for existing_file in list(category_dir.glob("*.xlsx")) + list(category_dir.glob("*.xls")):
+                    try:
+                        existing_file.unlink()
+                        _emit_log(f"Removed old MT Client Codes file: {existing_file.name}", important=True)
+                    except Exception as e:
+                        _emit_log(f"Failed to remove old file {existing_file.name}: {e}", important=True)
+                file_path = category_dir / "MT Client Codes.xlsx"
+                file.save(str(file_path))
+                _emit_log(f"Uploaded MT Client Codes file: {file.filename} -> {file_path.name}", important=True)
+
         # Copy all QF uploaded files to outputs folder
         if qf_uploaded_files:
             _emit_log(f"Copying {len(qf_uploaded_files)} QF files to outputs folder", important=True)
             copy_uploaded_files_to_qf_outputs(qf_uploaded_files, qf_months, qf_years, qf_dates)
+
+        # ── Summary master-data files ──────────────────────────────────────
+        summary_uploads = {}
+
+        # 1611
+        if "sum_1611_file" in request.files:
+            file = request.files["sum_1611_file"]
+            if file and file.filename:
+                month = request.form.get("sum_1611_month", "").strip()
+                year  = request.form.get("sum_1611_year", "").strip()
+                if not month or not year:
+                    flash("Month and Year are required when uploading 1611 file.", "error")
+                    return redirect(url_for("master_data_form", **request.form.to_dict()))
+                if not (year.isdigit() and len(year) == 4):
+                    flash("1611 Year must be a 4-digit number.", "error")
+                    return redirect(url_for("master_data_form", **request.form.to_dict()))
+                category_dir = MASTER_INPUTS_DIR / "1611"
+                category_dir.mkdir(parents=True, exist_ok=True)
+                filename = f"1611-{month} {year}.xlsx"
+                file_path = category_dir / filename
+                file.save(str(file_path))
+                summary_uploads["1611"] = str(file_path)
+                _emit_log(f"Uploaded 1611 file: {filename}", important=True)
+
+        # 2128
+        if "sum_2128_file" in request.files:
+            file = request.files["sum_2128_file"]
+            if file and file.filename:
+                month = request.form.get("sum_2128_month", "").strip()
+                year  = request.form.get("sum_2128_year", "").strip()
+                if not month or not year:
+                    flash("Month and Year are required when uploading 2128 file.", "error")
+                    return redirect(url_for("master_data_form", **request.form.to_dict()))
+                if not (year.isdigit() and len(year) == 4):
+                    flash("2128 Year must be a 4-digit number.", "error")
+                    return redirect(url_for("master_data_form", **request.form.to_dict()))
+                category_dir = MASTER_INPUTS_DIR / "2128"
+                category_dir.mkdir(parents=True, exist_ok=True)
+                filename = f"2128-{month} {year}.xlsx"
+                file_path = category_dir / filename
+                file.save(str(file_path))
+                summary_uploads["2128"] = str(file_path)
+                _emit_log(f"Uploaded 2128 file: {filename}", important=True)
+
+        # Assetline Related Party (no date fields)
+        if "sum_assetline_rp_file" in request.files:
+            file = request.files["sum_assetline_rp_file"]
+            if file and file.filename:
+                category_dir = MASTER_INPUTS_DIR / "Assetline Related Party"
+                category_dir.mkdir(parents=True, exist_ok=True)
+                filename = "Assetline Finance Limited - Related Party Register_All.xlsb"
+                file_path = category_dir / filename
+                if file_path.exists():
+                    file_path.unlink()
+                file.save(str(file_path))
+                summary_uploads["Assetline Related Party"] = str(file_path)
+                _emit_log(f"Uploaded Assetline Related Party file: {filename}", important=True)
+
+        # Cadre (date picker)
+        if "sum_cadre_file" in request.files:
+            file = request.files["sum_cadre_file"]
+            if file and file.filename:
+                cadre_date = request.form.get("sum_cadre_date", "").strip()
+                if not cadre_date:
+                    flash("Date is required when uploading Cadre file.", "error")
+                    return redirect(url_for("master_data_form", **request.form.to_dict()))
+                category_dir = MASTER_INPUTS_DIR / "CadreSUM"
+                category_dir.mkdir(parents=True, exist_ok=True)
+                date_obj = datetime.strptime(cadre_date, "%Y-%m-%d")
+                date_display = date_obj.strftime("%d %m %Y")
+                filename = f"Cadre as at {date_display}.xlsx"
+                file_path = category_dir / filename
+                file.save(str(file_path))
+                summary_uploads["CadreSUM"] = str(file_path)
+                _emit_log(f"Uploaded CadreSUM file: {filename}", important=True)
+
+        # Insurance Premium
+        if "sum_insurance_file" in request.files:
+            file = request.files["sum_insurance_file"]
+            if file and file.filename:
+                month = request.form.get("sum_insurance_month", "").strip()
+                year  = request.form.get("sum_insurance_year", "").strip()
+                if not month or not year:
+                    flash("Month and Year are required when uploading Insurance Premium file.", "error")
+                    return redirect(url_for("master_data_form", **request.form.to_dict()))
+                if not (year.isdigit() and len(year) == 4):
+                    flash("Insurance Premium Year must be a 4-digit number.", "error")
+                    return redirect(url_for("master_data_form", **request.form.to_dict()))
+                year_short = year[2:]
+                category_dir = MASTER_INPUTS_DIR / "Insurance Premium"
+                category_dir.mkdir(parents=True, exist_ok=True)
+                filename = f"Insurance Premium {month} -{year_short}.xlsx"
+                file_path = category_dir / filename
+                file.save(str(file_path))
+                summary_uploads["Insurance Premium"] = str(file_path)
+                _emit_log(f"Uploaded Insurance Premium file: {filename}", important=True)
+
+        # Litigation Report
+        if "sum_litigation_file" in request.files:
+            file = request.files["sum_litigation_file"]
+            if file and file.filename:
+                lit_date = request.form.get("sum_litigation_date", "").strip()
+                if not lit_date:
+                    flash("Date is required when uploading Litigation Report file.", "error")
+                    return redirect(url_for("master_data_form", **request.form.to_dict()))
+                category_dir = MASTER_INPUTS_DIR / "Litigation Report"
+                category_dir.mkdir(parents=True, exist_ok=True)
+                date_obj = datetime.strptime(lit_date, "%Y-%m-%d")
+                date_display = date_obj.strftime("%d.%m.%Y")
+                filename = f"Litigation Report - {date_display}.xlsx"
+                file_path = category_dir / filename
+                file.save(str(file_path))
+                summary_uploads["Litigation Report"] = str(file_path)
+                _emit_log(f"Uploaded Litigation Report file: {filename}", important=True)
+
+        # Mediation Detail Report
+        if "sum_mediation_file" in request.files:
+            file = request.files["sum_mediation_file"]
+            if file and file.filename:
+                month = request.form.get("sum_mediation_month", "").strip()
+                year  = request.form.get("sum_mediation_year", "").strip()
+                if not month or not year:
+                    flash("Month and Year are required when uploading Mediation Detail Report file.", "error")
+                    return redirect(url_for("master_data_form", **request.form.to_dict()))
+                if not (year.isdigit() and len(year) == 4):
+                    flash("Mediation Detail Report Year must be a 4-digit number.", "error")
+                    return redirect(url_for("master_data_form", **request.form.to_dict()))
+                category_dir = MASTER_INPUTS_DIR / "Mediation Detail Report"
+                category_dir.mkdir(parents=True, exist_ok=True)
+                filename = f"Mediation Detail Report - {month} {year}.xlsx"
+                file_path = category_dir / filename
+                file.save(str(file_path))
+                summary_uploads["Mediation Detail Report"] = str(file_path)
+                _emit_log(f"Uploaded Mediation Detail Report file: {filename}", important=True)
+
+        # Moratorium Contracts Details
+        if "sum_moratorium_file" in request.files:
+            file = request.files["sum_moratorium_file"]
+            if file and file.filename:
+                month = request.form.get("sum_moratorium_month", "").strip()
+                year  = request.form.get("sum_moratorium_year", "").strip()
+                if not month or not year:
+                    flash("Month and Year are required when uploading Moratorium Contracts Details file.", "error")
+                    return redirect(url_for("master_data_form", **request.form.to_dict()))
+                if not (year.isdigit() and len(year) == 4):
+                    flash("Moratorium Contracts Details Year must be a 4-digit number.", "error")
+                    return redirect(url_for("master_data_form", **request.form.to_dict()))
+                category_dir = MASTER_INPUTS_DIR / "Moratorium Contracts Details"
+                category_dir.mkdir(parents=True, exist_ok=True)
+                filename = f"Moratorium Contracts details-{month}-{year}.xlsx"
+                file_path = category_dir / filename
+                file.save(str(file_path))
+                summary_uploads["Moratorium Contracts Details"] = str(file_path)
+                _emit_log(f"Uploaded Moratorium Contracts Details file: {filename}", important=True)
+
+        # Yard Final
+        if "sum_yard_final_file" in request.files:
+            file = request.files["sum_yard_final_file"]
+            if file and file.filename:
+                month = request.form.get("sum_yard_final_month", "").strip()
+                year  = request.form.get("sum_yard_final_year", "").strip()
+                if not month or not year:
+                    flash("Month and Year are required when uploading Yard Final file.", "error")
+                    return redirect(url_for("master_data_form", **request.form.to_dict()))
+                if not (year.isdigit() and len(year) == 4):
+                    flash("Yard Final Year must be a 4-digit number.", "error")
+                    return redirect(url_for("master_data_form", **request.form.to_dict()))
+                year_short = year[2:]
+                category_dir = MASTER_INPUTS_DIR / "Yard Final"
+                category_dir.mkdir(parents=True, exist_ok=True)
+                filename = f"Yard Final - {month} {year_short}.xlsx"
+                file_path = category_dir / filename
+                file.save(str(file_path))
+                summary_uploads["Yard Final"] = str(file_path)
+                _emit_log(f"Uploaded Yard Final file: {filename}", important=True)
+
+        if summary_uploads:
+            _emit_log(f"Copying {len(summary_uploads)} Summary file(s) to working/Summary", important=True)
+            copy_summary_files_to_working(summary_uploads)
 
     # Start automation (ensure data is dict, not None)
     return start_automation_with_data(
@@ -8214,6 +8677,77 @@ def stop():
     _initialize_new_run()
 
     return jsonify({"ok": True, "refresh": True})
+
+
+def _resolve_report_outputs_dir(report_id: str) -> Path | None:
+    """Resolve the outputs/<folder> directory a report's completed runs are archived to."""
+    if report_id not in REPORT_STRUCTURE:
+        return None
+    if report_id == "NBD-MF-10-GA-11-IS":
+        return OUTPUTS_DIR / "NBD-MF-10-GA & NBD-MF-11-IS"
+    if report_id in ("NBD-QF-23-C3", "NBD-QF-23-C4", "NBD-QF-23-C6",
+                      "NBD-QF-23-C9", "NBD-QF-23-C10",
+                      "NBD-QF-16-SF", "NBD-QF-16-FI"):
+        return OUTPUTS_DIR / "NBD-QF-23-C3-C10-SF-FI"
+    return OUTPUTS_DIR / REPORT_STRUCTURE[report_id]["folder"]
+
+
+@app.route("/download-report/<report_id>", methods=["GET"])
+def download_report(report_id):
+    """Download the output files from a report's most recent completed run.
+
+    Independent of the in-run _download_files/_status state used by the
+    auto-download-after-run flow, so it works as a standalone backup and
+    can be clicked any time without disturbing an active/queued run.
+    """
+    outputs_dir = _resolve_report_outputs_dir(report_id)
+    if outputs_dir is None:
+        return jsonify({"error": f"Unknown report: {report_id}"}), 404
+
+    if not outputs_dir.exists():
+        return jsonify({"error": "This report has not completed a run yet."}), 404
+
+    date_folders = [p for p in outputs_dir.iterdir() if p.is_dir()]
+    if not date_folders:
+        return jsonify({"error": "This report has not completed a run yet."}), 404
+
+    latest_folder = max(date_folders, key=lambda p: p.stat().st_mtime)
+
+    # Prefer the manifest written by that run's post-processing, so this
+    # button selects the exact same files the auto-download flow queued —
+    # not everything sitting in the archived folder.
+    files: list[Path] = []
+    manifest_path = latest_folder / ".download_manifest.json"
+    if manifest_path.exists():
+        try:
+            rel_paths = json.loads(manifest_path.read_text(encoding="utf-8")).get("files", [])
+            files = [latest_folder / p for p in rel_paths if (latest_folder / p).is_file()]
+        except Exception:
+            files = []
+    if not files:
+        files = sorted(p for p in latest_folder.rglob("*") if p.is_file())
+    if not files:
+        return jsonify({"error": "No output files found for this report's last run."}), 404
+
+    safe_id = report_id.replace("/", "_")
+
+    if len(files) == 1:
+        return send_file(str(files[0]), as_attachment=True, download_name=files[0].name)
+
+    temp_zip_dir = BASE_DIR / "temp_zips"
+    temp_zip_dir.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    zip_path = temp_zip_dir / f"{safe_id}_{timestamp}.zip"
+
+    try:
+        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
+            for f in files:
+                zipf.write(f, arcname=f.relative_to(latest_folder))
+    except Exception as e:
+        return jsonify({"error": f"Failed to prepare files for download: {e}"}), 500
+
+    download_name = f"{safe_id}_{latest_folder.name}.zip"
+    return send_file(str(zip_path), as_attachment=True, download_name=download_name)
 
 
 @app.route("/download-latest", methods=["GET"])

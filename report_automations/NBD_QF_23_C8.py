@@ -686,7 +686,7 @@ df_stage_wise_movement = pd.concat([pivot, grand_total], axis=0).reset_index()
 df_stage_wise_movement = df_stage_wise_movement.rename(columns={"Initial Rating": "Row Labels"})
 
 # Format numbers with commas for readability
-df_stage_wise_movement = df_stage_wise_movement.map(
+df_stage_wise_movement = df_stage_wise_movement.applymap(
     lambda x: f"{int(x):,}" if isinstance(x, (int, float)) and not pd.isna(x) else x
 )
 
@@ -736,7 +736,7 @@ df_rating_movement = pd.concat([pivot, grand_total], axis=0).reset_index()
 df_rating_movement = df_rating_movement.rename(columns={"Initial Rating": "Row Labels"})
 
 # Format numeric values with commas for readability
-df_rating_movement = df_rating_movement.map(
+df_rating_movement = df_rating_movement.applymap(
     lambda x: f"{int(x):,}" if isinstance(x, (int, float)) and not pd.isna(x) else x
 )
 

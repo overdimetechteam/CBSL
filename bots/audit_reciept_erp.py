@@ -253,29 +253,29 @@ def login_to_erp(driver) -> bool:
         return False
 
 
-def select_premises(driver) -> bool:
-    """Click the SELECT button to proceed past the company/branch selector"""
-    try:
-        wait = WebDriverWait(driver, 20)
+# def select_premises(driver) -> bool:
+#     """Click the SELECT button to proceed past the company/branch selector"""
+#     try:
+#         wait = WebDriverWait(driver, 20)
 
-        time.sleep(3)
+#         time.sleep(3)
 
-        logger.info("Clicking Select button...")
-        select_button = wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[2]/div[3]/form/div/button')))
-        select_button.click()
+#         logger.info("Clicking Select button...")
+#         select_button = wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[2]/div[3]/form/div/button')))
+#         select_button.click()
 
-        time.sleep(3)
+#         time.sleep(3)
 
-        logger.info("Refreshing the page...")
-        driver.refresh()
+#         logger.info("Refreshing the page...")
+#         driver.refresh()
 
-        time.sleep(3)
-        logger.info("Premises selection completed!")
-        return True
+#         time.sleep(3)
+#         logger.info("Premises selection completed!")
+#         return True
 
-    except Exception as e:
-        logger.error(f"Error clicking Select button: {e}")
-        return False
+#     except Exception as e:
+#         logger.error(f"Error clicking Select button: {e}")
+#         return False
 
 def navigate_to_reports(driver):
     """Step 1: Navigate to REPORT page, search for Audit Receipt and click it."""
@@ -575,9 +575,9 @@ def main(report_date: str = None, start_date: str = None, is_monthly: bool = Fal
                 logger.error("Login failed.")
                 continue
 
-            if not select_premises(driver):
-                logger.error("Failed to select premises.")
-                continue
+            # if not select_premises(driver):
+            #     logger.error("Failed to select premises.")
+            #     continue
 
             if not navigate_to_reports(driver):
                 logger.error("Failed to navigate to Reports.")

@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 from pathlib import Path
 from dotenv import load_dotenv
@@ -35,14 +36,14 @@ def _load_credentials():
     enc_password = os.getenv("ENC_PASSWORD")
 
     if not secret_key:
-        raise Exception("❌ FERNET_KEY environment variable not set")
+        raise Exception("[ERROR] FERNET_KEY environment variable not set")
     if not enc_username or not enc_password:
-        raise Exception("❌ Missing ENC_USERNAME or ENC_PASSWORD in .env file")
+        raise Exception("[ERROR] Missing ENC_USERNAME or ENC_PASSWORD in .env file")
 
     fernet = Fernet(secret_key.encode())
     username = fernet.decrypt(enc_username.encode()).decode()
     password = fernet.decrypt(enc_password.encode()).decode()
-    print("✓ Credentials decrypted successfully")
+    print("[OK] Credentials decrypted successfully")
     return username, password
 
 # ==========================
@@ -88,17 +89,17 @@ def erp_login():
         wait.until(EC.element_to_be_clickable((By.ID, "idSignIn"))).click()
         wait_for_loader(driver)
 
-        print("Clicking select button...")
-        wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "button.btn.blue.btn-circle"))).click()
-        wait_for_loader(driver)
+        # print("Clicking select button...")
+        # wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "button.btn.blue.btn-circle"))).click()
+        # wait_for_loader(driver)
 
-        print("✓ Login successful!")
+        print("[OK] Login successful!")
         return driver, wait
 
     except Exception as e:
         driver.save_screenshot("login_error.png")
         driver.quit()
-        raise Exception(f"❌ ERP login failed: {e}")
+        raise Exception(f"[ERROR] ERP login failed: {e}")
 
 # ==========================
 # NAVIGATE TO FINANCE PAGE
@@ -108,7 +109,7 @@ def click_finance(driver, wait):
     driver.get("https://erp.assetline.lk/Application/Home/FINANCE")
     wait_for_loader(driver)
     time.sleep(3)
-    print("✓ Finance page loaded:", driver.current_url)
+    print("[OK] Finance page loaded:", driver.current_url)
 
 # ==========================
 # CLICK GL ACCOUNT VIEW
@@ -133,14 +134,14 @@ def click_gl_account_view(driver, wait):
             driver.execute_script("arguments[0].click();", el)
             wait_for_loader(driver)
             time.sleep(2)
-            print("✓ Clicked GL Account View element")
+            print("[OK] Clicked GL Account View element")
             print("URL after click:", driver.current_url)
             print("Page title after click:", driver.title)
             return
         except Exception as e:
             print(f"  Click failed on [{el.tag_name}]: {e}")
 
-    print("❌ Could not find or click GL Account View")
+    print("[ERROR] Could not find or click GL Account View")
 
 # ==========================
 # CLICK INQUIRY BUTTON
@@ -158,10 +159,10 @@ def click_inquiry(driver, wait):
         time.sleep(1)
         driver.execute_script("arguments[0].click();", inquiry_btn)
         wait_for_loader(driver)
-        print("✓ Inquiry button clicked successfully")
+        print("[OK] Inquiry button clicked successfully")
 
     except Exception as e:
-        print(f"❌ Inquiry button not found: {e}")
+        print(f"[ERROR] Inquiry button not found: {e}")
 
 # ==========================
 # ENTER GL CODE
@@ -185,10 +186,10 @@ def enter_gl_code(driver, wait, gl_code="1173"):
         driver.execute_script("arguments[0].dispatchEvent(new Event('input', {bubbles:true}));", gl_input)
 
         wait_for_loader(driver)
-        print(f"✓ GL code entered: {gl_code}")
+        print(f"[OK] GL code entered: {gl_code}")
 
     except Exception as e:
-        print(f"❌ GL code entry failed: {e}")
+        print(f"[ERROR] GL code entry failed: {e}")
 
 
 # ==========================
@@ -216,7 +217,7 @@ def enter_date_range(driver, wait, from_date, to_date):
                 driver.execute_script("arguments[0].scrollIntoView({block:'center'});", inp)
                 time.sleep(0.3)
 
-                # Set value purely via JS — no send_keys to avoid double-entry
+                # Set value purely via JS -- no send_keys to avoid double-entry
                 driver.execute_script(
                     "arguments[0].value = '';"
                     "arguments[0].value = arguments[1];"
@@ -228,15 +229,15 @@ def enter_date_range(driver, wait, from_date, to_date):
 
                 time.sleep(0.5)
                 actual = inp.get_attribute('value')
-                print(f"✓ {label} date entered: {val} | Field shows: {actual}")
+                print(f"[OK] {label} date entered: {val} | Field shows: {actual}")
 
         else:
-            print(f"❌ Expected 2 date fields but found {len(date_inputs)}")
+            print(f"[ERROR] Expected 2 date fields but found {len(date_inputs)}")
 
         wait_for_loader(driver)
 
     except Exception as e:
-        print(f"❌ Date entry failed: {e}")
+        print(f"[ERROR] Date entry failed: {e}")
 
  # ==========================
 # CLICK SEARCH BUTTON
@@ -252,10 +253,10 @@ def click_search(driver, wait):
         time.sleep(0.5)
         driver.execute_script("arguments[0].click();", search_btn)
         wait_for_loader(driver)
-        print("✓ Search button clicked successfully")
+        print("[OK] Search button clicked successfully")
 
     except Exception as e:
-        print(f"❌ Search button not found: {e}")
+        print(f"[ERROR] Search button not found: {e}")
 
         # ==========================
 # SCROLL PAGE DOWN
@@ -274,10 +275,10 @@ def scroll_page(driver, wait):
             });
         """)
         time.sleep(1)
-        print("✓ Scrolled to bottom successfully")
+        print("[OK] Scrolled to bottom successfully")
 
     except Exception as e:
-        print(f"❌ Scroll failed: {e}")
+        print(f"[ERROR] Scroll failed: {e}")
 
 # ==========================
 # GET CLOSING BALANCE
@@ -292,19 +293,20 @@ def get_closing_balance(driver, wait):
             EC.presence_of_element_located((By.ID, "intClossingBalance_FINGLAccountView"))
         )
 
-        # Field is disabled — use JS to read value
+        # Field is disabled -- use JS to read value
         value = driver.execute_script("return arguments[0].value;", closing_balance_input)
 
         if value and value.strip():
-            print(f"✓ Closing Balance: {value.strip()}")
+            print(f"[OK] Closing Balance: {value.strip()}")
             return value.strip()
         else:
-            print("⚠️ Closing Balance field is empty")
+            print("[WARNING] Closing Balance field is empty")
             return None
 
     except Exception as e:
-        print(f"❌ Could not read Closing Balance: {e}")
+        print(f"[ERROR] Could not read Closing Balance: {e}")
         return None
+
 # ==========================
 # DOWNLOAD EXCEL
 # ==========================
@@ -315,12 +317,12 @@ def _find_latest_outputs_folder(outputs_subdir: "Path") -> "Path | None":
 
     dates_file = _Path(outputs_subdir) / "completed_dates.txt"
     if not dates_file.exists():
-        print(f"❌ completed_dates.txt not found in {outputs_subdir}")
+        print(f"[ERROR] completed_dates.txt not found in {outputs_subdir}")
         return None
 
     lines = [l.strip() for l in dates_file.read_text().splitlines() if l.strip()]
     if not lines:
-        print(f"❌ completed_dates.txt is empty in {outputs_subdir}")
+        print(f"[ERROR] completed_dates.txt is empty in {outputs_subdir}")
         return None
 
     last_date = lines[-1]
@@ -333,7 +335,7 @@ def _find_latest_outputs_folder(outputs_subdir: "Path") -> "Path | None":
             candidates.append((int(m.group(1)) if m else 0, child))
 
     if not candidates:
-        print(f"❌ No outputs folder found for date '{last_date}' in {outputs_subdir}")
+        print(f"[ERROR] No outputs folder found for date '{last_date}' in {outputs_subdir}")
         return None
 
     candidates.sort(key=lambda x: x[0], reverse=True)
@@ -359,7 +361,7 @@ def download_excel(driver, wait, download_dir: str, dest_outputs_name: str = "NB
         pre_files = set(f for f in download_path.glob("*") if f.is_file())
 
         driver.execute_script("arguments[0].click();", excel_btn)
-        print("✓ Excel Download button clicked — waiting for file...")
+        print("[OK] Excel Download button clicked -- waiting for file...")
 
         # Wait for new xlsx file
         timeout = 120
@@ -381,17 +383,17 @@ def download_excel(driver, wait, download_dir: str, dest_outputs_name: str = "NB
             time.sleep(1)
 
         if not downloaded:
-            print("❌ Excel file not downloaded within timeout")
+            print("[ERROR] Excel file not downloaded within timeout")
             return None
 
-        print(f"✓ Downloaded: {downloaded.name}")
+        print(f"[OK] Downloaded: {downloaded.name}")
 
         # Resolve destination outputs folder
         root = Path(__file__).resolve().parent.parent
         outputs_subdir = root / "outputs" / dest_outputs_name
         dest_folder = _find_latest_outputs_folder(outputs_subdir)
         if not dest_folder:
-            print(f"❌ Could not resolve destination folder under outputs/{dest_outputs_name}")
+            print(f"[ERROR] Could not resolve destination folder under outputs/{dest_outputs_name}")
             return downloaded
 
         # Remove existing *GL Account Details.xlsx before moving
@@ -404,11 +406,11 @@ def download_excel(driver, wait, download_dir: str, dest_outputs_name: str = "NB
 
         dest = dest_folder / downloaded.name
         downloaded.replace(dest)
-        print(f"✓ Moved to: {dest}")
+        print(f"[OK] Moved to: {dest}")
         return dest
 
     except Exception as e:
-        print(f"❌ Excel download failed: {e}")
+        print(f"[ERROR] Excel download failed: {e}")
         return None
 
 
@@ -444,20 +446,19 @@ def run(start_date_str: str, end_date_str: str = None, gl_code: str = "1173",
         search_btn = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@id='btn_02366_BtnSearch_FINGLAccountView']")))
         driver.execute_script("arguments[0].click();", search_btn)
         wait_for_loader(driver)
-        print("✓ Search clicked")
+        print("[OK] Search clicked")
 
         download_excel(driver, wait, download_dir, dest_outputs_name=dest_outputs_name)
 
     finally:
         driver.quit()
-        print("✓ GL CodeBase Report completed")
+        print("[OK] GL CodeBase Report completed")
 
 
 # ==========================
 # MAIN
 # ==========================
 if __name__ == "__main__":
-    import sys
     start    = sys.argv[1] if len(sys.argv) > 1 else "01/12/2025"
     end      = sys.argv[2] if len(sys.argv) > 2 else start
     gl       = sys.argv[3] if len(sys.argv) > 3 else "1173"

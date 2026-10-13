@@ -278,15 +278,15 @@ def login_to_system(driver):
         logger.info("Sign in button clicked")
         
         # Wait for page to load and click SELECT button
-        time.sleep(3)
-        try:
-            select_button = WebDriverWait(driver, 5).until(
-                EC.element_to_be_clickable((By.XPATH, "//button[@id='idSignIn' and @type='submit']"))
-            )
-            select_button.click()
-            logger.info("SELECT button clicked")
-        except:
-            logger.info("No additional SELECT button found, proceeding with login")
+        # time.sleep(3)
+        # try:
+        #     select_button = WebDriverWait(driver, 5).until(
+        #         EC.element_to_be_clickable((By.XPATH, "//button[@id='idSignIn' and @type='submit']"))
+        #     )
+        #     select_button.click()
+        #     logger.info("SELECT button clicked")
+        # except:
+        #     logger.info("No additional SELECT button found, proceeding with login")
         
         time.sleep(3)
         logger.info("Login successful")

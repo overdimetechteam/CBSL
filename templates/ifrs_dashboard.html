@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>IFRS Report Automation</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/vendor/bootstrap.min.css" rel="stylesheet">
     <style>
       /* ── Theme tokens ──────────────────────────────────────────── */
       :root {
@@ -230,6 +230,7 @@
       ::-webkit-scrollbar { width: 7px; }
       ::-webkit-scrollbar-track { background: var(--bg-page); }
       ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+
     </style>
   </head>
   <body>
@@ -332,9 +333,38 @@
                             onclick="runSingle('{{ report.id }}')">
                       &#9654; Run
                     </button>
+                    <button type="button"
+                            class="btn btn-sm btn-outline-secondary flex-shrink-0 download-single-btn"
+                            title="Download last completed run of this report"
+                            onclick="downloadReportLastRun('{{ report.id }}', this)">
+                      &#11015;&#65039;
+                    </button>
                   </div>
                 </div>
                 {% endfor %}
+              </div>
+
+              <!-- Mark as Completed -->
+              <div class="mt-4 pt-3" style="border-top:1px solid var(--border-subtle);">
+                <h6 class="fw-semibold mb-2" style="color:var(--text-secondary); font-size:.8rem; text-transform:uppercase; letter-spacing:.05em;">Mark as Completed</h6>
+                <form method="post" action="/ifrs/mark-complete" class="d-flex align-items-center gap-2 flex-wrap mb-2">
+                  <span class="priority-badge flex-shrink-0" style="font-size:.75rem; padding:.2rem .5rem;">01</span>
+                  <span style="color:var(--text-primary); font-size:.875rem; flex:1; min-width:120px;">Portfolio 4 ECL / ECL Model / Summary</span>
+                  <input type="date" class="form-control form-control-sm" name="date" value="{{ today_iso }}" style="width:160px;" required>
+                  <button type="submit" class="btn btn-sm btn-success px-3">&#10003; Mark as Completed</button>
+                </form>
+                <form method="post" action="/ifrs/mark-complete-pd" class="d-flex align-items-center gap-2 flex-wrap mb-2">
+                  <span class="priority-badge flex-shrink-0" style="font-size:.75rem; padding:.2rem .5rem;">02</span>
+                  <span style="color:var(--text-primary); font-size:.875rem; flex:1; min-width:120px;">PD</span>
+                  <input type="date" class="form-control form-control-sm" name="date" value="{{ today_iso }}" style="width:160px;" required>
+                  <button type="submit" class="btn btn-sm btn-success px-3">&#10003; Mark as Completed</button>
+                </form>
+                <form method="post" action="/ifrs/mark-complete-lgd" class="d-flex align-items-center gap-2 flex-wrap">
+                  <span class="priority-badge flex-shrink-0" style="font-size:.75rem; padding:.2rem .5rem;">03</span>
+                  <span style="color:var(--text-primary); font-size:.875rem; flex:1; min-width:120px;">LGD</span>
+                  <input type="date" class="form-control form-control-sm" name="date" value="{{ today_iso }}" style="width:160px;" required>
+                  <button type="submit" class="btn btn-sm btn-success px-3">&#10003; Mark as Completed</button>
+                </form>
               </div>
 
             </div><!-- /content-wrapper -->
@@ -372,6 +402,35 @@
               <ul id="log-list"></ul>
             </div>
 
+            <!-- Scheduler Activity card -->
+            <div class="content-wrapper mt-4" id="scheduler-card">
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <h5 class="fw-semibold mb-0" style="color:var(--text-primary);">Scheduler Activity</h5>
+                <button class="btn btn-sm btn-outline-secondary" onclick="loadSchedulerLog()" title="Refresh">&#8635;</button>
+              </div>
+
+              <!-- Upcoming jobs -->
+              <div id="scheduler-jobs" class="mb-3"></div>
+
+              <!-- Recent log entries -->
+              <div style="max-height:260px; overflow-y:auto;">
+                <table class="table table-sm mb-0" id="scheduler-table" style="font-size:.78rem;">
+                  <thead>
+                    <tr style="color:var(--text-secondary);">
+                      <th>Time</th>
+                      <th>Job</th>
+                      <th>Downloaded</th>
+                      <th>Transferred To</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="scheduler-tbody">
+                    <tr><td colspan="5" style="color:var(--text-secondary); text-align:center;">Loading…</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
           </div><!-- /col-lg-5 -->
 
         </div><!-- /row -->
@@ -384,7 +443,7 @@
       <div id="form-ids"></div>
     </form>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/vendor/bootstrap.bundle.min.js"></script>
     <script>
       // ── Theme ──────────────────────────────────────────────────────
       (function () {
@@ -419,6 +478,16 @@
       function runSingle(reportId) {
         const date = document.getElementById('sel-date').value;
         if (!date) { alert('Please select a date before running.'); return; }
+
+        _lastRunReportId   = reportId;
+        _downloadTriggered = false;
+        sessionStorage.setItem('ifrs_last_report_id', reportId);
+
+        // IFRS-01 (Summary), IFRS-02 and IFRS-03 go through the master data page first
+        if (reportId === 'IFRS-01' || reportId === 'IFRS-02' || reportId === 'IFRS-03') {
+          window.location.href = '/ifrs/master-data?report_id=' + reportId + '&date=' + encodeURIComponent(date);
+          return;
+        }
 
         setRunBtnsDisabled(true);
         document.getElementById('form-date').value = date;
@@ -462,6 +531,72 @@
           });
       }
 
+      // ── Download helper ─────────────────────────────────────────────
+      let _downloadTriggered = false;
+      let _lastRunReportId   = sessionStorage.getItem('ifrs_last_report_id') || null;
+
+      async function triggerDownload() {
+        try {
+          const response = await fetch('/ifrs/download-latest', { method: 'GET', cache: 'no-store' });
+          if (!response.ok) { window.location.href = '/ifrs/download-latest'; return; }
+          const cd = response.headers.get('Content-Disposition') || '';
+          const m  = cd.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+          const filename = m ? m[1].replace(/['"]/g, '') : 'ifrs_reports.zip';
+          const blob = await response.blob();
+          const url  = window.URL.createObjectURL(blob);
+          const a    = document.createElement('a');
+          a.style.display = 'none'; a.href = url; a.download = filename;
+          document.body.appendChild(a); a.click();
+          window.URL.revokeObjectURL(url); a.remove();
+        } catch (e) {
+          window.location.href = '/ifrs/download-latest';
+        }
+      }
+
+      async function downloadReportLastRun(reportId, button) {
+        const originalHtml = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '&#8987;';
+
+        try {
+          const response = await fetch(`/ifrs/download-report/${encodeURIComponent(reportId)}`, {
+            method: 'GET',
+            cache: 'no-store'
+          });
+
+          if (!response.ok) {
+            let message = 'No completed run found for this report yet.';
+            try {
+              const data = await response.json();
+              if (data && data.error) message = data.error;
+            } catch (e) { /* non-JSON error response, keep default message */ }
+            alert(message);
+            return;
+          }
+
+          const cd = response.headers.get('Content-Disposition') || '';
+          const m  = cd.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+          const filename = m ? m[1].replace(/['"]/g, '') : `${reportId}.xlsx`;
+
+          const blob = await response.blob();
+          const objectUrl = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = objectUrl;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(objectUrl);
+          a.remove();
+        } catch (error) {
+          console.error('Error downloading report:', error);
+          alert('Failed to download this report. Please try again.');
+        } finally {
+          button.disabled = false;
+          button.innerHTML = originalHtml;
+        }
+      }
+
       // ── Polling ─────────────────────────────────────────────────────
       let _statusInterval    = null;
       let _logsInterval      = null;
@@ -492,7 +627,7 @@
             const bar   = document.getElementById('progress-bar');
             const lbl   = document.getElementById('running-label');
 
-            msg.textContent = data.message || '';
+            msg.innerHTML = data.message || '';
 
             const stageMap = {
               'idle':     ['Idle',     'badge-idle'],
@@ -513,6 +648,7 @@
               document.getElementById('stop-btn').style.display  = '';
               document.getElementById('reset-btn').style.display = 'none';
               setRunBtnsDisabled(true);
+              _downloadTriggered = false; // reset on new run start
             } else {
               spin.style.setProperty('display', 'none', 'important');
               lbl.textContent = '';
@@ -521,6 +657,13 @@
                 prog.style.display = 'none';
                 document.getElementById('reset-btn').style.display = '';
                 setRunBtnsDisabled(false);
+
+                // Auto-download for IFRS-01, IFRS-02, and IFRS-03 when done
+                if (data.stage === 'done' && (_lastRunReportId === 'IFRS-01' || _lastRunReportId === 'IFRS-02' || _lastRunReportId === 'IFRS-03') && !_downloadTriggered) {
+                  _downloadTriggered = true;
+                  sessionStorage.removeItem('ifrs_last_report_id');
+                  setTimeout(triggerDownload, 2000);
+                }
               } else {
                 setRunBtnsDisabled(false);
               }
@@ -599,17 +742,87 @@
       });
     </script>
   
+  <!-- ── Scheduler Activity panel JS ── -->
+  <script>
+  (function () {
+    function loadSchedulerLog() {
+      fetch('/ifrs/scheduler-log?limit=50')
+        .then(r => r.json())
+        .then(data => {
+          // Upcoming jobs
+          const jobsEl = document.getElementById('scheduler-jobs');
+          if (data.jobs && data.jobs.length) {
+            jobsEl.innerHTML = '<div class="d-flex flex-wrap gap-2">' +
+              data.jobs.map(j =>
+                '<span style="font-size:.75rem;padding:.25rem .6rem;border-radius:.4rem;background:var(--bg-surface);border:1px solid var(--border-subtle);color:var(--text-secondary);">' +
+                '<span style="color:var(--text-primary);font-weight:600;">' + j.name + '</span>' +
+                ' &nbsp;&#9654;&nbsp; ' + j.next_run + '</span>'
+              ).join('') + '</div>';
+          } else {
+            jobsEl.innerHTML = '<span style="font-size:.78rem;color:var(--text-secondary);">No scheduled jobs running.</span>';
+          }
+
+          // Log table
+          const tbody = document.getElementById('scheduler-tbody');
+          if (!data.entries || !data.entries.length) {
+            tbody.innerHTML = '<tr><td colspan="5" style="color:var(--text-secondary);text-align:center;">No log entries yet.</td></tr>';
+            return;
+          }
+          tbody.innerHTML = data.entries.map(e => {
+            const ok = (e['Status'] || '').toLowerCase() === 'success';
+            const badge = ok
+              ? '<span style="color:#166534;background:#dcfce7;padding:.1rem .45rem;border-radius:.3rem;font-weight:600;">Success</span>'
+              : '<span style="color:#991b1b;background:#fee2e2;padding:.1rem .45rem;border-radius:.3rem;font-weight:600;">Failed</span>';
+            return '<tr>' +
+              '<td style="white-space:nowrap;color:var(--text-secondary);">' + (e['Timestamp'] || '') + '</td>' +
+              '<td>' + (e['Job Name'] || '') + '</td>' +
+              '<td style="word-break:break-all;">' + (e['Downloaded File'] || '—') + '</td>' +
+              '<td style="word-break:break-all;">' + (e['Transferred To'] || '—') + '</td>' +
+              '<td>' + badge + (e['Status'] !== 'Success' && e['Notes'] ? '<br><small style="color:var(--text-secondary);">' + e['Notes'] + '</small>' : '') + '</td>' +
+              '</tr>';
+          }).join('');
+        })
+        .catch(() => {
+          document.getElementById('scheduler-tbody').innerHTML =
+            '<tr><td colspan="5" style="color:#ef4444;text-align:center;">Failed to load scheduler log.</td></tr>';
+        });
+    }
+    window.loadSchedulerLog = loadSchedulerLog;
+    loadSchedulerLog();
+    setInterval(loadSchedulerLog, 60000); // refresh every 60s
+  })();
+  </script>
+
   <!-- ── Inactivity timeout (10 min) ── -->
   <script>
   (function(){
-    var TIMEOUT = 15 * 60 * 1000;
+    var TIMEOUT = 30 * 60 * 1000;
     var WARN_BEFORE = 60 * 1000;
-    var timer, warnTimer, toast;
+    var RECHECK = 30 * 1000;
+    var timer, warnTimer, toast, wasDeferred = false;
     function resetTimer() {
       clearTimeout(timer); clearTimeout(warnTimer);
       if (toast) { toast.remove(); toast = null; }
       warnTimer = setTimeout(showWarning, TIMEOUT - WARN_BEFORE);
-      timer     = setTimeout(function(){ window.location.href = '/logout?reason=timeout'; }, TIMEOUT);
+      timer     = setTimeout(attemptLogout, TIMEOUT);
+    }
+    function attemptLogout() {
+      fetch('/automation-status').then(function(r){ return r.json(); }).then(function(data){
+        if (data && data.running) {
+          // A report automation is mid-run — don't sign the user out, keep checking.
+          wasDeferred = true;
+          timer = setTimeout(attemptLogout, RECHECK);
+        } else if (wasDeferred) {
+          // Automation just finished while the user was away — give them a
+          // fresh window to notice and grab the download.
+          wasDeferred = false;
+          resetTimer();
+        } else {
+          window.location.href = '/logout?reason=timeout';
+        }
+      }).catch(function(){
+        window.location.href = '/logout?reason=timeout';
+      });
     }
     function showWarning() {
       toast = document.createElement('div');

@@ -110,14 +110,14 @@ def selenium_login():
         logger.info("Sign in button clicked")
         time.sleep(3)
 
-        # Handle potential secondary SELECT button
-        try:
-            WebDriverWait(driver, 5).until(
-                EC.element_to_be_clickable((By.XPATH, "//button[@id='idSignIn' and @type='submit']"))
-            ).click()
-            logger.info("SELECT button clicked")
-        except:
-            logger.info("No additional SELECT button found")
+        # # Handle potential secondary SELECT button
+        # try:
+        #     WebDriverWait(driver, 5).until(
+        #         EC.element_to_be_clickable((By.XPATH, "//button[@id='idSignIn' and @type='submit']"))
+        #     ).click()
+        #     logger.info("SELECT button clicked")
+        # except:
+        #     logger.info("No additional SELECT button found")
 
         logger.info("Login successful")
         return driver

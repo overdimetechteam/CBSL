@@ -109,7 +109,7 @@ def fetch_titles_from_erp(customer_codes: List[str], driver: Optional[webdriver.
         # Step 1: Login
         logger.info("Starting login process...")
         driver.get("https://erp.assetline.lk/")
-        print("🌐 Opening ERP login page...")
+        print("Opening ERP login page...")
         time.sleep(3)
 
         username_field = wait.until(EC.presence_of_element_located((By.ID, "strUserName")))
@@ -128,7 +128,7 @@ def fetch_titles_from_erp(customer_codes: List[str], driver: Optional[webdriver.
         # Step 2: Handle Default Location popup
         time.sleep(3)
         try:
-            print("⏳ Waiting for default location selection screen...")
+            print("Waiting for default location selection screen...")
             select_button = wait.until(
                 EC.presence_of_element_located((By.XPATH, "//button[@id='idSignIn' and @type='submit']"))
             )
@@ -313,7 +313,7 @@ def fetch_titles_from_erp(customer_codes: List[str], driver: Optional[webdriver.
         # Convert to JSON string before returning
         extracted_titles = json.dumps(results, indent=4)
         logger.info("Customer titles extraction completed successfully.")
-        print("\n✅ Extraction completed.")
+        print("\nExtraction completed.")
         print(extracted_titles)
 
         return extracted_titles

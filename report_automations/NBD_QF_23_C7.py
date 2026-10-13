@@ -3,10 +3,6 @@ import argparse
 from pathlib import Path
 from datetime import datetime
 
-# Force unbuffered output for proper logging when run as subprocess
-sys.stdout.reconfigure(line_buffering=True)
-sys.stderr.reconfigure(line_buffering=True)
-
 # Add the parent directory of the project to Python path
 project_root = Path(__file__).resolve().parent.parent
 sys.path.append(str(project_root))
@@ -17,10 +13,6 @@ sys.path.append(str(project_root))
 # from report_automations.newActivations import update_new_activations_sheet
 # from report_automations.grantAmounts import update_grant_amounts_sheet
 from report_automations.wo import update_wo_sheet
-
-def log(message):
-    """Print with flush to ensure immediate output to log file."""
-    print(message, flush=True)
 
 def calculate_quarter_from_date(date_str):
     """

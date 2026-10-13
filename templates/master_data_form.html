@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Master Data Input - CBSL Report Automation Portal</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/vendor/bootstrap.min.css" rel="stylesheet">
     <style>
       /* ── Theme tokens ─────────────────────────────────────────── */
       :root {
@@ -1385,6 +1385,12 @@
                              id="ecs_mp_sscl" name="ecs_mp_sscl" placeholder="0.00"
                              value="{{ form_data.get('ecs_mp_sscl', '') }}">
                     </div>
+                    <div class="col-md-3">
+                      <label for="ecs_mp_mt_loan_payment" class="form-label small">MT Loan Payment</label>
+                      <input type="number" step="any" class="form-control form-control-sm"
+                             id="ecs_mp_mt_loan_payment" name="ecs_mp_mt_loan_payment" placeholder="0.00"
+                             value="{{ form_data.get('ecs_mp_mt_loan_payment', '') }}">
+                    </div>
                   </div>
                 </div>
 
@@ -1446,6 +1452,38 @@
                       <input type="number" step="any" class="form-control form-control-sm"
                              id="m2m_gain" name="m2m_gain" placeholder="0.00"
                              value="{{ form_data.get('m2m_gain', '') }}">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Adjustments from Cashflows (Unutilized Credit Lines) -->
+                <div class="mb-2">
+                  <label class="form-label fw-bold">Adjustments from Cashflows (+/-) <small class="text-muted fw-normal">(Movement in Unutilized Liquid Assets)</small></label>
+                  <p class="text-muted small mb-3">Enter values for the 'Adjustments from cashflows (+/-)' row under 'Movement in unutilized Liquid Assets' (code 18.9.1.2.0.0). These will be written to columns D-G of that row in the NBD-WF-18-ECS sheet.</p>
+                  <div class="row g-3">
+                    <div class="col-md-3">
+                      <label for="ecs_ucl_adj_0_7" class="form-label small">Next 0-7 days</label>
+                      <input type="number" step="any" class="form-control form-control-sm"
+                             id="ecs_ucl_adj_0_7" name="ecs_ucl_adj_0_7" placeholder="0.00"
+                             value="{{ form_data.get('ecs_ucl_adj_0_7', '') }}">
+                    </div>
+                    <div class="col-md-3">
+                      <label for="ecs_ucl_adj_8_14" class="form-label small">Next 8-14 days</label>
+                      <input type="number" step="any" class="form-control form-control-sm"
+                             id="ecs_ucl_adj_8_14" name="ecs_ucl_adj_8_14" placeholder="0.00"
+                             value="{{ form_data.get('ecs_ucl_adj_8_14', '') }}">
+                    </div>
+                    <div class="col-md-3">
+                      <label for="ecs_ucl_adj_15_21" class="form-label small">Next 15-21 days</label>
+                      <input type="number" step="any" class="form-control form-control-sm"
+                             id="ecs_ucl_adj_15_21" name="ecs_ucl_adj_15_21" placeholder="0.00"
+                             value="{{ form_data.get('ecs_ucl_adj_15_21', '') }}">
+                    </div>
+                    <div class="col-md-3">
+                      <label for="ecs_ucl_adj_22_28" class="form-label small">Next 22-28 days</label>
+                      <input type="number" step="any" class="form-control form-control-sm"
+                             id="ecs_ucl_adj_22_28" name="ecs_ucl_adj_22_28" placeholder="0.00"
+                             value="{{ form_data.get('ecs_ucl_adj_22_28', '') }}">
                     </div>
                   </div>
                 </div>
@@ -1753,6 +1791,224 @@
                   </div>
                 </div>
 
+                <!-- MT Client Codes (ICAM Code / MT) - optional, latest upload is reused every run -->
+                <div class="mb-4">
+                  <label class="form-label fw-bold">MT Client Codes</label>
+                  <div class="mb-2">
+                    <small class="text-muted">Latest file: {{ uploaded_files.get('MT Client Codes', 'No files uploaded') }}</small>
+                  </div>
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label for="mt_client_codes_file" class="form-label">Upload File (columns: ICAM Code, MT)</label>
+                      <input type="file" class="form-control" id="mt_client_codes_file" name="mt_client_codes_file" accept=".xlsx">
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+            {% endif %}
+
+            {% if show_qf %}
+            <!-- Summary Master Data Files -->
+            <div class="card mb-4">
+              <div class="card-body">
+                <h5 class="card-title">Summary Master Data Files</h5>
+
+                <!-- 1611 -->
+                <div class="mb-4">
+                  <label class="form-label fw-bold">1611</label>
+                  <div class="mb-2"><small class="text-muted">Latest file: {{ uploaded_files.get('1611', 'No files uploaded') }}</small></div>
+                  <div class="row g-3">
+                    <div class="col-md-4">
+                      <label for="sum_1611_month" class="form-label">Month <span class="text-danger" id="sum_1611_month_req" style="display:none;">*</span></label>
+                      <select class="form-control" id="sum_1611_month" name="sum_1611_month">
+                        <option value="">Select Month</option>
+                        {% for m in ['January','February','March','April','May','June','July','August','September','October','November','December'] %}
+                        <option value="{{ m }}" {{ 'selected' if form_data.get('sum_1611_month') == m else '' }}>{{ m }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div class="col-md-4">
+                      <label for="sum_1611_year" class="form-label">Year <span class="text-danger" id="sum_1611_year_req" style="display:none;">*</span></label>
+                      <input type="number" class="form-control" id="sum_1611_year" name="sum_1611_year" min="2000" max="2100" placeholder="2025" value="{{ form_data.get('sum_1611_year', '') }}">
+                    </div>
+                    <div class="col-md-4">
+                      <label for="sum_1611_file" class="form-label">Upload File</label>
+                      <input type="file" class="form-control" id="sum_1611_file" name="sum_1611_file" accept=".xlsx,.xls">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 2128 -->
+                <div class="mb-4">
+                  <label class="form-label fw-bold">2128</label>
+                  <div class="mb-2"><small class="text-muted">Latest file: {{ uploaded_files.get('2128', 'No files uploaded') }}</small></div>
+                  <div class="row g-3">
+                    <div class="col-md-4">
+                      <label for="sum_2128_month" class="form-label">Month <span class="text-danger" id="sum_2128_month_req" style="display:none;">*</span></label>
+                      <select class="form-control" id="sum_2128_month" name="sum_2128_month">
+                        <option value="">Select Month</option>
+                        {% for m in ['January','February','March','April','May','June','July','August','September','October','November','December'] %}
+                        <option value="{{ m }}" {{ 'selected' if form_data.get('sum_2128_month') == m else '' }}>{{ m }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div class="col-md-4">
+                      <label for="sum_2128_year" class="form-label">Year <span class="text-danger" id="sum_2128_year_req" style="display:none;">*</span></label>
+                      <input type="number" class="form-control" id="sum_2128_year" name="sum_2128_year" min="2000" max="2100" placeholder="2025" value="{{ form_data.get('sum_2128_year', '') }}">
+                    </div>
+                    <div class="col-md-4">
+                      <label for="sum_2128_file" class="form-label">Upload File</label>
+                      <input type="file" class="form-control" id="sum_2128_file" name="sum_2128_file" accept=".xlsx,.xls">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Assetline Related Party -->
+                <div class="mb-4">
+                  <label class="form-label fw-bold">Assetline Related Party</label>
+                  <div class="mb-2"><small class="text-muted">Latest file: {{ uploaded_files.get('Assetline Related Party', 'No files uploaded') }}</small></div>
+                  <div class="row g-3">
+                    <div class="col-md-12">
+                      <label for="sum_assetline_rp_file" class="form-label">Upload File</label>
+                      <input type="file" class="form-control" id="sum_assetline_rp_file" name="sum_assetline_rp_file" accept=".xlsb,.xlsx,.xls">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Cadre -->
+                <div class="mb-4">
+                  <label class="form-label fw-bold">Cadre</label>
+                  <div class="mb-2"><small class="text-muted">Latest file: {{ uploaded_files.get('CadreSUM', 'No files uploaded') }}</small></div>
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label for="sum_cadre_date" class="form-label">Date <span class="text-danger" id="sum_cadre_date_req" style="display:none;">*</span></label>
+                      <input type="date" class="form-control" id="sum_cadre_date" name="sum_cadre_date" value="{{ form_data.get('sum_cadre_date', '') }}">
+                    </div>
+                    <div class="col-md-6">
+                      <label for="sum_cadre_file" class="form-label">Upload File</label>
+                      <input type="file" class="form-control" id="sum_cadre_file" name="sum_cadre_file" accept=".xlsx,.xls">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Insurance Premium -->
+                <div class="mb-4">
+                  <label class="form-label fw-bold">Insurance Premium</label>
+                  <div class="mb-2"><small class="text-muted">Latest file: {{ uploaded_files.get('Insurance Premium', 'No files uploaded') }}</small></div>
+                  <div class="row g-3">
+                    <div class="col-md-4">
+                      <label for="sum_insurance_month" class="form-label">Month <span class="text-danger" id="sum_insurance_month_req" style="display:none;">*</span></label>
+                      <select class="form-control" id="sum_insurance_month" name="sum_insurance_month">
+                        <option value="">Select Month</option>
+                        {% for m in ['January','February','March','April','May','June','July','August','September','October','November','December'] %}
+                        <option value="{{ m }}" {{ 'selected' if form_data.get('sum_insurance_month') == m else '' }}>{{ m }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div class="col-md-4">
+                      <label for="sum_insurance_year" class="form-label">Year <span class="text-danger" id="sum_insurance_year_req" style="display:none;">*</span></label>
+                      <input type="number" class="form-control" id="sum_insurance_year" name="sum_insurance_year" min="2000" max="2100" placeholder="2025" value="{{ form_data.get('sum_insurance_year', '') }}">
+                    </div>
+                    <div class="col-md-4">
+                      <label for="sum_insurance_file" class="form-label">Upload File</label>
+                      <input type="file" class="form-control" id="sum_insurance_file" name="sum_insurance_file" accept=".xlsx,.xls">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Litigation Report -->
+                <div class="mb-4">
+                  <label class="form-label fw-bold">Litigation Report</label>
+                  <div class="mb-2"><small class="text-muted">Latest file: {{ uploaded_files.get('Litigation Report', 'No files uploaded') }}</small></div>
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label for="sum_litigation_date" class="form-label">Date <span class="text-danger" id="sum_litigation_date_req" style="display:none;">*</span></label>
+                      <input type="date" class="form-control" id="sum_litigation_date" name="sum_litigation_date" value="{{ form_data.get('sum_litigation_date', '') }}">
+                    </div>
+                    <div class="col-md-6">
+                      <label for="sum_litigation_file" class="form-label">Upload File</label>
+                      <input type="file" class="form-control" id="sum_litigation_file" name="sum_litigation_file" accept=".xlsx,.xls">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Mediation Detail Report -->
+                <div class="mb-4">
+                  <label class="form-label fw-bold">Mediation Detail Report</label>
+                  <div class="mb-2"><small class="text-muted">Latest file: {{ uploaded_files.get('Mediation Detail Report', 'No files uploaded') }}</small></div>
+                  <div class="row g-3">
+                    <div class="col-md-4">
+                      <label for="sum_mediation_month" class="form-label">Month <span class="text-danger" id="sum_mediation_month_req" style="display:none;">*</span></label>
+                      <select class="form-control" id="sum_mediation_month" name="sum_mediation_month">
+                        <option value="">Select Month</option>
+                        {% for m in ['January','February','March','April','May','June','July','August','September','October','November','December'] %}
+                        <option value="{{ m }}" {{ 'selected' if form_data.get('sum_mediation_month') == m else '' }}>{{ m }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div class="col-md-4">
+                      <label for="sum_mediation_year" class="form-label">Year <span class="text-danger" id="sum_mediation_year_req" style="display:none;">*</span></label>
+                      <input type="number" class="form-control" id="sum_mediation_year" name="sum_mediation_year" min="2000" max="2100" placeholder="2025" value="{{ form_data.get('sum_mediation_year', '') }}">
+                    </div>
+                    <div class="col-md-4">
+                      <label for="sum_mediation_file" class="form-label">Upload File</label>
+                      <input type="file" class="form-control" id="sum_mediation_file" name="sum_mediation_file" accept=".xlsx,.xls">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Moratorium Contracts Details -->
+                <div class="mb-4">
+                  <label class="form-label fw-bold">Moratorium Contracts Details</label>
+                  <div class="mb-2"><small class="text-muted">Latest file: {{ uploaded_files.get('Moratorium Contracts Details', 'No files uploaded') }}</small></div>
+                  <div class="row g-3">
+                    <div class="col-md-4">
+                      <label for="sum_moratorium_month" class="form-label">Month <span class="text-danger" id="sum_moratorium_month_req" style="display:none;">*</span></label>
+                      <select class="form-control" id="sum_moratorium_month" name="sum_moratorium_month">
+                        <option value="">Select Month</option>
+                        {% for m in ['January','February','March','April','May','June','July','August','September','October','November','December'] %}
+                        <option value="{{ m }}" {{ 'selected' if form_data.get('sum_moratorium_month') == m else '' }}>{{ m }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div class="col-md-4">
+                      <label for="sum_moratorium_year" class="form-label">Year <span class="text-danger" id="sum_moratorium_year_req" style="display:none;">*</span></label>
+                      <input type="number" class="form-control" id="sum_moratorium_year" name="sum_moratorium_year" min="2000" max="2100" placeholder="2025" value="{{ form_data.get('sum_moratorium_year', '') }}">
+                    </div>
+                    <div class="col-md-4">
+                      <label for="sum_moratorium_file" class="form-label">Upload File</label>
+                      <input type="file" class="form-control" id="sum_moratorium_file" name="sum_moratorium_file" accept=".xlsx,.xls">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Yard Final -->
+                <div class="mb-4">
+                  <label class="form-label fw-bold">Yard Final</label>
+                  <div class="mb-2"><small class="text-muted">Latest file: {{ uploaded_files.get('Yard Final', 'No files uploaded') }}</small></div>
+                  <div class="row g-3">
+                    <div class="col-md-4">
+                      <label for="sum_yard_final_month" class="form-label">Month <span class="text-danger" id="sum_yard_final_month_req" style="display:none;">*</span></label>
+                      <select class="form-control" id="sum_yard_final_month" name="sum_yard_final_month">
+                        <option value="">Select Month</option>
+                        {% for m in ['January','February','March','April','May','June','July','August','September','October','November','December'] %}
+                        <option value="{{ m }}" {{ 'selected' if form_data.get('sum_yard_final_month') == m else '' }}>{{ m }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div class="col-md-4">
+                      <label for="sum_yard_final_year" class="form-label">Year <span class="text-danger" id="sum_yard_final_year_req" style="display:none;">*</span></label>
+                      <input type="number" class="form-control" id="sum_yard_final_year" name="sum_yard_final_year" min="2000" max="2100" placeholder="2025" value="{{ form_data.get('sum_yard_final_year', '') }}">
+                    </div>
+                    <div class="col-md-4">
+                      <label for="sum_yard_final_file" class="form-label">Upload File</label>
+                      <input type="file" class="form-control" id="sum_yard_final_file" name="sum_yard_final_file" accept=".xlsx,.xls">
+                    </div>
+                  </div>
+                </div>
+
               </div>
             </div>
             {% endif %}
@@ -1830,7 +2086,7 @@
       </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/vendor/bootstrap.bundle.min.js"></script>
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -1857,7 +2113,15 @@
         { file: 'fdbastat_file', month: 'fdbastat_date', required: 'fdbastat_date_required' },
         { file: 'loanW_schedule_file', month: 'loanW_schedule_month', required: 'loanW_schedule_month_required', year: 'loanW_year', yearRequired: 'loanW_year_required' },
         { file: 'investmentW_file', month: 'investmentW_month', required: 'investmentW_month_required', year: 'investmentW_year', yearRequired: 'investmentW_year_required' },
-        { file: 'property_morgage_file', month: 'property_morgage_month', required: 'property_mortgage_month_required', year: 'property_mrgage_year', yearRequired: 'property_mortgage_year_required' }
+        { file: 'property_morgage_file', month: 'property_morgage_month', required: 'property_mortgage_month_required', year: 'property_mrgage_year', yearRequired: 'property_mortgage_year_required' },
+        { file: 'sum_1611_file', month: 'sum_1611_month', required: 'sum_1611_month_req', year: 'sum_1611_year', yearRequired: 'sum_1611_year_req' },
+        { file: 'sum_2128_file', month: 'sum_2128_month', required: 'sum_2128_month_req', year: 'sum_2128_year', yearRequired: 'sum_2128_year_req' },
+        { file: 'sum_cadre_file', month: 'sum_cadre_date', required: 'sum_cadre_date_req' },
+        { file: 'sum_insurance_file', month: 'sum_insurance_month', required: 'sum_insurance_month_req', year: 'sum_insurance_year', yearRequired: 'sum_insurance_year_req' },
+        { file: 'sum_litigation_file', month: 'sum_litigation_date', required: 'sum_litigation_date_req' },
+        { file: 'sum_mediation_file', month: 'sum_mediation_month', required: 'sum_mediation_month_req', year: 'sum_mediation_year', yearRequired: 'sum_mediation_year_req' },
+        { file: 'sum_moratorium_file', month: 'sum_moratorium_month', required: 'sum_moratorium_month_req', year: 'sum_moratorium_year', yearRequired: 'sum_moratorium_year_req' },
+        { file: 'sum_yard_final_file', month: 'sum_yard_final_month', required: 'sum_yard_final_month_req', year: 'sum_yard_final_year', yearRequired: 'sum_yard_final_year_req' }
       ];
 
       fileInputs.forEach(function(item) {
@@ -2083,14 +2347,33 @@
   <!-- ── Inactivity timeout (10 min) ── -->
   <script>
   (function(){
-    var TIMEOUT = 15 * 60 * 1000;
+    var TIMEOUT = 30 * 60 * 1000;
     var WARN_BEFORE = 60 * 1000;
-    var timer, warnTimer, toast;
+    var RECHECK = 30 * 1000;
+    var timer, warnTimer, toast, wasDeferred = false;
     function resetTimer() {
       clearTimeout(timer); clearTimeout(warnTimer);
       if (toast) { toast.remove(); toast = null; }
       warnTimer = setTimeout(showWarning, TIMEOUT - WARN_BEFORE);
-      timer     = setTimeout(function(){ window.location.href = '/logout?reason=timeout'; }, TIMEOUT);
+      timer     = setTimeout(attemptLogout, TIMEOUT);
+    }
+    function attemptLogout() {
+      fetch('/automation-status').then(function(r){ return r.json(); }).then(function(data){
+        if (data && data.running) {
+          // A report automation is mid-run — don't sign the user out, keep checking.
+          wasDeferred = true;
+          timer = setTimeout(attemptLogout, RECHECK);
+        } else if (wasDeferred) {
+          // Automation just finished while the user was away — give them a
+          // fresh window to notice and grab the download.
+          wasDeferred = false;
+          resetTimer();
+        } else {
+          window.location.href = '/logout?reason=timeout';
+        }
+      }).catch(function(){
+        window.location.href = '/logout?reason=timeout';
+      });
     }
     function showWarning() {
       toast = document.createElement('div');

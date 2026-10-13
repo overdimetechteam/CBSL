@@ -260,19 +260,20 @@ def login_to_erp(driver):
         signin_button.click()
         logger.info("Sign in button clicked")
         
-        # Wait for page to load and check for select button
-        select_clicked = False
-        try:
-            # Look for select button
-            select_button = WebDriverWait(driver, 10).until(
-                EC.element_to_be_clickable((By.XPATH, "//button[@id='idSignIn' and @type='submit']"))
-            )
-            select_button.click()
-            select_clicked = True
-            logger.info("SELECT button clicked")
-        except:
-            logger.info("No additional SELECT button found, proceeding with login")
-
+        # # Wait for page to load and check for select button
+        # select_clicked = False
+        # try:
+        #     # Look for select button
+        #     select_button = WebDriverWait(driver, 10).until(
+        #         EC.element_to_be_clickable((By.XPATH, "//button[@id='idSignIn' and @type='submit']"))
+        #     )
+        #     select_button.click()
+        #     select_clicked = True
+        #     logger.info("SELECT button clicked")
+        # except:
+        #     logger.info("No additional SELECT button found, proceeding with login")
+        select_clicked = True
+        
         if select_clicked:
             # Wait for the next page to fully load after clicking SELECT
             WebDriverWait(driver, 20).until(

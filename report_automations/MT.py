@@ -16,7 +16,7 @@ def unmerge_row1_and_save(file_path):
     wb = openpyxl.load_workbook(file_path)
     
     # Get the active sheet (or specify sheet name if needed)
-    ws = wb['Unutilized-MAR 2025']
+    ws = wb['Unutilized']
 
     # Get all merged cell ranges
     merged_cells = list(ws.merged_cells.ranges)
@@ -50,15 +50,15 @@ def create_marginal_loans_df(unutilized_file_path, df_district=None, combined_df
 
     temp = './temp.xlsx'
     unmerge_row1_and_save(unutilized_file_path)
-    unutilized_df = pd.read_excel(temp, sheet_name='Unutilized-MAR 2025')
+    unutilized_df = pd.read_excel(temp, sheet_name='Unutilized')
     print(unutilized_df.columns.tolist())
     margin_trading_df = pd.DataFrame()
 
     margin_trading_df['Name of the Client'] = unutilized_df['Name of the Client']
     margin_trading_df['ICAM code'] = unutilized_df['ICAM code']
-    margin_trading_df['Interest Rate NOV'] = unutilized_df['Intrest Rate ']
+    margin_trading_df['Interest Rate NOV'] = unutilized_df['Intrest Rate']
     margin_trading_df['Market Value of Portfolio'] = unutilized_df['Market Value of Portfolio']
-    margin_trading_df['(ICAM) Debtor'] = unutilized_df['  (ICAM) D/C']
+    margin_trading_df['(ICAM) Debtor'] = unutilized_df['(ICAM) D/C']
     margin_trading_df['50% of Portfolio'] = margin_trading_df['Market Value of Portfolio'] * 0.5
     margin_trading_df['Limit'] = unutilized_df.iloc[:, 8]
     margin_trading_df['Liability'] = unutilized_df['Liability']

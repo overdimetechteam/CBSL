@@ -14,12 +14,20 @@ import os
 import time
 from pathlib import Path
 
-from flask import (Flask, flash, redirect, render_template, render_template_string,
+from flask import (Flask, flash, jsonify, redirect, render_template, render_template_string,
                    request, session, url_for)
 from flask.sessions import SecureCookieSessionInterface  # noqa: used in PermissionGate
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
 from werkzeug.serving import run_simple
 from werkzeug.wrappers import Request as WerkzeugRequest  # noqa: used in PermissionGate
+
+# ── Load .env into the process environment (before importing sub-apps, so any
+# env-driven config they read is available) ─────────────────────────────────
+try:
+    from dotenv import load_dotenv
+    load_dotenv(dotenv_path=Path(__file__).resolve().parent / ".env", override=True)
+except ImportError:
+    pass
 
 # ── Auth helpers ────────────────────────────────────────────────────────────
 import auth
@@ -237,12 +245,31 @@ _LANDING_HTML = """\
   (function(){
     var TIMEOUT = 10 * 60 * 1000;
     var WARN_BEFORE = 60 * 1000;
-    var timer, warnTimer, toast;
+    var RECHECK = 30 * 1000;
+    var timer, warnTimer, toast, wasDeferred = false;
     function resetTimer() {
       clearTimeout(timer); clearTimeout(warnTimer);
       if (toast) { toast.remove(); toast = null; }
       warnTimer = setTimeout(showWarning, TIMEOUT - WARN_BEFORE);
-      timer     = setTimeout(function(){ window.location.href = '/logout?reason=timeout'; }, TIMEOUT);
+      timer     = setTimeout(attemptLogout, TIMEOUT);
+    }
+    function attemptLogout() {
+      fetch('/automation-status').then(function(r){ return r.json(); }).then(function(data){
+        if (data && data.running) {
+          // A report automation is mid-run — don't sign the user out, keep checking.
+          wasDeferred = true;
+          timer = setTimeout(attemptLogout, RECHECK);
+        } else if (wasDeferred) {
+          // Automation just finished while the user was away — give them a
+          // fresh window to notice and grab the download.
+          wasDeferred = false;
+          resetTimer();
+        } else {
+          window.location.href = '/logout?reason=timeout';
+        }
+      }).catch(function(){
+        window.location.href = '/logout?reason=timeout';
+      });
     }
     function showWarning() {
       toast = document.createElement('div');
@@ -270,20 +297,48 @@ _LANDING_HTML = """\
 
 
 # ── Inactivity timeout ───────────────────────────────────────────────────────
-INACTIVITY_TIMEOUT = 10 * 60  # 10 minutes in seconds
+INACTIVITY_TIMEOUT = 40 * 60  # 40 minutes in seconds
+
+
+def _is_automation_running() -> bool:
+    """True if the CBSL or IFRS module is mid-run in a background thread."""
+    try:
+        with cbsl_module._status_lock:
+            if cbsl_module._status.get("running"):
+                return True
+    except Exception:
+        pass
+    try:
+        with ifrs_module._lock:
+            if ifrs_module._state.get("running"):
+                return True
+    except Exception:
+        pass
+    return False
+
+
+@landing.route("/automation-status")
+def automation_status():
+    return jsonify(running=_is_automation_running())
+
 
 @landing.before_request
 def check_inactivity():
-    # Skip for login/logout/static
-    if request.endpoint in ("login", "logout", "static"):
+    # Skip for login/logout/static/status-poll
+    if request.endpoint in ("login", "logout", "static", "automation_status"):
         return
     if not session.get("username"):
         return
     last = session.get("last_activity")
     now  = time.time()
     if last and (now - last) > INACTIVITY_TIMEOUT:
+        if _is_automation_running():
+            # Don't kick the user out while a report is mid-run — just push
+            # the deadline out and let them come back to grab the download.
+            session["last_activity"] = now
+            return
         session.clear()
-        flash("You were signed out due to 10 minutes of inactivity.", "warning")
+        flash("You were signed out due to inactivity.", "warning")
         return redirect(url_for("login"))
     session["last_activity"] = now
 
@@ -319,7 +374,7 @@ def login():
 def logout():
     session.clear()
     if request.args.get("reason") == "timeout":
-        flash("You were signed out due to 10 minutes of inactivity.", "warning")
+        flash("You were signed out due to inactivity.", "warning")
     else:
         flash("You have been signed out.", "warning")
     return redirect(url_for("login"))
@@ -551,4 +606,4 @@ if __name__ == "__main__":
     ensure_directories_exist()
 
     print("Starting server on http://0.0.0.0:5000")
-    run_simple("0.0.0.0", 5000, application, use_reloader=False, use_debugger=False)
+    run_simple("127.0.0.1", 5000, application, use_reloader=False, use_debugger=False)

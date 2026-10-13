@@ -1149,7 +1149,11 @@ def _run_reports_thread(reports_to_run: list[dict], date_str: str) -> None:
                 overall_ok = False
             continue  # skip generic subprocess block below
 
-        cmd = [sys.executable, str(script_path), script_date]
+        _gen_ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        _gen_log_dir = LOGS_DIR / f"run_{_gen_ts}"
+        _gen_log_dir.mkdir(parents=True, exist_ok=True)
+        _gen_log_file = _gen_log_dir / f"{re.sub(r'[^A-Za-z0-9_-]', '_', report['id'])}.log"
+        cmd = [sys.executable, str(script_path), script_date, "--log-dir", str(_gen_log_dir)]
         try:
             proc = subprocess.Popen(
                 cmd,
@@ -1189,7 +1193,14 @@ def _run_reports_thread(reports_to_run: list[dict], date_str: str) -> None:
 
         except Exception as e:
             _running_proc = None
+            import traceback as _tb
             _emit(f"[ERROR] {report['label']}: {e}")
+            _emit(_tb.format_exc())
+            try:
+                with open(_gen_log_file, "a", encoding="utf-8") as _gen_fh:
+                    _gen_fh.write(f"\n[ERROR] {e}\n{_tb.format_exc()}\n")
+            except Exception:
+                pass
             _set_checklist_status(report["id"], "failed")
             overall_ok = False
 

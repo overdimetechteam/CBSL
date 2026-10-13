@@ -12,7 +12,7 @@ import time
 import gc
 
 # Configuration
-BASE_PATH = r"C:\Users\ASUS\Documents\WORK\Unutilized\Files"
+BASE_PATH = r"C:\CBSL\Script\outputs\Unutilized Credit Limit\Input"
 
 # Keywords used to identify files (matched case-insensitively against filenames)
 FILE_KEYWORDS = {

@@ -11,9 +11,11 @@ from calendar import monthrange
 from functools import wraps
 from contextlib import contextmanager
 from pathlib import Path
+from copy import copy
 
 from openpyxl import load_workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
+from openpyxl.utils import column_index_from_string, get_column_letter
 import pandas as pd
 import xlwings as xw
 
@@ -29,6 +31,35 @@ def get_sheet(wb, name: str):
         if sname.strip() == name.strip():
             return wb[sname]
     raise KeyError(f"Sheet '{name}' not found. Available: {wb.sheetnames}")
+
+
+def com_retry(func, *args, retries=6, delay=2.0, **kwargs):
+    """
+    Call func(*args, **kwargs) retrying on COM RPC errors (Excel busy), and on
+    AttributeError caused by a COM property transiently returning None instead
+    of the live object (e.g. sheet.api / range.api occasionally returning None
+    right after a workbook opens). Both are symptoms of the same underlying
+    Excel-COM-not-ready-yet flakiness — func is re-evaluated fresh each retry,
+    so a transient None resolves itself once Excel catches up.
+    -2147418111 = RPC_E_CALL_REJECTED — Excel is busy; retry after a short wait.
+    """
+    import pywintypes
+    last_exc = None
+    for attempt in range(1, retries + 1):
+        try:
+            return func(*args, **kwargs)
+        except pywintypes.com_error as e:
+            if e.args[0] == -2147418111:  # RPC_E_CALL_REJECTED
+                logging.warning(f"COM call rejected (attempt {attempt}/{retries}), retrying in {delay}s...")
+                time.sleep(delay)
+                last_exc = e
+            else:
+                raise
+        except AttributeError as e:
+            logging.warning(f"COM property returned None (attempt {attempt}/{retries}): {e}, retrying in {delay}s...")
+            time.sleep(delay)
+            last_exc = e
+    raise last_exc
 
 
 # ---------------------------------------------------------
@@ -151,10 +182,13 @@ def find_dm_deposit_liability_file(working_path):
     return find_file_by_pattern(working_path, contains="Deposit Liability")
 
 def find_afl_borrowing_schedule_file(working_path):
-    return find_file_by_pattern(working_path, contains="AFL Borrowing schedule")
+    # Matches "AFIN Borrowing Schedule - Week <N>.xlsx" regardless of week number.
+    return find_file_by_pattern(working_path, starts_with="AFIN Borrowing Schedule")
 
 def find_audit_receipt_file(working_path):
-    return find_file_by_pattern(working_path, contains="Audit Receipt")
+    # Match the weekly file specifically — not the monthly one, which also
+    # contains "Audit Receipt" and would otherwise be picked ambiguously.
+    return find_file_by_pattern(working_path, starts_with="Audit Receipt - Internal (weekly)")
 
 def find_gl_account_details_file(working_path):
     return find_file_by_pattern(working_path, contains="GL Account Details")
@@ -241,8 +275,12 @@ def dataframe_to_worksheet(ws, df, start_row, start_col=1, include_header=False)
 # Extract account blocks and prepare dataframe - OPTIMIZED
 # ---------------------------------------------------------
 @log_time
-def process_accounts(ws, start_label):
-    """Extract account data using bulk operations."""
+def process_accounts(ws, start_label, skip_copy: bool = False):
+    """Extract account data using bulk operations.
+
+    skip_copy=True suppresses the column E -> C 'previous balance' copy below —
+    used when this looks like a rerun for a week already processed, so a second
+    pass doesn't overwrite last week's snapshot in C with a duplicate of E."""
     start_row = find_row_by_label(ws, start_label)
     if not start_row:
         raise ValueError(f"Label '{start_label}' not found")
@@ -283,9 +321,12 @@ def process_accounts(ws, start_label):
 
     df = pd.DataFrame(data, columns=["GL", "Account details", "Col3", "Col4", "Amounts"])
 
-    # Copy column E to column C
-    for i, row in enumerate(data):
-        ws.cell(data_start + i, 3).value = row[4]  # Copy col 5 to col 3
+    # Copy column E to column C — skipped on a same-week rerun (see skip_copy)
+    if skip_copy:
+        logging.info(f"{start_label}: skip_copy=True — not overwriting column C")
+    else:
+        for i, row in enumerate(data):
+            ws.cell(data_start + i, 3).value = row[4]  # Copy col 5 to col 3
 
     df = df[["GL", "Account details", "Amounts"]]
     logging.info(f"{start_label}: extracted {len(df)} rows")
@@ -622,7 +663,10 @@ def process_weekly_distributions(report_file, payments_file, input_date):
 @log_time
 def write_manual_payments_to_weekly_distributions(report_file):
     """Read manual payments from last row of Master_Data.xlsx (cols Q-Y)
-    and write to Weekly Distributions sheet cells C51-C59."""
+    and write to Weekly Distributions sheet cells C51-C59. MT Loan Payment
+    (col Z) is written by looking up the row in column B of Weekly
+    Distributions whose label is 'MT Loan Payment' and writing to column C
+    of that row."""
     logging.info("Processing Manual Payments -> Weekly Distributions")
 
     _col_to_cell = {
@@ -636,6 +680,8 @@ def write_manual_payments_to_weekly_distributions(report_file):
         "X": "C58",  # Dividend Payment
         "Y": "C59",  # SSCL
     }
+    _mt_loan_payment_col = "Z"
+    _mt_loan_payment_label = "MT Loan Payment"
 
     try:
         root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -651,13 +697,14 @@ def write_manual_payments_to_weekly_distributions(report_file):
         for col_letter, cell_ref in _col_to_cell.items():
             col_idx = ord(col_letter) - ord("A") + 1
             values[cell_ref] = ws_md.cell(row=last_row, column=col_idx).value
+        mt_loan_payment_val = ws_md.cell(row=last_row, column=ord(_mt_loan_payment_col) - ord("A") + 1).value
         wb_md.close()
-        logging.info(f"Read manual payments from Master_Data row {last_row}: {values}")
+        logging.info(f"Read manual payments from Master_Data row {last_row}: {values}, MT Loan Payment={mt_loan_payment_val}")
     except Exception as e:
         logging.warning(f"Could not read manual payments from Master_Data.xlsx: {e}")
         return
 
-    if all(v in (None, "") for v in values.values()):
+    if all(v in (None, "") for v in values.values()) and mt_loan_payment_val in (None, ""):
         logging.warning("All manual payment values are empty — skipping Weekly Distributions update")
         return
 
@@ -672,8 +719,86 @@ def write_manual_payments_to_weekly_distributions(report_file):
         ws_weekly[cell_ref] = val
         logging.info(f"Set {cell_ref} = {val}")
 
+    if mt_loan_payment_val not in (None, ""):
+        mt_row = None
+        for (cell,) in ws_weekly.iter_rows(min_col=2, max_col=2):
+            if str(cell.value).strip().lower() == _mt_loan_payment_label.lower():
+                mt_row = cell.row
+                break
+        if mt_row:
+            ws_weekly[f"C{mt_row}"] = mt_loan_payment_val
+            logging.info(f"Set C{mt_row} = {mt_loan_payment_val} ('{_mt_loan_payment_label}' matched in column B, row {mt_row})")
+        else:
+            logging.warning(f"'{_mt_loan_payment_label}' not found in Weekly Distributions column B — skipping")
+
     wb_report.save(report_file)
-    logging.info("Manual payments written to Weekly Distributions C51-C59")
+    logging.info("Manual payments written to Weekly Distributions")
+
+# ---------------------------------------------------------
+# Step 04b – Write UCL Adjustments from Cashflows to NBD-WF-18-ECS - from Master_Data.xlsx
+# ---------------------------------------------------------
+def write_ucl_adjustments_from_cashflows(report_file):
+    """Read the 4 'Adjustments from cashflows (+/-)' values (Next 0-7 / 8-14 / 15-21 /
+    22-28 days) from the last row of Master_Data.xlsx (cols AB-AE) and write them to
+    columns D-G of the row with code '18.9.1.2.0.0' — the 'Adjustments from cashflows
+    (+/-)' row under 'Movement in unutilized Liquid Assets' — in the NBD-WF-18-ECS sheet.
+    That code is looked up rather than the row label, since the same label
+    ('Adjustments from cashflows (+/-)') also appears earlier under 'Movement in
+    Liquid Assets' (code 18.7.1.2.0.0)."""
+    logging.info("Processing UCL Adjustments from cashflows -> NBD-WF-18-ECS")
+
+    _target_code = "18.9.1.2.0.0"
+    _col_to_dest = {
+        "AB": 4,  # D - Next 0-7 days
+        "AC": 5,  # E - Next 8-14 days
+        "AD": 6,  # F - Next 15-21 days
+        "AE": 7,  # G - Next 22-28 days
+    }
+
+    try:
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        master_data_path = os.path.join(root, "Master_Data.xlsx")
+        wb_md = load_workbook(master_data_path, data_only=True)
+        ws_md = wb_md["NBD_WF_18_ECS"]
+        last_row = ws_md.max_row
+        if last_row < 2:
+            logging.warning("Master_Data.xlsx NBD_WF_18_ECS has no data rows — skipping UCL adjustments")
+            wb_md.close()
+            return
+        values = {}
+        for col_letter, dest_col in _col_to_dest.items():
+            values[dest_col] = ws_md.cell(row=last_row, column=column_index_from_string(col_letter)).value
+        wb_md.close()
+        logging.info(f"Read UCL adjustment values from Master_Data row {last_row}: {values}")
+    except Exception as e:
+        logging.warning(f"Could not read UCL adjustment values from Master_Data.xlsx: {e}")
+        return
+
+    if all(v in (None, "") for v in values.values()):
+        logging.warning("All UCL adjustment values are empty — skipping NBD-WF-18-ECS update")
+        return
+
+    wb_report = load_workbook(report_file, keep_vba=True)
+    ws_ecs = get_sheet(wb_report, "NBD-WF-18-ECS")
+
+    target_row = None
+    for (cell,) in ws_ecs.iter_rows(min_col=1, max_col=1):
+        if cell.value and str(cell.value).strip() == _target_code:
+            target_row = cell.row
+            break
+
+    if not target_row:
+        logging.warning(f"Code '{_target_code}' not found in NBD-WF-18-ECS column A — skipping UCL adjustments write")
+        wb_report.close()
+        return
+
+    for dest_col, val in values.items():
+        if val not in (None, ""):
+            ws_ecs.cell(target_row, dest_col).value = val
+            logging.info(f"Set NBD-WF-18-ECS row {target_row} col {dest_col} = {val}")
+
+    wb_report.save(report_file)
+    logging.info(f"UCL adjustments from cashflows written to NBD-WF-18-ECS row {target_row}, cols D-G")
 
 # ---------------------------------------------------------
 # Step 05 – Update Treasury Input Sheet - OPTIMIZED
@@ -744,20 +869,25 @@ def update_treasury_input_sheet(report_file, input_date):
     try:
         with timed_operation("xlwings read Treasury Input"):
             wb_xw = app.books.open(report_file)
+            time.sleep(2)  # Allow Excel COM to fully initialise before accessing sheets
 
-            if "Treasury Input" not in [sheet.name for sheet in wb_xw.sheets]:
+            # Direct name lookup instead of iterating wb_xw.sheets — the iterator
+            # (_NewEnum) has been the source of intermittent "does not support
+            # enumeration" COM failures elsewhere in this file; Item()-style
+            # named access avoids that code path entirely.
+            try:
+                ws_xw = com_retry(lambda: wb_xw.sheets["Treasury Input"])
+            except KeyError:
                 logging.warning("Treasury Input sheet not found")
                 wb_xw.close()
                 return None
 
-            ws_xw = wb_xw.sheets["Treasury Input"]
-
             # Batch read column B to find target fields
-            b_col_data = ws_xw.range("B1:B100").value
+            b_col_data = com_retry(lambda: ws_xw.range("B1:B100").value)
             for row_num, cell_val in enumerate(b_col_data, start=1):
                 if cell_val and str(cell_val).strip() in target_fields:
                     field_name = str(cell_val).strip()
-                    value_from_d = ws_xw.range(f"D{row_num}").value
+                    value_from_d = com_retry(lambda r=row_num: ws_xw.range(f"D{r}").value)
                     field_values[field_name] = {'row': row_num, 'value': value_from_d}
                     logging.info(f"Read D{row_num} ('{field_name}'): {value_from_d}")
 
@@ -884,14 +1014,37 @@ def update_tb_sheets(report_file):
     opening_tb_name = opening_tb_sheet.title
 
     with timed_operation("Copy entire Close TB to Opening TB via xlwings"):
-        app = xw.App(visible=False)
+        app = xw.App(visible=True)  # TEMP DIAGNOSTIC: visible so we can watch what Excel does live — revert to False after
         try:
-            wb_xw = app.books.open(str(report_file))
-            close_tb_xw = wb_xw.sheets[close_tb_name]
-            opening_tb_xw = wb_xw.sheets[opening_tb_name]
-            opening_tb_xw.used_range.api.UnMerge()
-            close_tb_xw.used_range.copy(opening_tb_xw.range("A1"))
-            wb_xw.save()
+            wb_xw = com_retry(lambda: app.books.open(str(report_file)))
+            # Disable events/alerts immediately after opening — this workbook has VBA
+            # (keep_vba=True) and may run a Workbook_Open macro or show an alert/msgbox
+            # on open, which can block or corrupt COM automation calls on an invisible
+            # instance since Excel is single-threaded for macros and COM alike.
+            com_retry(lambda: setattr(app.api, "EnableEvents", False))
+            com_retry(lambda: setattr(app, "display_alerts", False))
+            # Look up sheets by direct name index instead of iterating wb_xw.sheets —
+            # iterating the Sheets collection's enumerator is what was intermittently
+            # throwing "This object does not support enumeration"; direct named/indexed
+            # access uses a different COM call path and avoids it. Falls back to None
+            # (handled below) on KeyError, same as a miss during iteration would.
+            try:
+                close_tb_xw = com_retry(lambda: wb_xw.sheets[close_tb_name])
+            except KeyError:
+                close_tb_xw = None
+            try:
+                opening_tb_xw = com_retry(lambda: wb_xw.sheets[opening_tb_name])
+            except KeyError:
+                opening_tb_xw = None
+            if close_tb_xw is None or opening_tb_xw is None:
+                logging.warning(
+                    f"Sheet lookup failed in xlwings — "
+                    f"wanted close='{close_tb_name}' opening='{opening_tb_name}'"
+                )
+            else:
+                com_retry(lambda: opening_tb_xw.api.UsedRange.UnMerge())
+                com_retry(lambda: close_tb_xw.api.UsedRange.Copy(opening_tb_xw.range("A1").api))
+            com_retry(wb_xw.save)
             wb_xw.close()
         finally:
             app.quit()
@@ -993,15 +1146,9 @@ def update_utilized_credit_lines(report_file, afl_file, input_date):
             _wb2 = _app2.books.open(afl_file)
             time.sleep(1)
 
-            # Find sheet
-            _ws_afl = None
-            for _sh in _wb2.sheets:
-                if "Funding Arrangement" in _sh.name:
-                    _ws_afl = _sh
-                    break
-            if _ws_afl is None:
-                _ws_afl = _wb2.sheets[0]
-                logging.warning("'Funding Arrangement' sheet not found — using first sheet")
+            # The AFIN Borrowing Schedule file always has exactly one sheet
+            # ("Sheet1") — no name search needed, just grab it directly.
+            _ws_afl = com_retry(lambda: _wb2.sheets[0])
 
             # Find header row containing "Institute"
             used = _ws_afl.used_range
@@ -1139,13 +1286,19 @@ def update_utilized_credit_lines(report_file, afl_file, input_date):
     logging.info("Pasted AFL data to UCL columns E-I")
 
     # ── Step 6: Find section label rows in column E (col 5) ─────────────────────
-    # Labels: "Short term", "Over Draft Facility", "Long term", "Inter Company"
+    # Labels: "Short term", "Over Draft Facility", "Long term", "Inter Company",
+    # plus the "Total STL" / "Total OD" / "Total LT" subtotal rows already
+    # present in the pasted data (used directly for C2/C3/C8 instead of
+    # summing a row range).
     # (search from row 2 since row 1 is headers)
     section_labels = {
         "short term": None,
         "over draft facility": None,
         "long term": None,
         "inter company": None,
+        "total stl": None,
+        "total od": None,
+        "total lt": None,
     }
     ucl_last_row = ws_ucl.max_row
     for _r in range(2, ucl_last_row + 1):
@@ -1157,31 +1310,27 @@ def update_utilized_credit_lines(report_file, afl_file, input_date):
 
     logging.info(f"Section label rows in col E: {section_labels}")
 
-    st_row  = section_labels.get("short term")
-    od_row  = section_labels.get("over draft facility")
-    lt_row  = section_labels.get("long term")
     ic_row  = section_labels.get("inter company")
+    total_stl_row = section_labels.get("total stl")
+    total_od_row  = section_labels.get("total od")
+    total_lt_row  = section_labels.get("total lt")
 
-    # ── Step 7: Write range-based formulas to C2, C3, C4, C8 ───────────────────
-    # STL_range: I(st_row+1) : I(od_row-1)
-    # OD_range:  I(od_row+1) : I(lt_row-1)
-    # TL_range:  I(lt_row+1) : I(ic_row-1)
+    # ── Step 7: Write formulas to C2, C3, C4, C8 ────────────────────────────────
+    # C2/C3/C8 reference the existing "Total STL"/"Total LT"/"Total OD" subtotal
+    # rows directly, rather than re-summing the individual bank rows.
     # IC_range:  I(ic_row)
 
-    def _sum_formula(start_r, end_r):
-        return f"=SUM(I{start_r}:I{end_r})"
-
-    if st_row and od_row and st_row + 1 <= od_row - 1:
-        ws_ucl["C2"] = _sum_formula(st_row + 1, od_row - 1)
-        logging.info(f"C2 = SUM(I{st_row+1}:I{od_row-1})")
+    if total_stl_row:
+        ws_ucl["C2"] = f"=+I{total_stl_row}"
+        logging.info(f"C2 = +I{total_stl_row}")
     else:
-        logging.warning(f"Cannot build STL range (st_row={st_row}, od_row={od_row}) — C2 not updated")
+        logging.warning("'Total STL' row not found — C2 not updated")
 
-    if lt_row and ic_row and lt_row + 1 <= ic_row - 1:
-        ws_ucl["C3"] = _sum_formula(lt_row + 1, ic_row - 1)
-        logging.info(f"C3 = SUM(I{lt_row+1}:I{ic_row-1})")
+    if total_lt_row:
+        ws_ucl["C3"] = f"=+I{total_lt_row}"
+        logging.info(f"C3 = +I{total_lt_row}")
     else:
-        logging.warning(f"Cannot build TL range (lt_row={lt_row}, ic_row={ic_row}) — C3 not updated")
+        logging.warning("'Total LT' row not found — C3 not updated")
 
     if ic_row:
         ws_ucl["C4"] = f"=+I{ic_row}"
@@ -1189,11 +1338,11 @@ def update_utilized_credit_lines(report_file, afl_file, input_date):
     else:
         logging.warning("Inter Company row not found — C4 not updated")
 
-    if od_row and lt_row and od_row + 1 <= lt_row - 1:
-        ws_ucl["C8"] = _sum_formula(od_row + 1, lt_row - 1)
-        logging.info(f"C8 = SUM(I{od_row+1}:I{lt_row-1})")
+    if total_od_row:
+        ws_ucl["C8"] = f"=+I{total_od_row}"
+        logging.info(f"C8 = +I{total_od_row}")
     else:
-        logging.warning(f"Cannot build OD range (od_row={od_row}, lt_row={lt_row}) — C8 not updated")
+        logging.warning("'Total OD' row not found — C8 not updated")
 
     wb_report.save(report_file)
     logging.info("utilized_credit_lines update complete")
@@ -1588,15 +1737,74 @@ def update_payment_sheet(report_file, payments_file, audit_receipt_file):
         logging.warning("No Payments file and no Audit Receipt file — skipping Payment sheet update")
         return
 
+    def _to_number(val):
+        """Convert a numeric-looking text value (e.g. ERP export's '24,900.5')
+        to a real float so Excel doesn't flag it as a number stored as text."""
+        if isinstance(val, str):
+            cleaned = val.replace(",", "").strip()
+            try:
+                return float(cleaned)
+            except ValueError:
+                return val
+        return val
+
     logging.info(f"Using {source_label}")
     with timed_operation("Read Payment source data"):
         wb_src = load_workbook(source_file, data_only=True, read_only=True)
         ws_src = wb_src.active
+
+        # Locate the real header row (col A = "Date") instead of assuming row 2.
+        # ERP exports (e.g. the GL Account Details report Payments now uses)
+        # include a metadata block — Sub Ledger Code, Transaction From/To Date,
+        # Opening/Closing Balance — plus a blank row, before the actual column
+        # headers and data; a plain manually-uploaded file has headers on row 1
+        # with no such block, so this still works for that case too.
+        header_row_idx = None
+        header_row_vals = None
+        for _r, _row in enumerate(ws_src.iter_rows(max_row=30, max_col=8, values_only=True), start=1):
+            if _row and str(_row[0]).strip().lower() == "date":
+                header_row_idx = _r
+                header_row_vals = _row
+                break
+        data_start_row = (header_row_idx + 1) if header_row_idx else 2
+
+        # A source file only has real per-transaction categories when its own
+        # header row labels column H 'Category' — that's true for a manually
+        # uploaded Payments file, but the raw ERP GL Account Details export
+        # the bot downloads has only 7 columns and no Category at all. This
+        # is checked from the actual header text rather than by which source
+        # was picked, so it works correctly regardless of which file ends up
+        # as payments_file.
+        has_source_category_col = bool(
+            header_row_vals and len(header_row_vals) > 7 and header_row_vals[7]
+            and str(header_row_vals[7]).strip().lower() == "category"
+        )
+
+        # max_col=8 also pulls col H (Category): the authoritative source for
+        # every row when has_source_category_col is True (looked up by
+        # Transaction No — col B — below), and otherwise a fallback for rows
+        # the List-sheet keyword search doesn't match.
         src_rows = []
-        for row in ws_src.iter_rows(min_row=2, max_col=7, values_only=True):
-            src_rows.append(row)
+        src_categories = []
+        src_txn_to_category = {}
+        for row in ws_src.iter_rows(min_row=data_start_row, max_col=8, values_only=True):
+            if row and any(v not in (None, "") for v in row):
+                row = list(row)
+                for _idx in (4, 5, 6):  # Debit Amount, Credit Amount, Running Balance
+                    row[_idx] = _to_number(row[_idx])
+                cat = row[7] if len(row) > 7 else None
+                src_categories.append(cat)
+                src_rows.append(tuple(row[:7]))
+                if has_source_category_col:
+                    txn_no = row[1]   # column B = Transaction No
+                    if txn_no not in (None, "") and cat not in (None, ""):
+                        src_txn_to_category[str(txn_no).strip()] = str(cat).strip()
         wb_src.close()
-    logging.info(f"Read {len(src_rows)} data rows from {source_label}")
+    logging.info(
+        f"Read {len(src_rows)} data rows from {source_label} "
+        f"(header row: {header_row_idx or 'none found, defaulted to row 1'}"
+        f"{', with per-transaction Category column' if has_source_category_col else ''})"
+    )
 
     with timed_operation("Write to Payment sheet"):
         wb_report = load_workbook(report_file, keep_vba=True)
@@ -1627,9 +1835,37 @@ def update_payment_sheet(report_file, payments_file, audit_receipt_file):
         # Step 3: Clear H column from row 3 to last data row, then apply formula
         for r_idx in range(3, last_data_row + 1):
             ws_pay.cell(r_idx, 8).value = None
-        if h1_formula and str(h1_formula).startswith("="):
+
+        def _fallback_category(src_cat):
+            """Fall back to the source file's own Category when the List-sheet
+            keyword search finds no match, instead of a bare 'No Category'."""
+            if src_cat not in (None, "") and str(src_cat).strip().lower() != "no category":
+                return str(src_cat).strip().replace('"', '""')
+            return "No Category"
+
+        if has_source_category_col:
+            # The source file has its own authoritative Category per
+            # transaction — use that directly as a literal value instead of
+            # the List-sheet keyword-search formula, looked up by each row's
+            # own Transaction No (col B) rather than assumed row order, so a
+            # transaction always gets its own correct category regardless of
+            # how the destination rows are ordered.
+            matched = 0
+            for r_idx in range(3, last_data_row + 1):
+                txn_no = ws_pay.cell(r_idx, 2).value
+                cat = src_txn_to_category.get(str(txn_no).strip()) if txn_no not in (None, "") else None
+                ws_pay.cell(r_idx, 8).value = cat or "No Category"
+                if cat:
+                    matched += 1
+            logging.info(
+                f"Set Category directly from source file's own column, matched by Transaction No: "
+                f"{matched}/{last_data_row - 2} rows"
+            )
+        elif h1_formula and str(h1_formula).startswith("="):
             for r_idx in range(3, last_data_row + 1):
                 adjusted = re.sub(r'(\$?[A-Za-z]+)\$?1(?!\d)', lambda m, r=r_idx: f"{m.group(1)}{r}", str(h1_formula))
+                fallback = _fallback_category(src_categories[r_idx - 3])
+                adjusted = re.sub(r',\s*"[^"]*"\s*\)\s*$', f',"{fallback}")', adjusted)
                 ws_pay.cell(r_idx, 8).value = adjusted
             logging.info(f"Applied H formula (from H1 template) to rows 3-{last_data_row}")
         else:
@@ -1637,9 +1873,10 @@ def update_payment_sheet(report_file, payments_file, audit_receipt_file):
             # Using ArrayFormula prevents openpyxl from inserting the @ implicit intersection operator
             from openpyxl.worksheet.formula import ArrayFormula
             for r_idx in range(3, last_data_row + 1):
+                fallback = _fallback_category(src_categories[r_idx - 3])
                 formula = (
                     f'IFERROR(INDEX(List!$B$2:$B$205,'
-                    f'MATCH(TRUE,ISNUMBER(SEARCH(List!$A$2:$A$205,C{r_idx})),0)),"No Category")'
+                    f'MATCH(TRUE,ISNUMBER(SEARCH(List!$A$2:$A$205,C{r_idx})),0)),"{fallback}")'
                 )
                 ws_pay.cell(r_idx, 8).value = ArrayFormula(f"H{r_idx}", f"={formula}")
             logging.info(f"Applied hardcoded IFERROR/INDEX/MATCH H formula to rows 3-{last_data_row}")
@@ -1916,6 +2153,18 @@ def update_cum_monthly_collection(report_file: str, date_folder: str, input_date
 
         ws_cum = wb_w[sheet_name]
 
+        _month_header_exists = any(
+            isinstance(ws_cum.cell(_r, 3).value, datetime)
+            and ws_cum.cell(_r, 3).value.year == all_dates[0].year
+            and ws_cum.cell(_r, 3).value.month == all_dates[0].month
+            and ws_cum.cell(_r, GRAND_TOTAL_SHEET_COL).value == "Grand Total"
+            for _r in range(1, ws_cum.max_row + 1)
+        )
+        if _month_header_exists:
+            logging.info(f"'Last Cum month collection' already has the {all_dates[0]:%b-%Y} block — not appending again")
+            wb_w.close()
+            return
+
         _BLUE_FILL = PatternFill(fill_type="solid", fgColor="D8E9F1")
         _BOLD_FONT = Font(bold=True)
 
@@ -1976,20 +2225,34 @@ def update_cum_monthly_collection(report_file: str, date_folder: str, input_date
 # ---------------------------------------------------------
 def update_collection_sheet(report_file: str, input_date: datetime, week_number: int = 0):
     """
-    Week-1 only.  In the 'Collection' sheet, append a new data row to three sections:
+    Week-1 only.  In the 'Collection' sheet, append a new data row to three sections.
+    Every appended row copies the full cell formatting (font, fill, borders,
+    number formats) of the row above it so the sections stay visually consistent.
 
-    1. After "Colelction per day" section:
-       - Col A = first day of previous month
+    Sections are processed in top-to-bottom sheet order, because each insert
+    shifts all rows below it without updating formula text:
+
+    1. "Colelction per day" (top):
+       - Col A = previous-month label (same type/format as the row above)
        - Col C–AH = previous row's sheet-ref formula +6 on the row index
-       - AH SUM row below: extend range end by 1
 
-    2. After "Fixed Deposits" section:
-       - Same logic: Col A = prev month first, Col C–AH = +6 ref formula
+    2. "Average collection per day" (middle):
+       - Col A = prev-month label
+       - Col C–AH = previous row's formula with row refs +1, so the new row
+         divides the section-1 row just appended by its AH total
+         (e.g. =AC39/$AH39 → =AC40/$AH40)
 
-    3. After "Average collection per day" section:
-       - Col A = prev month first
-       - Col C–AH = previous row's formula with this new row's row number substituted
-         (formula pattern: =C{r}/$AH{r}, =D{r}/$AH{r}, …)
+    3. "Fixed Deposits" (bottom, last so the section-2 insert has already
+       shifted it into final position):
+       - Same logic as section 1: Col A = prev-month label, +6 ref formulas
+
+    After each insert, every range formula in the totals/average row directly
+    below the section (SUM, AVERAGE, … across all columns) has its range end
+    re-anchored to the newly inserted row.
+
+    Then AJ21 ("Current month") is re-pointed at the AH cell of the
+    prior-year same-month row (same target row as "Update to past same
+    month"), e.g. a Dec-25 run points AJ21 at Dec-24's AH cell.
     """
     import re as _re
 
@@ -2009,15 +2272,30 @@ def update_collection_sheet(report_file: str, input_date: datetime, week_number:
 
     ws = coll_sheet
 
-    # ── Fill C1:AG1 with dates starting from week_start_date, one per cell ───
-    # week_start_date = Monday of the week containing input_date
+    # ── Update C1:AG1 for the 'Next 22-28 days' window only ──────────────────
+    # Each column is a FIXED day-of-month slot (C=day1, D=day2, … AG=day31),
+    # not a rolling 31-day window — so only the 7 columns matching this run's
+    # 'Next 22-28 days' dates (Weekly Distributions row 2, cols K:L) get
+    # touched; the other 24 keep whatever they were set to on a previous run.
+    # K2:L2 there is itself just week_start+28 .. week_start+34 (built off
+    # 'NBD-WF-18-ECS'!H2, which this script sets to week_start_date), so it's
+    # computed directly here rather than read back from the sheet.
+    # Writing straight to the day-of-month column (instead of a fixed offset
+    # from week_start) means a window that crosses a month boundary (e.g.
+    # 29-Dec..4-Jan) naturally updates the right columns to the new month/
+    # year while leaving the rest alone — and a short month (Feb, or any
+    # 30-day month) just never produces a day-31 (or day-30) date to write,
+    # so that column is left untouched rather than forced to an invalid date.
     week_start = input_date - timedelta(days=input_date.weekday())
-    for col_offset in range(31):   # C=3 … AG=33, 31 cells
-        _d = week_start + timedelta(days=col_offset)
-        cell = ws.cell(1, 3 + col_offset)   # col C=3, AG=33
+    _updated_cols = []
+    for _day_offset in range(28, 35):   # the 7 days of 'Next 22-28 days'
+        _d = week_start + timedelta(days=_day_offset)
+        _col = 3 + (_d.day - 1)   # day-of-month 1 -> C(3) … day-of-month 31 -> AG(33)
+        cell = ws.cell(1, _col)
         cell.value = datetime(_d.year, _d.month, _d.day)
         cell.number_format = "M/D/YYYY"
-    logging.info(f"Filled C1:AG1 with dates {week_start.strftime('%m/%d/%Y')} to {(week_start + timedelta(days=30)).strftime('%m/%d/%Y')}")
+        _updated_cols.append(f"{get_column_letter(_col)}1={_d.strftime('%m/%d/%Y')}")
+    logging.info(f"Updated 'Next 22-28 days' date columns: {', '.join(_updated_cols)}")
 
     prev_month_first = (input_date.replace(day=1) - timedelta(days=1)).replace(day=1)
 
@@ -2052,13 +2330,63 @@ def update_collection_sheet(report_file: str, input_date: datetime, week_number:
             formula
         )
 
-    def _append_ref_row(label_substr: str, fix_ah_sum: bool = False,
-                        start_from: int = 1, col_a_value=None) -> int:
+    def _update_totals_row(total_row: int, new_end: int):
+        """Re-anchor the end row of every range reference in the totals/average
+        row below an inserted row (e.g. =SUM(AH14:AH40) → =SUM(AH14:AH41),
+        =AVERAGE(AF42:AF77) → =AVERAGE(AF42:AF79)) so the range includes the
+        row just inserted. Scans cols B..AJ; cells without range formulas are
+        left untouched."""
+        updated = 0
+        for _c in range(2, 37):   # B=2 … AJ=36
+            _cell = ws.cell(total_row, _c)
+            _f = _cell.value
+            if _f and isinstance(_f, str) and _f.startswith("=") and ":" in _f:
+                _new_f = _re.sub(
+                    r"(\$?[A-Z]+\$?\d+:\$?[A-Z]+\$?)(\d+)",
+                    lambda m: f"{m.group(1)}{new_end}",
+                    _f
+                )
+                if _new_f != _f:
+                    _cell.value = _new_f
+                    updated += 1
+        if updated:
+            logging.info(f"  Totals row {total_row}: re-anchored {updated} range formulas to end row {new_end}")
+        else:
+            logging.info(f"  Totals row {total_row}: no range formulas found — nothing updated")
+
+    def _copy_row_format(src_row: int, dst_row: int, max_col: int = 36):
+        """Copy cell styles (font, fill, border, alignment, number format) from
+        src_row onto dst_row for cols A..AJ, so appended rows match the section's
+        existing formatting."""
+        from copy import copy as _style_copy
+        for _c in range(1, max_col + 1):
+            _s = ws.cell(src_row, _c)
+            _d = ws.cell(dst_row, _c)
+            if _s.has_style:
+                _d.font = _style_copy(_s.font)
+                _d.fill = _style_copy(_s.fill)
+                _d.border = _style_copy(_s.border)
+                _d.alignment = _style_copy(_s.alignment)
+                _d.protection = _style_copy(_s.protection)
+                _d.number_format = _s.number_format
+
+    def _write_col_a(new_row: int, prev_row: int):
+        """Write the previous-month label in col A, mirroring the type of the row
+        above: a real date if the section stores dates (renders as Mmm-yy via the
+        copied number format), otherwise a 'Mon-YY' string."""
+        cell_a = ws.cell(new_row, 1)
+        prev_a = ws.cell(prev_row, 1).value
+        if isinstance(prev_a, (datetime, date)):
+            cell_a.value = datetime(prev_month_first.year, prev_month_first.month, prev_month_first.day)
+        else:
+            cell_a.value = prev_month_first.strftime("%b-%y")
+
+    def _append_ref_row(label_substr: str, start_from: int = 1) -> int:
         """
         Find section label, insert new row after last data row, write:
-          - Col A: col_a_value (string label like "Nov-25") or prev_month_first date if None
+          - Col A: previous-month label, same type/format as the row above
           - Col C–AH: previous row's cross-sheet formula with +6 row index
-          - Optionally extend the AH SUM below the new row by 1
+          - Totals/average row below: re-anchor all range formulas to the new row
         Returns the new_row number (after insertion), or 0 on failure.
         """
         label_row = _find_label_row(label_substr, start_from)
@@ -2072,14 +2400,8 @@ def update_collection_sheet(report_file: str, input_date: datetime, week_number:
         logging.info(f"  last data row={last_data_row}, inserting at row={new_row}")
 
         ws.insert_rows(new_row)
-
-        # Col A: string label or date
-        cell_a = ws.cell(new_row, 1)
-        if col_a_value is not None:
-            cell_a.value = col_a_value
-        else:
-            cell_a.value = datetime(prev_month_first.year, prev_month_first.month, prev_month_first.day)
-            cell_a.number_format = "DD/MM/YYYY"
+        _copy_row_format(last_data_row, new_row)
+        _write_col_a(new_row, last_data_row)
 
         # Col C–AH: +6 cross-sheet ref from previous row
         prev_c = ws.cell(last_data_row, 3).value
@@ -2093,69 +2415,9 @@ def update_collection_sheet(report_file: str, input_date: datetime, week_number:
         else:
             logging.warning(f"  Col C of row {last_data_row} has no formula — formulas not copied")
 
-        # Optionally fix AH SUM in the row immediately below the new row
-        if fix_ah_sum:
-            sum_row = new_row + 1
-            ah_cell = ws.cell(sum_row, 34)
-            ah_f = ah_cell.value
-            logging.info(f"  AH SUM at row {sum_row}: {ah_f}")
-            if ah_f and str(ah_f).startswith("=SUM("):
-                updated = _re.sub(
-                    r"(=SUM\([A-Z]+\d+:[A-Z]+)(\d+)\)",
-                    lambda m: f"{m.group(1)}{int(m.group(2)) + 1})",
-                    str(ah_f)
-                )
-                ah_cell.value = updated
-                logging.info(f"  Updated AH SUM: {updated}")
-            else:
-                logging.warning(f"  AH SUM formula not found at row {sum_row}")
-
-        return new_row
-
-    def _append_avg_row(label_substr: str, start_from: int = 1) -> int:
-        """
-        Find 'Average collection per day' section, insert new row, write:
-          - Col A: prev_month_first date
-          - Col C–AH: formula =C{new_row}/$AH{new_row}, =D{new_row}/$AH{new_row}, …
-            (pattern derived from the previous row's formula, substituting the new row number)
-        Returns new_row number or 0 on failure.
-        """
-        label_row = _find_label_row(label_substr, start_from)
-        if label_row is None:
-            logging.warning(f"Label '{label_substr}' not found in Collection col A — skipping")
-            return 0
-
-        logging.info(f"Found '{label_substr}' at row {label_row}")
-        last_data_row = _find_last_data_row(label_row)
-        new_row = last_data_row + 1
-        logging.info(f"  last data row={last_data_row}, inserting at row={new_row}")
-
-        ws.insert_rows(new_row)
-
-        # Col A: date
-        cell_a = ws.cell(new_row, 1)
-        cell_a.value = datetime(prev_month_first.year, prev_month_first.month, prev_month_first.day)
-        cell_a.number_format = "DD/MM/YYYY"
-
-        # Col C–AH: substitute new_row number into the formula pattern from previous row
-        prev_c = ws.cell(last_data_row, 3).value
-        logging.info(f"  Previous C formula: {prev_c}")
-        if prev_c and str(prev_c).startswith("="):
-            # Replace all unanchored row references with new_row
-            # e.g. =C38/$AH38  →  =C{new_row}/$AH{new_row}
-            def _replace_row(formula: str, old_row: int, new_r: int) -> str:
-                return _re.sub(
-                    r"(\$?[A-Z]+)(\b" + str(old_row) + r"\b)",
-                    lambda m: f"{m.group(1)}{new_r}",
-                    formula
-                )
-            old_row = last_data_row
-            for _col in range(3, 35):   # C=3 … AH=34
-                prev_f = ws.cell(last_data_row, _col).value
-                if prev_f and str(prev_f).startswith("="):
-                    ws.cell(new_row, _col).value = _replace_row(str(prev_f), old_row, new_row)
-        else:
-            logging.warning(f"  Col C of row {last_data_row} has no formula — formulas not copied")
+        # Totals/average row immediately below the new row: extend its ranges
+        # to include the inserted row (all columns, not just AH)
+        _update_totals_row(new_row + 1, new_row)
 
         return new_row
 
@@ -2173,20 +2435,32 @@ def update_collection_sheet(report_file: str, input_date: datetime, week_number:
         logging.info("Collection sheet C1:AG1 updated")
         return
 
-    # Col A label: Mon-YY of previous month (e.g. "Nov-25")
-    prev_month_label = (input_date.replace(day=1) - timedelta(days=1)).strftime("%b-%y")
+    # Sections are processed in TOP-TO-BOTTOM sheet order (Colelction per day →
+    # Average collection per day → Fixed Deposits). Each insert shifts every row
+    # below it down by one WITHOUT updating formula text, so a section's totals
+    # must only be located and re-anchored after all inserts above it are done.
 
     # ── Section 1: "Colelction per day" — data rows BELOW the label ──────────
-    nr1 = _append_ref_row("colelction per day", fix_ah_sum=True, col_a_value=prev_month_label)
+    _sec1_row = _find_label_row("colelction per day")
+    _sec2_row = _find_label_row("average collection per day")
+    _month_row_exists = _sec1_row is not None and any(
+        isinstance(ws.cell(_r, 1).value, datetime)
+        and ws.cell(_r, 1).value.year == prev_month_first.year
+        and ws.cell(_r, 1).value.month == prev_month_first.month
+        for _r in range(_sec1_row + 1, (_sec2_row or ws.max_row + 1))
+    )
+    if _month_row_exists:
+        logging.info(f"Collection sheet already has the {prev_month_first:%b-%Y} rows — not appending again")
+        wb.save(report_file)
+        return
 
-    # ── Section 2: "Fixed Deposits" — same logic as Section 1 (+6 cross-sheet ref) ──
-    nr2 = _append_ref_row("fixed deposits", fix_ah_sum=False, start_from=nr1 if nr1 else 1,
-                          col_a_value=prev_month_label)
+    nr1 = _append_ref_row("colelction per day")
 
-    # ── Section 3: "Average collection per day" ──────────────────────────────
-    # Find label, insert new row after last data row below it (scan DOWN).
-    # Col A = Mon-YY label.
-    # Col C–AH = =C{r}/$AH{r}, =D{r}/$AH{r}, … (only letter changes, row anchored to new row)
+    # ── Section 2: "Average collection per day" ──────────────────────────────
+    # Each row here divides the matching "Colelction per day" row by its AH total
+    # (e.g. Oct-25 → =AC39/$AH39). Continue the pattern: copy the previous row's
+    # formulas with row refs advanced by 1 so the new row points at the section-1
+    # row just appended (=AC39/$AH39 → =AC40/$AH40).
     _label3 = "average collection per day"
     _label3_row = _find_label_row(_label3, start_from=1)
     if _label3_row is None:
@@ -2197,71 +2471,230 @@ def update_collection_sheet(report_file: str, input_date: datetime, week_number:
         _new3 = _last3 + 1
         logging.info(f"  last data row={_last3}, inserting at row={_new3}")
         ws.insert_rows(_new3)
-        # Col A: Mon-YY label
-        ws.cell(_new3, 1).value = prev_month_label
-        # Col C–AH: =C{r}/$AH{r} with only the column letter changing
-        def _col_letter(col_idx: int) -> str:
-            """Convert 1-based column index to Excel letter(s)."""
-            result = ""
-            n = col_idx - 1
-            while True:
-                result = chr(65 + n % 26) + result
-                n = n // 26 - 1
-                if n < 0:
-                    break
-            return result
-        for _col in range(3, 35):   # C=3 … AH=34
-            ws.cell(_new3, _col).value = f"={_col_letter(_col)}{_new3}/$AH{_new3}"
-        logging.info(f"  Written =COL{_new3}/$AH{_new3} formulas C–AH")
+        _copy_row_format(_last3, _new3)
+        _write_col_a(_new3, _last3)
+        _prev_c3 = ws.cell(_last3, 3).value
+        logging.info(f"  Previous C formula: {_prev_c3}")
+        if _prev_c3 and str(_prev_c3).startswith("="):
+            for _col in range(3, 35):   # C=3 … AH=34
+                _prev_f = ws.cell(_last3, _col).value
+                if _prev_f and str(_prev_f).startswith("="):
+                    ws.cell(_new3, _col).value = _re.sub(
+                        r"(\$?[A-Z]+\$?)(\d+)",
+                        lambda m: f"{m.group(1)}{int(m.group(2)) + 1}",
+                        str(_prev_f)
+                    )
+            logging.info(f"  Copied row-{_last3} formulas with row refs +1 into row {_new3}")
+        else:
+            logging.warning(f"  Col C of row {_last3} has no formula — formulas not copied")
 
-    # ── AI21: extend AVERAGE range upper bound by 1 (week 1 only) ────────────
+        # Averages row immediately below: extend its ranges to the new row
+        # (e.g. =AVERAGE(AF42:AF77) → =AVERAGE(AF42:AF79))
+        _update_totals_row(_new3 + 1, _new3)
+
+    # ── Section 3: "Fixed Deposits" — the lowest section, processed LAST so the
+    # average-section insert above has already shifted it into final position
+    # before its rows are located and its totals row is re-anchored ───────────
+    nr2 = _append_ref_row("fixed deposits", start_from=nr1 if nr1 else 1)
+
+    # ── AI21: re-anchor AVERAGE range end to the new section-1 row ───────────
     ai21 = ws.cell(21, 35)   # AI = col 35
     ai21_formula = ai21.value
     logging.info(f"AI21 formula: {ai21_formula}")
-    if ai21_formula and str(ai21_formula).startswith("="):
+    if ai21_formula and str(ai21_formula).startswith("=") and nr1:
         updated_ai21 = _re.sub(
-            r"(=\w+\([A-Z]+\d+:[A-Z]+)(\d+)\)",
-            lambda m: f"{m.group(1)}{int(m.group(2)) + 1})",
+            r"(\$?[A-Z]+\$?\d+:\$?[A-Z]+\$?)(\d+)",
+            lambda m: f"{m.group(1)}{nr1}",
             str(ai21_formula)
         )
         ai21.value = updated_ai21
         logging.info(f"Updated AI21: {updated_ai21}")
     else:
-        logging.warning("AI21 has no formula — skipping")
+        logging.warning("AI21 has no formula or section-1 row missing — skipping")
 
-    # ── AJ21: find row with previous year's previous month, write =+AH{row} ───
-    # e.g. report date 07/12/2025 → prev month = Nov 2025 → prev year = Nov 2024 → "Nov-24"
-    _prev_month_dt = input_date.replace(day=1) - timedelta(days=1)   # last day of prev month
-    _prev_yr_label = datetime(_prev_month_dt.year - 1, _prev_month_dt.month, 1).strftime("%b-%y")
-    logging.info(f"Looking for label '{_prev_yr_label}' in col A up to 'Average collection per day'")
-
-    # Limit search to rows before "Average collection per day"
-    _avg_label_row = ws.max_row + 1
-    for _r in range(1, ws.max_row + 1):
-        _v = ws.cell(_r, 1).value
-        if _v and "average collection per day" in str(_v).strip().lower():
-            _avg_label_row = _r
-            break
-
-    _target_row = None
-    for _r in range(1, _avg_label_row):
-        _v = ws.cell(_r, 1).value
-        if _v is None:
-            continue
-        # Col A may be a datetime object or a string — normalise both to "Mon-YY"
-        if isinstance(_v, (datetime, date)):
-            _v_str = _v.strftime("%b-%y")
-        else:
-            _v_str = str(_v).strip()
-        if _v_str.lower() == _prev_yr_label.lower():
-            _target_row = _r
-            break
-
-    if _target_row is not None:
-        ws.cell(21, 36).value = f"=+AH{_target_row}"   # AJ = col 36
-        logging.info(f"AJ21 = =+AH{_target_row} (row for '{_prev_yr_label}')")
+    # ── AJ21 "Current month": same calendar month as the RUN DATE, one year
+    # earlier — the same target row as "Update to past same month" below
+    # (nr1 - 11, see that block's comment for the derivation). Recomputed
+    # every run from nr1 so it never drifts, regardless of how many rows
+    # have been inserted above it.
+    if nr1 and nr1 - 11 >= 4:
+        ws.cell(21, 36).value = f"=+AH{nr1 - 11}"   # AJ = col 36
+        logging.info(f"AJ21 = =+AH{nr1 - 11} (prior-year same-month row in 'Colelction per day')")
     else:
-        logging.warning(f"Row '{_prev_yr_label}' not found before 'Average collection per day' — AJ21 not updated")
+        logging.warning("Section-1 row missing or no prior-year row available — AJ21 not updated")
+
+    # ── "Update to past same month": same calendar month as the RUN DATE
+    # (input_date), one year earlier. nr1 is the row just appended for the
+    # PREVIOUS month (this code only runs in week 1, when the prior month's
+    # data is finalized — e.g. a Dec-2025 run appends "Nov-25" at nr1). Since
+    # the run month is always exactly one month after nr1's month, the same
+    # month one year back is nr1 - 12 + 1 = nr1 - 11 (e.g. new row = Nov-25 at
+    # row 40 → run month is December → past-year Dec-24 is at row 29, not
+    # Nov-24 at row 28). Unlike AJ21, nothing else recomputes this cell, so it
+    # was left pinned to whatever row was correct when it was last set by
+    # hand, drifting one month stale every week-1 run thereafter.
+    upsm_row = _find_label_row("update to past same month", start_from=1)
+    if upsm_row is None:
+        logging.warning("'Update to past same month' label not found — skipping")
+    elif nr1 and nr1 - 11 >= 4:
+        ws.cell(upsm_row, 2).value = f"=+AH{nr1 - 11}"
+        logging.info(f"'Update to past same month' (row {upsm_row}) B = =+AH{nr1 - 11}")
+    else:
+        logging.warning("Section-1 row missing or no prior-year row available — 'Update to past same month' not updated")
+
+    # ── "Debtor" row: for each day-of-month column (C:AG), the value is
+    # (Debtor total, this row's own B cell) x (that day's average-collection
+    # % from the row directly above 'Factor') x (Factor, Factor row's B cell).
+    # This whole block ('Average'/Total row, Factor, Update to past same
+    # month, Debtor) shifts down by one row each week-1 run, in lockstep,
+    # because it sits immediately below the 'Average collection per day'
+    # section's newly inserted row. Row positions are looked up by label
+    # every run rather than carried forward, so the formula stays correctly
+    # anchored regardless of how far the block has drifted.
+    factor_row = _find_label_row("factor", start_from=1)
+    debtor_row = _find_label_row("debtor", start_from=1)
+    if factor_row is None or debtor_row is None:
+        logging.warning("'Factor' or 'Debtor' label not found — skipping Debtor row formula refresh")
+    else:
+        avg_row = factor_row - 1  # the section-2 average/total row, directly above 'Factor'
+
+        # ── "Factor" row's own B-column formula: (Update to past same
+        # month's B value) / $AI$21. Drifts the same way as Debtor below —
+        # openpyxl's insert_rows() shifts the cell down without updating the
+        # row number in its formula text — so it's re-derived by label every
+        # run instead of being carried forward.
+        if upsm_row is not None:
+            ws.cell(factor_row, 2).value = f"=+B{upsm_row}/$AI$21"
+            logging.info(f"Factor row {factor_row}: B = =+B{upsm_row}/$AI$21 (Update to past same month row {upsm_row})")
+        else:
+            logging.warning("'Update to past same month' row not found — skipping Factor B formula refresh")
+
+        updated_cols = 0
+        for _col in range(3, 34):  # C=3 … AG=33
+            _col_letter = get_column_letter(_col)
+            ws.cell(debtor_row, _col).value = f"=$B${factor_row}*{_col_letter}{avg_row}*$B${debtor_row}"
+            updated_cols += 1
+        logging.info(f"Debtor row {debtor_row}: refreshed {updated_cols} formulas (Factor row {factor_row}, Average row {avg_row})")
+
+    # ── "Other Collections" row: for each day-of-month column (C:AG), the
+    # value is (Other Collections' own B total) x (that day's average-
+    # collection % from the row directly above 'Factor'). Same drift pattern
+    # as Debtor above, but only 2 factors, not 3 — the reference template
+    # (Week 48 file) has this row's formula as =$B$83*C78 (its OWN B column,
+    # not Debtor's), so re-derived here as $B$<other_collections_row> rather
+    # than reusing debtor_row.
+    other_collections_row = _find_label_row("other collections", start_from=1)
+    if other_collections_row is None or factor_row is None:
+        logging.warning("'Other Collections' or 'Factor' label not found — skipping Other Collections row formula refresh")
+    else:
+        _avg_row = factor_row - 1
+        updated_oc_cols = 0
+        for _col in range(3, 34):  # C=3 … AG=33
+            _col_letter = get_column_letter(_col)
+            ws.cell(other_collections_row, _col).value = f"=$B${other_collections_row}*{_col_letter}{_avg_row}"
+            updated_oc_cols += 1
+        logging.info(f"Other Collections row {other_collections_row}: refreshed {updated_oc_cols} formulas (Average row {_avg_row})")
+
+    # ── AH-column "self total" formulas (=SUM(C{row}:AG{row})) drift the same
+    # way as the Debtor row above, and it isn't limited to the Factor/Debtor/
+    # Other Collections block — the 'Average collection per day' section's own
+    # historical monthly rows (its data sits ABOVE 'Factor', so Section 1's
+    # insert shifts the whole section down by one row every week-1 run) and
+    # the 'Fixed Deposits' section's monthly rows further down are affected
+    # the exact same way: insert_rows() shifts the cell down without updating
+    # the row number baked into its own formula text, so each ends up
+    # referencing a row a few positions too high (e.g. AH58 pointing at
+    # =SUM(C57:AG57) instead of its own =SUM(C58:AG58)). Re-anchor every such
+    # formula from the 'Average collection per day' section's first data row
+    # all the way down through the end of the 'Fixed Deposits' data block
+    # (nr2, the row just appended there) — bounded and re-derived every run,
+    # so it keeps working regardless of how many rows have been inserted
+    # above it. The regex only matches self-referencing SUM(C:AG) formulas,
+    # so it naturally skips the cross-sheet-linked rows within Fixed Deposits
+    # (e.g. ='Last  Cum month collection'!AH220) without needing to special-
+    # case them.
+    #
+    # A second, unrelated pattern also shows up further down in the Average-
+    # collection-per-day section: some rows carry '=AH{x}/$AH{x}' instead of
+    # a real self-total — always evaluating to 100%, not an actual sum of
+    # that row's own C:AG values like every row above it. Any row using that
+    # ratio pattern is unconditionally replaced with a proper self-total too,
+    # so the whole section (through to the Average/Totals row) uses one
+    # consistent formula shape.
+    if factor_row is not None:
+        _self_sum_re = _re.compile(r"^=\s*SUM\(\s*C(\d+)\s*:\s*AG\d+\s*\)\s*$", _re.IGNORECASE)
+        _ratio_re = _re.compile(r"^=\s*AH\d+\s*/\s*\$AH\d+\s*$", _re.IGNORECASE)
+        block_start = (_label3_row + 1) if _label3_row else factor_row
+        block_end = (nr2 + 1) if nr2 else (_find_label_row("fixed deposits", start_from=factor_row) or (factor_row + 10))
+        fixed_count = 0
+        for _r in range(block_start, block_end):
+            _cell = ws.cell(_r, 34)  # AH = col 34
+            _f = _cell.value
+            if _f and isinstance(_f, str):
+                _f_stripped = _f.strip()
+                _m = _self_sum_re.match(_f_stripped)
+                if _m and int(_m.group(1)) != _r:
+                    _cell.value = f"=SUM(C{_r}:AG{_r})"
+                    fixed_count += 1
+                    logging.info(f"  Re-anchored AH{_r} self-total: {_f} -> =SUM(C{_r}:AG{_r})")
+                elif _ratio_re.match(_f_stripped):
+                    _cell.value = f"=SUM(C{_r}:AG{_r})"
+                    fixed_count += 1
+                    logging.info(f"  Replaced AH{_r} ratio formula with self-total: {_f} -> =SUM(C{_r}:AG{_r})")
+        if fixed_count:
+            logging.info(f"Fixed {fixed_count} AH formula(s) in rows {block_start}-{block_end - 1}")
+        else:
+            logging.info(f"No AH formula issues found in rows {block_start}-{block_end - 1}")
+
+    # ── Re-point 'Weekly Distributions' cross-sheet links at the Collection
+    # rows they actually mean, not whatever row they happened to sit at when
+    # the template was last hand-aligned. Three rows there pull from Collection
+    # via SUMIFS(Collection!$C${row}:$AG${row}, ...): 'Loan Recoveries' from
+    # 'Debtor', 'Any Other cash Inflows' from 'Other Collections', and 'New
+    # Deposits' from the Fixed Deposits section's totals row (nr2 + 1, the row
+    # right after the newly appended Fixed Deposits data row). All three of
+    # those Collection rows shift every week-1 run, but the Weekly
+    # Distributions formulas are static text that never gets touched by
+    # Excel's own row-insert logic (this is a different sheet), so they were
+    # left pointing at stale rows. Re-derived by label every run instead of
+    # carried forward, same as the fixes above. other_collections_row was
+    # already resolved above for the Other Collections formula refresh.
+    fd_totals_row = (nr2 + 1) if nr2 else None
+
+    wd_sheet = None
+    for _sn in wb.sheetnames:
+        if _sn.strip().lower() == "weekly distributions":
+            wd_sheet = wb[_sn]
+            break
+
+    if wd_sheet is None:
+        logging.warning("'Weekly Distributions' sheet not found — skipping cross-sheet link refresh")
+    else:
+        # count=1: each formula's FIRST Collection!$C$x:$AG$x is the actual
+        # value range being summed; the two that follow are always the fixed
+        # Collection!$C$1:$AG$1 header/date-row criteria refs for the SUMIFS
+        # ">=" / "<=" conditions, which must stay pointed at row 1.
+        _coll_row_re = _re.compile(r"(Collection!\$C\$)\d+(:\$AG\$)\d+")
+
+        def _repoint(row: int, target_row: int | None, target_label: str):
+            if target_row is None:
+                logging.warning(f"{target_label} row not found — skipping Weekly Distributions row {row} link refresh")
+                return
+            updated = 0
+            for _col in (5, 7, 9, 11):  # E, G, I, K
+                _cell = wd_sheet.cell(row, _col)
+                _f = _cell.value
+                if _f and isinstance(_f, str) and _f.startswith("="):
+                    _new_f = _coll_row_re.sub(rf"\g<1>{target_row}\g<2>{target_row}", _f, count=1)
+                    if _new_f != _f:
+                        _cell.value = _new_f
+                        updated += 1
+            if updated:
+                logging.info(f"Weekly Distributions row {row}: re-pointed {updated} cell(s) to Collection row {target_row} ({target_label})")
+
+        _repoint(4, debtor_row, "Debtor")
+        _repoint(5, fd_totals_row, "Fixed Deposits totals")
+        _repoint(6, other_collections_row, "Other Collections")
 
     wb.save(report_file)
     logging.info("Collection sheet updated — C1:AG1 dates filled, three sections appended")
@@ -2318,7 +2751,7 @@ def update_m2m_sheet(report_file: str, input_date: datetime):
     # 7 dates: Mon–Sun of the week ending on input_date
     week_start = input_date - timedelta(days=input_date.weekday())
     week_dates = [
-        f"{(week_start + timedelta(days=i)).day}-{(week_start + timedelta(days=i)).strftime('%b')}"
+        week_start + timedelta(days=i)
         for i in range(7)
     ]
 
@@ -2342,9 +2775,23 @@ def update_m2m_sheet(report_file: str, input_date: datetime):
                 last_data_row = r_idx
         first_new_row = last_data_row + 1
 
-        for i, (date_str, value) in enumerate(zip(week_dates, m2m_values)):
+        for i, (date_val, value) in enumerate(zip(week_dates, m2m_values)):
             r = first_new_row + i
-            ws_m2m.cell(row=r, column=1, value=date_str)
+            # Copy formatting from the row directly above so new rows match
+            # existing ones (number format, font, borders, etc.) instead of
+            # falling back to Excel's default "General" style.
+            for col in (1, 2, 3, 4):
+                src_cell = ws_m2m.cell(row=r - 1, column=col)
+                dest_cell = ws_m2m.cell(row=r, column=col)
+                if src_cell.has_style:
+                    dest_cell.font = copy(src_cell.font)
+                    dest_cell.border = copy(src_cell.border)
+                    dest_cell.fill = copy(src_cell.fill)
+                    dest_cell.number_format = src_cell.number_format
+                    dest_cell.protection = copy(src_cell.protection)
+                    dest_cell.alignment = copy(src_cell.alignment)
+
+            ws_m2m.cell(row=r, column=1, value=date_val)
             ws_m2m.cell(row=r, column=2, value=value if value not in (None, "") else 0)
             # Column C: movement = B[r] - B[r-1]
             ws_m2m.cell(row=r, column=3, value=f"=B{r}-B{r-1}")
@@ -2424,10 +2871,13 @@ def _download_single_tb(bot_class, enc_username: str, enc_password: str,
 
     download_patterns = ["*Report*.xlsx", "TB-COA*.xlsx", "*TB_COA*.xlsx"]
 
-    # Remove any previously downloaded file with the same dest name
-    if dest_path.exists():
-        dest_path.unlink()
-        logging.info(f"Removed existing {dest_name}")
+    # Remove all existing *_Report.xlsx files in the output folder before moving the new one
+    for _old in TB_OUTPUT_FOLDER.glob("*_Report.xlsx"):
+        try:
+            _old.unlink()
+            logging.info(f"Removed existing TB file: {_old.name}")
+        except Exception as _e:
+            logging.warning(f"Could not remove {_old.name}: {_e}")
 
     retry_count = 0
     while True:
@@ -2661,6 +3111,95 @@ def run_gl_codebook_bot(input_date: datetime) -> bool:
         sys.path.pop(0)
 
 
+def run_payments_bot(input_date: datetime, outputs_ecs_dir: Path) -> bool:
+    """
+    Run bots/payments.py as a subprocess to download the Payments report from
+    the ERP for the reporting week (input_date - 6 days through input_date) —
+    the same weekly window used for the Audit Receipt bot.
+
+    Moves the downloaded file into the current ECS outputs date folder
+    (resolved via completed_dates.txt, same lookup used elsewhere) under a
+    fixed name, "Payments - DD-MM-YYYY.xlsx", replacing any existing one —
+    this matches find_payments_file()'s starts_with="Payments -" pattern, so
+    update_payment_sheet picks it up exactly like a manually uploaded file.
+    Returns True on success.
+    """
+    logging.info("=" * 60)
+    logging.info("Running Payments ERP Bot...")
+    logging.info("=" * 60)
+
+    script_dir = Path(os.path.dirname(os.path.abspath(__file__)))
+    bot_script = script_dir.parent / "bots" / "payments.py"
+
+    if not bot_script.exists():
+        logging.error(f"Payments bot not found: {bot_script}")
+        return False
+
+    week_start = input_date - timedelta(days=6)
+    from_date_str = week_start.strftime("%d/%m/%Y")
+    to_date_str = input_date.strftime("%d/%m/%Y")
+
+    downloads_dir = Path.home() / "Downloads"
+    existing_files = {f.name for f in downloads_dir.iterdir() if f.is_file()} if downloads_dir.exists() else set()
+
+    cmd = [sys.executable, str(bot_script), from_date_str, to_date_str]
+    result = subprocess.run(cmd, capture_output=False)
+
+    if result.returncode != 0:
+        logging.error(f"Payments bot exited with code {result.returncode}")
+        return False
+
+    downloaded = [
+        f for f in downloads_dir.iterdir()
+        if f.is_file() and f.name not in existing_files and f.suffix.lower() == ".xlsx"
+    ]
+    if not downloaded:
+        logging.error("Payments bot completed but no new file found in Downloads")
+        return False
+
+    new_file = max(downloaded, key=lambda f: f.stat().st_mtime)
+    logging.info(f"Payments bot downloaded: {new_file.name}")
+
+    # Resolve the current ECS outputs date folder from completed_dates.txt —
+    # same version-suffix-aware lookup used by run_audit_receipt_bot.
+    dates_file = outputs_ecs_dir / "completed_dates.txt"
+    if not dates_file.exists():
+        logging.warning("completed_dates.txt not found — cannot place downloaded Payments file")
+        return False
+    lines = [l.strip() for l in dates_file.read_text().splitlines() if l.strip()]
+    if not lines:
+        logging.warning("completed_dates.txt is empty — cannot place downloaded Payments file")
+        return False
+    last_date = lines[-1]
+    target = None
+    base = outputs_ecs_dir / last_date
+    if base.exists():
+        target = base
+    max_ver = 0
+    for d in outputs_ecs_dir.iterdir():
+        if d.is_dir() and d.name.startswith(f"{last_date}("):
+            try:
+                ver = int(d.name[len(last_date) + 1:-1])
+                if ver > max_ver:
+                    max_ver = ver
+                    target = d
+            except ValueError:
+                pass
+    if not target:
+        logging.warning(f"No outputs folder found for {last_date} — cannot place downloaded Payments file")
+        return False
+
+    dest_filename = f"Payments - {input_date.strftime('%d-%m-%Y')}.xlsx"
+    dest_path = target / dest_filename
+    if dest_path.exists():
+        dest_path.unlink()
+        logging.info(f"Removed existing: {dest_filename}")
+    new_file.rename(dest_path)
+    logging.info(f"Moved Payments file to: {dest_path}")
+
+    return True
+
+
 # ---------------------------------------------------------
 # Main execution
 # ---------------------------------------------------------
@@ -2704,7 +3243,13 @@ def main():
     # ----------------------------------------------------------------
 
     # Run Audit Receipt bot — downloads to ECS outputs folder (not working yet)
-    audit_ok = run_audit_receipt_bot(input_date, None, outputs_ecs_dir)
+    # dest_filename gives this a fixed name immediately after download, so a
+    # later monthly download (which can generate the same timestamp-based
+    # filename if run within the same minute) can never silently overwrite it.
+    audit_ok = run_audit_receipt_bot(
+        input_date, None, outputs_ecs_dir,
+        dest_filename="Audit Receipt - Internal (weekly) Current.xlsx"
+    )
     if not audit_ok:
         logging.warning("Audit Receipt bot failed — receipt sheet may be skipped")
 
@@ -2733,6 +3278,11 @@ def main():
     if not tb_path:
         logging.error("TB bot failed — cannot proceed without TB file")
         sys.exit(1)
+
+    # Run Payments bot — downloads the reporting week's Payments report from ERP
+    payments_ok = run_payments_bot(input_date, outputs_ecs_dir)
+    if not payments_ok:
+        logging.warning("Payments bot failed — Payment sheet will fall back to Audit Receipt data")
 
     # ----------------------------------------------------------------
     # Step 2: Copy latest ECS outputs date folder - working
@@ -2905,14 +3455,33 @@ def main():
         ws_ecs = wb["NBD-WF-18-ECS"]
         ws_opening = wb["Opening&End LA"]
 
+        # H2 already holds the week-start date from whichever run touched this
+        # report_file last. If that matches this run's week_start_date, this is
+        # a rerun for a week already processed — read it before overwriting so
+        # process_accounts() can skip the E->C 'previous balance' copy (a
+        # second copy would just duplicate this week's E into C, destroying
+        # the real previous-week snapshot — see Opening&End LA notes).
+        _prev_h2 = ws_ecs["H2"].value
+        _same_week_rerun = (
+            isinstance(_prev_h2, (datetime, date))
+            and _prev_h2.year == week_start_date.year
+            and _prev_h2.month == week_start_date.month
+            and _prev_h2.day == week_start_date.day
+        )
+        if _same_week_rerun:
+            logging.info(
+                f"Opening&End LA: H2 already shows week starting {week_start_date:%d/%m/%Y} — "
+                f"rerun for the same week detected, skipping E->C copy for Current/Savings blocks"
+            )
+
         # H2: week start date as short date (DD/MM/YYYY)
         ws_ecs["H2"] = week_start_date
         ws_ecs["H2"].number_format = "DD/MM/YYYY"
         ws_ecs["I2"] = week_number
         ws_ecs["I12"] = None
 
-        df_current, current_start, _ = process_accounts(ws_opening, "Current Accounts Balances")
-        df_savings, savings_start, _ = process_accounts(ws_opening, "Savings Accounts Balances")
+        df_current, current_start, _ = process_accounts(ws_opening, "Current Accounts Balances", skip_copy=_same_week_rerun)
+        df_savings, savings_start, _ = process_accounts(ws_opening, "Savings Accounts Balances", skip_copy=_same_week_rerun)
 
         df_daily, expected_total = process_daily_bank_balances(daily_file, input_date)
         sum_current = apply_vlookup(ws_opening, df_current, df_daily, current_start)
@@ -2930,6 +3499,8 @@ def main():
 
     write_manual_payments_to_weekly_distributions(report_file)
 
+    write_ucl_adjustments_from_cashflows(report_file)
+
     update_treasury_input_sheet(report_file, input_date)
 
     dm_file = find_dm_deposit_liability_file(date_folder)
@@ -2942,8 +3513,12 @@ def main():
             _xw_app = xw.App(visible=False)
             try:
                 _wb_dm = _xw_app.books.open(dm_file)
+                # Index-based scan instead of iterating _wb_dm.sheets — see note
+                # above re: avoiding the COM enumerator (_NewEnum).
                 _ws_dm = None
-                for _sh in _wb_dm.sheets:
+                _dm_sheet_count = com_retry(lambda: len(_wb_dm.sheets))
+                for _i in range(_dm_sheet_count):
+                    _sh = com_retry(lambda i=_i: _wb_dm.sheets[i])
                     if _sh.name.strip() == "NBD-WF-18-DM":
                         _ws_dm = _sh
                         break
@@ -2983,6 +3558,7 @@ def main():
         _xw_app3 = xw.App(visible=False)
         try:
             _wb3 = _xw_app3.books.open(report_file)
+            time.sleep(2)  # Allow Excel COM to fully initialise before accessing sheets
             _ws3 = _wb3.sheets["NBD-WF-18-ECS"]
             _i17_val = _ws3.range("I17").value
             _wb3.close()

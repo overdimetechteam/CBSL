@@ -30,7 +30,42 @@ install_dependencies()
 import xlwings as xw
 
 # Configuration
-FILE_PATH = r"C:\Users\ASUS\Documents\WORK\Provision\Files"
+BASE_DIR = Path(__file__).resolve().parent
+
+
+def resolve_file_path() -> Path:
+    """
+    Resolve outputs/CBSL Provision Comparison/<latest-date-folder>/ using the
+    most recent DD-MM-YYYY folder name (optionally suffixed like '(2)' for reruns,
+    matching the convention used by outputs/LGD/<date>/ elsewhere in this project).
+    Re-run this on every job invocation rather than caching the result — the
+    correct folder changes every reporting period.
+    """
+    import re
+    outputs_dir = BASE_DIR / "outputs" / "CBSL Provision Comparison"
+    if not outputs_dir.is_dir():
+        raise FileNotFoundError(f"Outputs folder not found: {outputs_dir}")
+
+    candidates = []  # (date, version, Path)
+    for child in outputs_dir.iterdir():
+        if not child.is_dir():
+            continue
+        m = re.match(r'^(\d{2})-(\d{2})-(\d{4})(?:\((\d+)\))?$', child.name)
+        if not m:
+            continue
+        day, month, year, version = m.groups()
+        try:
+            folder_date = datetime(int(year), int(month), int(day))
+        except ValueError:
+            continue
+        candidates.append((folder_date, int(version) if version else 0, child))
+
+    if not candidates:
+        raise FileNotFoundError(f"No dated subfolders found in: {outputs_dir}")
+
+    candidates.sort(key=lambda c: (c[0], c[1]), reverse=True)
+    return candidates[0][2]
+
 
 class ExcelAutomation:
     def __init__(self, base_path):
@@ -1555,10 +1590,13 @@ class ExcelAutomation:
                 else:
                     self.log(f"Provision filename already up to date: '{old_name}'")
 
+            return all(all_steps)
+
         except Exception as e:
             self.log(f"FATAL ERROR: {str(e)}", "ERROR")
             import traceback
             self.log(traceback.format_exc(), "ERROR")
+            return False
 
 # Main execution
 if __name__ == "__main__":
@@ -1574,5 +1612,5 @@ if __name__ == "__main__":
         reporting_date = datetime.now()
         print(f"No date provided, using current date: {reporting_date.strftime('%d/%m/%Y')}")
 
-    automation = ExcelAutomation(FILE_PATH)
+    automation = ExcelAutomation(resolve_file_path())
     automation.run_all_steps(reporting_date=reporting_date)

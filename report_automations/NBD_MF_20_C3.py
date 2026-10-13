@@ -593,9 +593,17 @@ def extract_cbsl_provision_values(file_sofp):
     try:
         print(f"\n=== READING CBSL PROVISION VALUES FROM SOFP FILE ===")
         print(f"Reading from: {file_sofp}")
-        
-        # Read the CBSL Provision sheet
-        df_cbsl_prov = pd.read_excel(file_sofp, sheet_name="CBSL Provision", header=None, engine="openpyxl")
+        import xlwings as xw
+        # Open the Excel file using xlwings
+        with xw.App(visible=False) as app:  # `visible=False` opens Excel in the background
+            wb = app.books.open(file_sofp)  # Open the workbook
+            sheet = wb.sheets["CBSL Provision"]  # Select the specific sheet
+
+            # Read the values (calculated values, not formulas)
+            df_cbsl_prov = sheet.range('A1:H50').value  # Adjust range as needed
+
+        # Convert the list of values to a pandas DataFrame
+        df_cbsl_prov = pd.DataFrame(df_cbsl_prov)
         print(f"CBSL Provision sheet shape: {df_cbsl_prov.shape}")
         
         # Extract values based on the structure we observed
@@ -680,142 +688,126 @@ def categorize_risk_weight(df_port, categories):
     """Categorize contracts based on risk weight criteria"""
     try:
         print(f"\n=== CATEGORIZING RISK WEIGHT FOR {len(df_port)} CONTRACTS ===")
-        
+
         # Initialize the new columns
         df_port["final_category_for_risk_weight"] = ""
         df_port["final_category_for_risk_weight_code"] = ""
-        
-        # First, implement logic for "Adjustment", "FD Loans", and "Others" in P category
-        for idx, row in df_port.iterrows():
-            product = str(row["product"]).strip()
-            contract_no = str(row["contract_no"]).strip()
-            p_np = str(row["p_np_based_on_cbsl_provision"]).strip() if pd.notna(row["p_np_based_on_cbsl_provision"]) else ""
-            
-            # CBSL provision contracts always go to P Others
-            is_cbsl_provision = contract_no.startswith("CBSL-")
-            if is_cbsl_provision:
-                category = "P Others"
-                code = categories.get(category, "")
-                df_port.at[idx, "final_category_for_risk_weight"] = category
-                df_port.at[idx, "final_category_for_risk_weight_code"] = code
-                continue
-            
-            # Logic for P category
-            if p_np == "P":
-                if product in ["FDL", "FD Loan"]:
-                    # FD Loans -> P Others
-                    category = "P Others"
-                    code = categories.get(category, "")
-                    df_port.at[idx, "final_category_for_risk_weight"] = category
-                    df_port.at[idx, "final_category_for_risk_weight_code"] = code
-                
-                elif product in ["Adjustment", "Margin Trading", "Difference"]:
-                    # Adjustment, Margin Trading, Difference -> P Others
-                    category = "P Others"
-                    code = categories.get(category, "")
-                    df_port.at[idx, "final_category_for_risk_weight"] = category
-                    df_port.at[idx, "final_category_for_risk_weight_code"] = code
-                
-                elif product in ["LE", "UV"]:
-                    # Check if this is AFL Green Loans (exclude from P Leases)
-                    contract_no = str(row["contract_no"]).strip()
-                    equipment = str(row.get("equipment", "")).strip()
-                    if "AFL" in contract_no and "Green" in equipment:
-                        # AFL Green Loans -> P Others (excluded from P Leases)
-                        category = "P Others"
-                        code = categories.get(category, "")
-                        df_port.at[idx, "final_category_for_risk_weight"] = category
-                        df_port.at[idx, "final_category_for_risk_weight_code"] = code
-                    else:
-                        # LE and UV products -> P Leases (except AFL Green Loans)
-                        category = "P Leases"
-                        code = categories.get(category, "")
-                        df_port.at[idx, "final_category_for_risk_weight"] = category
-                        df_port.at[idx, "final_category_for_risk_weight_code"] = code
-                
-                else:
-                    # Check if this P product is Corporate (P Corporates)
-                    corporate_individual = str(row.get("corporate_individual", "")).strip()
-                    if corporate_individual == "Corporate":
-                        # P products with Corporate -> P Corporates
-                        category = "P Corporates"
-                        code = categories.get(category, "")
-                        df_port.at[idx, "final_category_for_risk_weight"] = category
-                        df_port.at[idx, "final_category_for_risk_weight_code"] = code
-                    else:
-                        # Check if this P product has mortgage value (P Real Estate)
-                        mortgage = row.get("mortgage", "")
-                        if pd.notna(mortgage) and str(mortgage).strip() != "#N/A" and str(mortgage).strip() != "nan":
-                            # P products with mortgage values -> P Real Estate
-                            category = "P Real Estate"
-                            code = categories.get(category, "")
-                            df_port.at[idx, "final_category_for_risk_weight"] = category
-                            df_port.at[idx, "final_category_for_risk_weight_code"] = code
-                        else:
-                            # Default for other P products without mortgage -> P Others
-                            df_port.at[idx, "final_category_for_risk_weight"] = "P Others"
-                            df_port.at[idx, "final_category_for_risk_weight_code"] = categories.get("P Others", "")
-            
-            # Logic for NP category
-            elif p_np == "NP":
-                # Check if NP contract has mortgage value (not #N/A)
-                mortgage = row.get("mortgage", "")
-                margin_20_percent = str(row.get("margin_20_percent", "")).strip()
-                
-                if pd.notna(mortgage) and str(mortgage).strip() != "#N/A" and str(mortgage).strip() != "nan":
-                    # NP contracts with mortgage values
-                    if margin_20_percent == "Below 20%":
-                        category = "NP Real Estate Below 20%"
-                        code = categories.get(category, "")
-                        df_port.at[idx, "final_category_for_risk_weight"] = category
-                        df_port.at[idx, "final_category_for_risk_weight_code"] = code
-                    elif margin_20_percent == "Above 20%":
-                        category = "NP Other Above 20%"
-                        code = categories.get(category, "")
-                        df_port.at[idx, "final_category_for_risk_weight"] = category
-                        df_port.at[idx, "final_category_for_risk_weight_code"] = code
-                    else:
-                        # NP with mortgage but unknown margin -> leave blank
-                        df_port.at[idx, "final_category_for_risk_weight"] = ""
-                        df_port.at[idx, "final_category_for_risk_weight_code"] = ""
-                else:
-                    # NP contracts without mortgage values
-                    if margin_20_percent == "Below 20%":
-                        category = "NP Other Below 20%"
-                        code = categories.get(category, "")
-                        df_port.at[idx, "final_category_for_risk_weight"] = category
-                        df_port.at[idx, "final_category_for_risk_weight_code"] = code
-                    elif margin_20_percent == "Above 20%":
-                        category = "NP Other Above 20%"
-                        code = categories.get(category, "")
-                        df_port.at[idx, "final_category_for_risk_weight"] = category
-                        df_port.at[idx, "final_category_for_risk_weight_code"] = code
-                    else:
-                        # NP without mortgage and unknown margin -> leave blank
-                        df_port.at[idx, "final_category_for_risk_weight"] = ""
-                        df_port.at[idx, "final_category_for_risk_weight_code"] = ""
-            
-            # Default for unknown P/NP
-            else:
-                df_port.at[idx, "final_category_for_risk_weight"] = "P Others"
-                df_port.at[idx, "final_category_for_risk_weight_code"] = categories.get("P Others", "")
-        
-        # Remove the final_category_for_risk_weight_code column if it exists
-        if "final_category_for_risk_weight_code" in df_port.columns:
-            df_port = df_port.drop(columns=["final_category_for_risk_weight_code"])
-            print("[OK] Removed final_category_for_risk_weight_code column from portfolio data")
-        
+
+        # Category to code mapping based on CBSL provisions
+        category_code_mapping = {
+            "P Corporates": "20.3.3.6.0.0",
+            "P Leases": "20.3.4.1.0.0",
+            "P Others": "20.3.4.4.0.0",
+            "P Real Estate": "20.3.5.0.0.0",
+            "NP Real Estate Above 20%": "20.3.6.1.1.0",
+            "NP Real Estate Below 20%": "20.3.6.1.2.0",
+            "NP Other Above 20%": "20.3.6.2.1.0",
+            "NP Other Below 20%": "20.3.6.2.2.0"
+        }
+
+        # Process P category first
+        print("\n[Processing P category contracts...]")
+        p_mask = df_port["p_np_based_on_cbsl_provision"] == "P"
+
+        # Step 1: P Real Estate - where mortgage is not blank and not #N/A
+        mortgage_mask = (
+            p_mask &
+            df_port["mortgage"].notna() &
+            (df_port["mortgage"].astype(str).str.strip() != "#N/A") &
+            (df_port["mortgage"].astype(str).str.strip() != "") &
+            (df_port["mortgage"].astype(str).str.strip() != "nan")
+        )
+        df_port.loc[mortgage_mask, "final_category_for_risk_weight"] = "P Real Estate"
+        df_port.loc[mortgage_mask, "final_category_for_risk_weight_code"] = category_code_mapping["P Real Estate"]
+        print(f"  [OK] Assigned {mortgage_mask.sum()} contracts to P Real Estate")
+
+        # Step 2: P Leases - where final_category is blank and product is LE or UV
+        leases_mask = (
+            p_mask &
+            (df_port["final_category_for_risk_weight"] == "") &
+            df_port["product"].isin(["LE", "UV"]) &
+            (df_port["equipment"] != "AFL Green Loans")
+        )
+        df_port.loc[leases_mask, "final_category_for_risk_weight"] = "P Leases"
+        df_port.loc[leases_mask, "final_category_for_risk_weight_code"] = category_code_mapping["P Leases"]
+        print(f"  [OK] Assigned {leases_mask.sum()} contracts to P Leases")
+
+        # Step 3: P Corporates - where final_category is blank and corporate_individual is Corporate
+        corporates_mask = (
+            p_mask &
+            (df_port["final_category_for_risk_weight"] == "") &
+            (df_port["corporate_individual"] == "Corporate")
+        )
+        df_port.loc[corporates_mask, "final_category_for_risk_weight"] = "P Corporates"
+        df_port.loc[corporates_mask, "final_category_for_risk_weight_code"] = category_code_mapping["P Corporates"]
+        print(f"  [OK] Assigned {corporates_mask.sum()} contracts to P Corporates")
+
+        # Step 4: P Others - where final_category is still blank
+        p_others_mask = p_mask & (df_port["final_category_for_risk_weight"] == "")
+        df_port.loc[p_others_mask, "final_category_for_risk_weight"] = "P Others"
+        df_port.loc[p_others_mask, "final_category_for_risk_weight_code"] = category_code_mapping["P Others"]
+        print(f"  [OK] Assigned {p_others_mask.sum()} contracts to P Others")
+
+        # Process NP category
+        print("\n[Processing NP category contracts...]")
+        np_mask = df_port["p_np_based_on_cbsl_provision"] == "NP"
+        #real state
+        np_above_realState_mask = (
+            np_mask &
+            (df_port["final_category_for_risk_weight"] == "") &
+            (df_port["margin_20_percent"] == "Above 20%") &
+            df_port["mortgage"].notna() &
+            (df_port["mortgage"].astype(str).str.strip() != "#N/A") &
+            (df_port["mortgage"].astype(str).str.strip() != "") &
+            (df_port["mortgage"].astype(str).str.strip() != "nan")
+        )
+        df_port.loc[np_above_realState_mask, "final_category_for_risk_weight"] = "NP Real Estate Above 20%"
+        df_port.loc[np_above_realState_mask, "final_category_for_risk_weight_code"] = category_code_mapping["NP Real Estate Above 20%"]
+
+        np_below_realState_mask = (
+            np_mask &
+            (df_port["final_category_for_risk_weight"] == "") &
+            (df_port["margin_20_percent"] == "Below 20%") &
+            df_port["mortgage"].notna() &
+            (df_port["mortgage"].astype(str).str.strip() != "#N/A") &
+            (df_port["mortgage"].astype(str).str.strip() != "") &
+            (df_port["mortgage"].astype(str).str.strip() != "nan")
+        )
+        df_port.loc[np_below_realState_mask, "final_category_for_risk_weight"] = "NP Real Estate Below 20%"
+        df_port.loc[np_below_realState_mask, "final_category_for_risk_weight_code"] = category_code_mapping["NP Real Estate Below 20%"]
+        # Step 1: NP Other Below 20% - where final_category is blank and margin_20_percent is Below 20%
+        np_below_mask = (
+            np_mask &
+            (df_port["final_category_for_risk_weight"] == "") &
+            (df_port["margin_20_percent"] == "Below 20%")
+        )
+        df_port.loc[np_below_mask, "final_category_for_risk_weight"] = "NP Other Below 20%"
+        df_port.loc[np_below_mask, "final_category_for_risk_weight_code"] = category_code_mapping["NP Other Below 20%"]
+        print(f"  [OK] Assigned {np_below_mask.sum()} contracts to NP Other Below 20%")
+
+
+        # Step 2: NP Other Above 20% - where final_category is blank and margin_20_percent is Above 20%
+        np_above_mask = (
+            np_mask &
+            (df_port["final_category_for_risk_weight"] == "") &
+            (df_port["margin_20_percent"] == "Above 20%")
+        )
+        df_port.loc[np_above_mask, "final_category_for_risk_weight"] = "NP Other Above 20%"
+        df_port.loc[np_above_mask, "final_category_for_risk_weight_code"] = category_code_mapping["NP Other Above 20%"]
+        print(f"  [OK] Assigned {np_above_mask.sum()} contracts to NP Other Above 20%")
+
         # Count categorized contracts
         categorized_count = len(df_port[df_port["final_category_for_risk_weight"] != ""])
         print(f"\n=== CATEGORIZATION COMPLETE ===")
         print(f"Categorized contracts: {categorized_count} out of {len(df_port)}")
-        
+
         # Show distribution
         category_dist = df_port["final_category_for_risk_weight"].value_counts()
         print(f"\nCategory distribution:")
         for category, count in category_dist.items():
-            print(f"  {category}: {count} contracts")
-        
+            code = df_port[df_port["final_category_for_risk_weight"] == category]["final_category_for_risk_weight_code"].iloc[0]
+            print(f"  {category} ({code}): {count} contracts")
+
         return df_port
         
     except Exception as e:
@@ -2151,9 +2143,9 @@ def main(wb_c1_c6, file_car, file_prod, file_cbsl, file_sofp=None, out_folder=No
                 if "mortgage" in df_port.columns:
                     df_port.loc[cbsl_mask, "mortgage"] = "#N/A"
                 if "final_category_for_risk_weight" in df_port.columns:
-                    df_port.loc[cbsl_mask, "final_category_for_risk_weight"] = ""
+                    df_port.loc[cbsl_mask, "final_category_for_risk_weight"] = "P Others"
                 if "final_category_for_risk_weight_code" in df_port.columns:
-                    df_port.loc[cbsl_mask, "final_category_for_risk_weight_code"] = ""
+                    df_port.loc[cbsl_mask, "final_category_for_risk_weight_code"] = "20.3.4.4.0.0"
                 if "a" in df_port.columns:
                     df_port.loc[cbsl_mask, "a"] = 0.0
                 if "b" in df_port.columns:

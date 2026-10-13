@@ -1,85 +1,81 @@
 import pandas as pd
-import numpy as np
+
+# IA Working sheet layout: header row is row 2, so skiprows=1 lines up with how
+# this sheet is read everywhere else in the pipeline (e.g. process_summary.py).
+IA_WORKING_SKIPROWS = 1
+
+# Output column order matches the FDL Quarter sheet's layout. 'Product' is
+# handled separately (see below) since its source value needs normalizing.
+FDL_OUTPUT_COLUMNS_BEFORE_PRODUCT = ['Contract No']
+FDL_OUTPUT_COLUMNS_AFTER_PRODUCT = [
+    'Client Code', 'Equipment', 'Purpose', 'Corporate Clients',
+    'Type of Loans (1.3.1.0.0.0)', 'Normal/Concessionary', 'Frequency',
+    'Contract Period', 'Tenure (Months)', 'Minimum Rate (Final)',
+    'Contractual Interest Rate', 'Base Rate', 'Disbursed Amount (Net of DC)',
+    'Contract Amount', 'Annual Interest Cost', 'EIR (%)', 'Gross Exposure',
+    'PD Category', 'Collateral/Security Type', 'Initial Valuation', 'LTV %', 'WALTV %',
+]
 
 
-def create_FDL_quarter_df(monthlyDF, fdlreport_file_path):
+def create_FDL_quarter_df(month_file_pairs):
     """
-    Creates FDL quarterly DataFrame with last 3 months of data.
-    
+    Builds the FDL Quarter sheet's data from 3 separate monthly
+    "Prod. wise Class. of Loans - <Month> <Year>" files, one row set per month.
+
     Parameters:
-    monthlyDF (DataFrame): Main monthly data containing FDL records
-    fdlreport_file_path (str): Path to the FDL report Excel file
-    
+    month_file_pairs (list[tuple[str, str]]): ordered (month_label, file_path)
+        pairs - one per month to include, in the order rows should appear in
+        the output (e.g. [('Sep-25', ...), ('Aug-25', ...), ('Jul-25', ...)]).
+        month_label is written into the output 'Month' column as-is.
+
     Returns:
-    DataFrame: Processed FDL loans data for the last 3 months
+    DataFrame: FDL rows for all given months, newest-first (per month_file_pairs order).
     """
-    
-    # Read the status file
-    monthlyDF_astatus = pd.read_excel(fdlreport_file_path, skiprows=3)
-    
-    # Filter for FDL products - FIXED: use .copy() to avoid SettingWithCopyWarning
-    monthlyDF = monthlyDF[monthlyDF['Product'] == 'FDL'].copy()
-    
-    # Map loan dates from status file
-    contract_to_date = dict(zip(monthlyDF_astatus['Loan No'], monthlyDF_astatus["Loan Date"]))
-    monthlyDF['Loan Date'] = monthlyDF['Contract No'].map(contract_to_date)
-    
-    # FIXED: Added error handling for date conversion
-    monthlyDF['Loan Date'] = pd.to_datetime(monthlyDF['Loan Date'], format='%d/%m/%Y', errors='coerce')
-    
-    # Remove rows with invalid dates
-    monthlyDF = monthlyDF.dropna(subset=['Loan Date'])
-    
-    # Extract month in 'May-25' format
-    monthlyDF['Month_Formatted'] = monthlyDF['Loan Date'].dt.strftime('%b-%y')
-    
-    # Sort by date (descending)
-    monthlyDF = monthlyDF.sort_values('Loan Date', ascending=False)
 
-    # Get the 3 most recent months
-    recent_months = monthlyDF['Loan Date'].dt.to_period('M').unique()
-    recent_months_sorted = sorted(recent_months, reverse=True)[:3]
+    frames = []
+    for month_label, file_path in month_file_pairs:
+        df = pd.read_excel(file_path, sheet_name='IA Working', skiprows=IA_WORKING_SKIPROWS, engine='pyxlsb')
+        # The sheet's actual header has a stray space ("Normal/ Concessionary");
+        # normalize it to match the output column name used below.
+        df = df.rename(columns={'Normal/ Concessionary': 'Normal/Concessionary'})
 
-    # Filter for last 3 months
-    monthlyDF = monthlyDF[monthlyDF['Loan Date'].dt.to_period('M').isin(recent_months_sorted)].copy()
-    
-    # FIXED: Reset index to avoid index misalignment issues
-    monthlyDF = monthlyDF.reset_index(drop=True)
-    
-    # Create the output DataFrame
+        # FDL rows are identified by IA Working's 'Product' column being 'FDL'
+        # OR by the resolved loan type, so a row is still caught if one of the
+        # two is inconsistent for a given contract.
+        product_code = df['Product'].astype(str).str.strip().str.upper()
+        type_of_loans = df['Type of Loans (1.3.1.0.0.0)'].astype(str).str.strip()
+        is_fdl = (product_code == 'FDL') | (type_of_loans == 'Loans against Cash/Deposits')
+
+        month_df = df[is_fdl].copy()
+        month_df['Month'] = month_label
+        frames.append(month_df)
+
+    combined = pd.concat(frames, ignore_index=True)
+
     fdl_loans_df = pd.DataFrame()
-    
-    # Map columns - FIXED: Added .values to ensure proper assignment
-    fdl_loans_df['Month'] = monthlyDF['Month_Formatted'].values
-    fdl_loans_df['Contract No'] = monthlyDF['Contract No'].values
-    fdl_loans_df['Product'] = monthlyDF['Product'].values
-    fdl_loans_df['Client Code'] = np.nan
-    fdl_loans_df['Equipment'] = np.nan
-    fdl_loans_df['Purpose'] = np.nan
-    fdl_loans_df['Corporate Clients'] = monthlyDF['Corporate Clients'].values
-    fdl_loans_df['Type of Loans (1.3.1.0.0.0)'] = 'Loans against Cash/Deposits'
-    fdl_loans_df['Normal/Concessionary'] = 'Normal'
-    fdl_loans_df['Frequency'] = monthlyDF['Frequency'].values
-    fdl_loans_df['Contract Period'] = monthlyDF['Contract Period'].values
-    fdl_loans_df['Tenure (Months)'] = monthlyDF['Tenure (Months)'].values
-    
-    # FIXED: Corrected typo - 'Contractual Interest rate' (lowercase 'r')
-    fdl_loans_df['Minimum Rate (Final)'] = monthlyDF['Contractual Interest rate'].values
-    fdl_loans_df['Contractual Interest Rate'] = monthlyDF['Contractual Interest rate'].values
-    fdl_loans_df['Base Rate'] = monthlyDF['Contractual Interest rate'].values
-    
-    fdl_loans_df['Disbursed Amount (Net of DC)'] = monthlyDF['Contract Amount'].values
-    fdl_loans_df['Contract Amount'] = monthlyDF['Contract Amount'].values
-    fdl_loans_df['Annual Interest Cost'] = monthlyDF['Annual Contract Interest'].values
-    fdl_loans_df['EIR (%)'] = monthlyDF['EIR (%)'].values
-    fdl_loans_df['Gross Exposure'] = monthlyDF['Gross Outstanding'].values
-    fdl_loans_df['PD Category'] = monthlyDF['PD Category'].values
-    fdl_loans_df['Collateral/Security Type'] = monthlyDF['Collateral/Security Type'].values
-    fdl_loans_df['Initial Valuation'] = monthlyDF['Initial Valuation'].values
-    fdl_loans_df['LTV %'] = monthlyDF['LTV %'].values
-    fdl_loans_df['WALTV %'] = monthlyDF['WALTV %'].values
-    
-    print(f"Months included: {sorted(fdl_loans_df['Month'].unique())}")
+    fdl_loans_df['Month'] = combined['Month'].values
+    for col in FDL_OUTPUT_COLUMNS_BEFORE_PRODUCT:
+        fdl_loans_df[col] = combined[col].values
+    # Historical FDL Quarter output always shows the spelled-out product name,
+    # regardless of the raw 'FD' code used to find these rows.
+    fdl_loans_df['Product'] = 'FDL'
+    for col in FDL_OUTPUT_COLUMNS_AFTER_PRODUCT:
+        fdl_loans_df[col] = combined[col].values
+
+    # LTV % and WALTV % are calculated in the output sheet itself rather than
+    # pulled from IA Working - process_summary.py writes this dataframe
+    # starting at sheet row 3 (write_dataframe_to_sheet(ws_fdl, ..., start_row=3)),
+    # so row i (0-indexed here) lands on sheet row 3 + i. Column letters below
+    # match FDL_OUTPUT_COLUMNS_AFTER_PRODUCT's fixed layout: Q=Contract Amount,
+    # W=Initial Valuation, T=Gross Exposure, X=LTV %.
+    #   LTV %   = Contract Amount / Initial Valuation
+    #   WALTV % = (Gross Exposure / SUM of all rows' Gross Exposure) * LTV %
+    n = len(fdl_loans_df)
+    last_row = 2 + n
+    fdl_loans_df['LTV %'] = [f'=IF(N(W{3 + i})=0,0,Q{3 + i}/W{3 + i})' for i in range(n)]
+    fdl_loans_df['WALTV %'] = [f'=T{3 + i}/SUM($T$3:$T${last_row})*X{3 + i}' for i in range(n)]
+
+    print(f"Months included: {[label for label, _ in month_file_pairs]}")
     print(f"Total records: {len(fdl_loans_df)}")
 
     return fdl_loans_df

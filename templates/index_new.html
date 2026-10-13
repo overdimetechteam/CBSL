@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>CBSL Report Automation Portal</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/vendor/bootstrap.min.css" rel="stylesheet">
     <style>
       /* ── Theme tokens ─────────────────────────────────────────── */
       :root {
@@ -242,6 +242,17 @@
         font-size: .92rem; color: var(--text-primary);
       }
       .report-name { flex-grow: 1; }
+
+      .report-download-btn {
+        display: flex; align-items: center; justify-content: center;
+        width: 28px; height: 28px; margin-left: .5rem; flex-shrink: 0;
+        border: none; border-radius: var(--radius-sm);
+        background: transparent; color: var(--text-secondary, #888);
+        cursor: pointer; transition: background .15s, color .15s;
+        font-size: .95rem;
+      }
+      .report-download-btn:hover { background: rgba(37,99,235,.15); color: var(--accent-blue); }
+      .report-download-btn:disabled { opacity: .5; cursor: progress; }
 
       .report-step-badge {
         background: var(--accent-blue);
@@ -609,6 +620,13 @@
                                         </div>
                                         <span class="report-time-badge">{{ report.estimated_minutes }} min</span>
                                       </label>
+                                      <button type="button"
+                                              class="report-download-btn"
+                                              title="Download last completed run of this report"
+                                              data-report-id="{{ report.id }}"
+                                              onclick="downloadReportLastRun(this)">
+                                        &#11015;&#65039;
+                                      </button>
                                     </div>
                                     {% if report.id == 'NBD-WF-15-LA' %}
                                     <!-- Month-end option for LA report -->
@@ -921,7 +939,7 @@
       </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/vendor/bootstrap.bundle.min.js"></script>
     <script>
       // Live Date and Time
       function updateLiveDateTime() {
@@ -1579,6 +1597,58 @@
         }
       }
 
+      async function downloadReportLastRun(button) {
+        const reportId = button.dataset.reportId;
+        const originalHtml = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '&#8987;';
+
+        try {
+          const fetchUrl = "{{ url_for('download_report', report_id='__REPORT_ID__') }}"
+            .replace('__REPORT_ID__', encodeURIComponent(reportId));
+          const response = await fetch(fetchUrl, {
+            method: 'GET',
+            cache: 'no-store'
+          });
+
+          if (!response.ok) {
+            let message = 'No completed run found for this report yet.';
+            try {
+              const data = await response.json();
+              if (data && data.error) message = data.error;
+            } catch (e) { /* non-JSON error response, keep default message */ }
+            alert(message);
+            return;
+          }
+
+          const contentDisposition = response.headers.get('Content-Disposition');
+          let filename = `${reportId}.xlsx`;
+          if (contentDisposition) {
+            const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+            if (filenameMatch && filenameMatch[1]) {
+              filename = filenameMatch[1].replace(/['"]/g, '');
+            }
+          }
+
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          a.remove();
+        } catch (error) {
+          console.error('Error downloading report:', error);
+          alert('Failed to download this report. Please try again.');
+        } finally {
+          button.disabled = false;
+          button.innerHTML = originalHtml;
+        }
+      }
+
       function handleDownloadComplete() {
         // Close modal and clear session without refreshing
         const modal = bootstrap.Modal.getInstance(document.getElementById('downloadCompleteModal'));
@@ -1594,14 +1664,33 @@
   <!-- ── Inactivity timeout (10 min) ── -->
   <script>
   (function(){
-    var TIMEOUT = 15 * 60 * 1000;
+    var TIMEOUT = 30 * 60 * 1000;
     var WARN_BEFORE = 60 * 1000;
-    var timer, warnTimer, toast;
+    var RECHECK = 30 * 1000;
+    var timer, warnTimer, toast, wasDeferred = false;
     function resetTimer() {
       clearTimeout(timer); clearTimeout(warnTimer);
       if (toast) { toast.remove(); toast = null; }
       warnTimer = setTimeout(showWarning, TIMEOUT - WARN_BEFORE);
-      timer     = setTimeout(function(){ window.location.href = '/logout?reason=timeout'; }, TIMEOUT);
+      timer     = setTimeout(attemptLogout, TIMEOUT);
+    }
+    function attemptLogout() {
+      fetch('/automation-status').then(function(r){ return r.json(); }).then(function(data){
+        if (data && data.running) {
+          // A report automation is mid-run — don't sign the user out, keep checking.
+          wasDeferred = true;
+          timer = setTimeout(attemptLogout, RECHECK);
+        } else if (wasDeferred) {
+          // Automation just finished while the user was away — give them a
+          // fresh window to notice and grab the download.
+          wasDeferred = false;
+          resetTimer();
+        } else {
+          window.location.href = '/logout?reason=timeout';
+        }
+      }).catch(function(){
+        window.location.href = '/logout?reason=timeout';
+      });
     }
     function showWarning() {
       toast = document.createElement('div');

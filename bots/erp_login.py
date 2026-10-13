@@ -24,27 +24,31 @@ print("Reports:", REPORTS_DIR)
 
 # ==========================
 # LOAD .ENV (ENCRYPTED)
+# FERNET_KEY  — system environment variable
+# ENC_USERNAME / ENC_PASSWORD — from .env file
 # ==========================
-ENV_PATH = os.path.join(CURRENT_DIR, ".env")
+ENV_PATH = os.path.join(PROJECT_ROOT, ".env")
 load_dotenv(dotenv_path=ENV_PATH, override=True)
 
-SECRET_KEY = os.getenv("ERP_SECRET_KEY")
-ENCRYPTED_USERNAME = os.getenv("ERP_USERNAME_ENC")
-ENCRYPTED_PASSWORD = os.getenv("ERP_PASSWORD_ENC")
+FERNET_KEY         = os.environ.get("FERNET_KEY", "").strip()
+ENCRYPTED_USERNAME = os.getenv("ENC_USERNAME", "").strip()
+ENCRYPTED_PASSWORD = os.getenv("ENC_PASSWORD", "").strip()
 
-if not all([SECRET_KEY, ENCRYPTED_USERNAME, ENCRYPTED_PASSWORD]):
-    raise Exception("❌ Missing encrypted credentials in .env file")
+if not FERNET_KEY:
+    raise Exception("FERNET_KEY not found in system environment variables")
+if not ENCRYPTED_USERNAME or not ENCRYPTED_PASSWORD:
+    raise Exception("ENC_USERNAME or ENC_PASSWORD not found in .env file")
 
 # ==========================
 # DECRYPT CREDENTIALS
 # ==========================
 try:
-    fernet = Fernet(SECRET_KEY.encode())
+    fernet = Fernet(FERNET_KEY.encode())
     USERNAME = fernet.decrypt(ENCRYPTED_USERNAME.encode()).decode()
     PASSWORD = fernet.decrypt(ENCRYPTED_PASSWORD.encode()).decode()
     print("✓ Username & password decrypted successfully")
 except Exception as e:
-    raise Exception(f"❌ Credential decryption failed: {e}")
+    raise Exception(f"Credential decryption failed: {e}")
 
 # ==========================
 # HELPER FUNCTION
@@ -62,7 +66,29 @@ def wait_for_loader(driver, timeout=30):
 # ==========================
 # ERP LOGIN FUNCTION
 # ==========================
+LOGIN_RETRIES = 3          # retries after the first attempt (4 attempts in total)
+LOGIN_RETRY_DELAY = 10     # seconds; multiplied by the retry number
+
+
 def erp_login():
+    """Log in to the ERP, retrying up to LOGIN_RETRIES times on failure (e.g.
+    net::ERR_CONNECTION_TIMED_OUT). Every attempt starts a fresh browser, since
+    a failed one is closed by _erp_login_once()."""
+    last_error = None
+    for attempt in range(LOGIN_RETRIES + 1):
+        try:
+            return _erp_login_once()
+        except Exception as e:
+            last_error = e
+            if attempt < LOGIN_RETRIES:
+                delay = LOGIN_RETRY_DELAY * (attempt + 1)
+                print(f"\n✗ Login attempt {attempt + 1}/{LOGIN_RETRIES + 1} failed: {e}")
+                print(f"  Retrying in {delay}s (retry {attempt + 1}/{LOGIN_RETRIES})...")
+                time.sleep(delay)
+    raise Exception(f"ERP login failed after {LOGIN_RETRIES + 1} attempts: {last_error}")
+
+
+def _erp_login_once():
     chrome_options = Options()
     chrome_options.add_argument("--start-maximized")
     chrome_options.add_argument("--disable-notifications")
@@ -89,11 +115,11 @@ def erp_login():
         wait.until(EC.element_to_be_clickable((By.ID, "idSignIn"))).click()
         wait_for_loader(driver)
 
-        print("Clicking select button...")
-        wait.until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "button.btn.blue.btn-circle"))
-        ).click()
-        wait_for_loader(driver)
+        # print("Clicking select button...")
+        # wait.until(
+        #     EC.element_to_be_clickable((By.CSS_SELECTOR, "button.btn.blue.btn-circle"))
+        # ).click()
+        # wait_for_loader(driver)
 
         print("✓ Login successful!")
         return driver, wait
@@ -101,7 +127,7 @@ def erp_login():
     except Exception as e:
         driver.save_screenshot("login_error.png")
         driver.quit()
-        raise Exception(f"❌ ERP login failed: {e}")
+        raise Exception(f"ERP login failed: {e}")
 
 # ==========================
 # RUN DIRECTLY

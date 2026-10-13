@@ -1440,6 +1440,14 @@ def main():
     working_date_folder = date_folders[0]
     print(f"Using working directory: {working_date_folder}")
 
+    # Remove any stale TB report files carried over from a previous run
+    for _old_tb in working_date_folder.glob("*Report.xlsx"):
+        try:
+            _old_tb.unlink()
+            print(f"Removed stale TB file: {_old_tb.name}")
+        except Exception as _e:
+            print(f"Warning: could not remove {_old_tb.name}: {_e}")
+
     # Output will be in the same working folder
     output_dir = working_date_folder
     report_name = "NBD-WF-18-DM"

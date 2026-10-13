@@ -1,25 +1,34 @@
 ' VBScript to copy D14 value from DM file to LA file C7 cell
-' Usage: cscript copy_deposit_liability_value.vbs "source_file_path" "target_file_path"
+' Also copies row_1_value to Treasury Input C30 cell (if provided)
+' Usage: cscript copy_deposit_liability_value.vbs "source_file_path" "target_file_path" ["row_1_value"]
 '
 ' Source: NBD-WF-18-DM sheet, D14 cell
 ' Target: NBD-WF-15-LA sheet, C7 cell
+' Optional: Treasury Input sheet, C30 cell (row_1_value from Daily Bank Balances)
 
 Option Explicit
 
-Dim objExcel, sourceWb, targetWb, sourceSheet, targetSheet
-Dim sourceFile, targetFile, d14Value
+Dim objExcel, sourceWb, targetWb, sourceSheet, targetSheet, treasurySheet
+Dim sourceFile, targetFile, d14Value, row1Value
 Dim objFSO, objArgs, objShell
 
 ' Get command line arguments
 Set objArgs = WScript.Arguments
 If objArgs.Count < 2 Then
     WScript.Echo "ERROR: Missing arguments"
-    WScript.Echo "Usage: cscript copy_deposit_liability_value.vbs ""source_file"" ""target_file"""
+    WScript.Echo "Usage: cscript copy_deposit_liability_value.vbs ""source_file"" ""target_file"" [""row_1_value""]"
     WScript.Quit 1
 End If
 
 sourceFile = objArgs(0)
 targetFile = objArgs(1)
+
+' Get optional third argument (row_1_value for Treasury Input C30)
+row1Value = ""
+If objArgs.Count >= 3 Then
+    row1Value = objArgs(2)
+    WScript.Echo "Row 1 value received: " & row1Value
+End If
 
 ' Verify files exist
 Set objFSO = CreateObject("Scripting.FileSystemObject")
@@ -207,6 +216,27 @@ End If
 ' Update C7 with D14 value
 WScript.Echo "Updating C7 with value: " & d14Value
 targetSheet.Range("C7").Value = d14Value
+
+' If row1Value was provided, also update Treasury Input C30
+If row1Value <> "" Then
+    WScript.Echo "Looking for Treasury Input sheet..."
+    Set treasurySheet = Nothing
+    On Error Resume Next
+    Set treasurySheet = targetWb.Sheets("Treasury Input")
+    On Error GoTo 0
+
+    If treasurySheet Is Nothing Then
+        WScript.Echo "WARNING: Sheet 'Treasury Input' not found in target file"
+        WScript.Echo "Available sheets:"
+        For Each ws In targetWb.Sheets
+            WScript.Echo "  - " & ws.Name
+        Next
+    Else
+        WScript.Echo "Updating Treasury Input C30 with row_1_value: " & row1Value
+        treasurySheet.Range("C30").Value = row1Value
+        WScript.Echo "SUCCESS: row_1_value (" & row1Value & ") copied to Treasury Input C30"
+    End If
+End If
 
 ' Save and close target file
 WScript.Echo "Saving target file..."

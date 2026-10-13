@@ -1,5 +1,0 @@
-2025-12-18 17:32:45,155 - INFO - Logger initialized
-2025-12-18 17:32:51,289 - INFO - Current Accounts Balances: extracted 44 rows
-2025-12-18 17:32:51,290 - INFO - Savings Accounts Balances: extracted 17 rows
-2025-12-18 17:32:51,352 - INFO - Daily bank balances total: -1713550.647362537
-2025-12-18 17:32:51,354 - WARNING - Validation failed: totals do not match

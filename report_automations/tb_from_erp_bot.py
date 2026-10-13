@@ -266,8 +266,15 @@ class ERPLoginBot:
             
             # Step 6: Navigate to specific section
             print("Navigating to Management Account section...")
-            section = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="iddivAppContent"]/div[1]/div/div[1]/div[2]/div/div[1]/div')))
+            section = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="iddivAppContent"]/div[1]/div/div[2]/div[2]/div/div/div/div/div/div')))
             section.click()
+
+            time.sleep(2)
+
+            print("Navigating to TB-COA section...")
+            section = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="iddivAppContent"]/div[1]/div/div[2]/div[2]/div/div[1]/div/div/div/div')))
+            section.click()
+
             time.sleep(2)
             
             # Step 7: Select TB-COA inquiry
@@ -409,10 +416,10 @@ class ERPLoginBot:
                 print("Login failed!")
                 return False
             
-            # Step 3: Click Select button only
-            if not self.select_premises():
-                print("Premises selection failed!")
-                return False
+            # # Step 3: Click Select button only
+            # if not self.select_premises():
+            #     print("Premises selection failed!")
+            #     return False
             
             # Step 4: Navigate to TB report
             if not self.navigate_to_tb_report():

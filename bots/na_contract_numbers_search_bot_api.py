@@ -190,19 +190,19 @@ def get_authenticated_session():
         signin_button.click()
         logger.info("Sign in button clicked")
         
-        # Wait for page to load and check if there's another button to click
-        time.sleep(3)
-        try:
-            # Look for any button with id="idSignIn" that might be a submit button
-            select_button = WebDriverWait(driver, 5).until(
-                EC.element_to_be_clickable((By.XPATH, "//button[@id='idSignIn' and normalize-space(text())='SELECT']"))
-            )
-            select_button.click()
-            logger.info("SELECT button clicked")
-        except:
-            logger.info("No additional SELECT button found, proceeding with login")
+        # # Wait for page to load and check if there's another button to click
+        # time.sleep(3)
+        # try:
+        #     # Look for any button with id="idSignIn" that might be a submit button
+        #     select_button = WebDriverWait(driver, 5).until(
+        #         EC.element_to_be_clickable((By.XPATH, "//button[@id='idSignIn' and normalize-space(text())='SELECT']"))
+        #     )
+        #     select_button.click()
+        #     logger.info("SELECT button clicked")
+        # except:
+        #     logger.info("No additional SELECT button found, proceeding with login")
         
-        time.sleep(3)
+        # time.sleep(3)
         logger.info("Login successful")
         
         # Navigate to Contract Inquiry page to ensure proper session

@@ -176,7 +176,6 @@ class NBD_MF23_IA_Report:
                 sheet_name="month",
                 usecols="A,H,AC"
             )
-
             
             # Validate required columns
             required_cols = ["CONTRACT NO", "Net Amount", "Base Rate"]

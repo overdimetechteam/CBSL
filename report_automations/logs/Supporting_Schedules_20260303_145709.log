@@ -1,8 +1,0 @@
-2026-03-03 14:57:09,289 - INFO - setup_logging:31 - Logging initialized. Log file: C:\CBSL\Script\report_automations\logs\Supporting_Schedules_20260303_145709.log
-2026-03-03 14:57:09,290 - INFO - <module>:2516 - Working directory: C:\CBSL\Script\working\Supporting Schedules
-2026-03-03 14:57:09,291 - INFO - get_month_from_gl_file:102 - Extracting month from GL Account Details file...
-2026-03-03 14:57:09,291 - INFO - get_monthly_folder:41 - Searching for monthly folder in: C:\CBSL\Script\working\Supporting Schedules
-2026-03-03 14:57:09,292 - INFO - get_monthly_folder:48 - Found 1 subdirectories: ['03-03-2026']
-2026-03-03 14:57:09,292 - INFO - get_monthly_folder:55 - Selected monthly folder: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
-2026-03-03 14:57:09,292 - INFO - find_gl_account_details_file:62 - Searching for GL Account Details file in: C:\CBSL\Script\working\Supporting Schedules\03-03-2026
-2026-03-03 14:57:09,293 - ERROR - find_gl_account_details_file:67 - Supporting_Schedules directory not found: C:\CBSL\Script\working\Supporting Schedules\03-03-2026\Supporting_Schedules

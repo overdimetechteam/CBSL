@@ -18,6 +18,7 @@ import subprocess
 import os
 import sys
 import xlwings as xw
+import glob
 # Excel constants (defined explicitly to avoid COM issues in subprocess)
 xlUp = -4162
 xlToLeft = -4159
@@ -88,7 +89,7 @@ def validate_required_files():
         "Investment Schedule": "Investment Schedule*.xlsx",
         "FD Base as at": "FD Base as at*.xlsx",
         "Borrowing report": "Borrowing report*.xlsm",
-        "MATCAP": "MATCAP*.csv",
+        "MATCAP": "MATCAP*.xlsx",
         "CBSL Provision Comparison": "CBSL Provision Comparison*.xlsb"
     }
     
@@ -820,7 +821,7 @@ class PreciseExcelDataTransfer:
             # FIRST: Clear existing data in columns A, B, C (rows 2-499) to prevent duplicates
             cleared_count = 0
             self.log("[INFO] Clearing existing System TB data in columns A, B, C (rows 2-499)...")
-            for dest_row in range(2, 500):  # 2 to 499
+            for dest_row in range(2, 10000):  # 2 to 499
                 for col_idx in [1, 2, 3]:  # A, B, C
                     dest_cell = dest_ws.cell(dest_row, col_idx)
                     # Only clear if it's not a formula
@@ -832,7 +833,7 @@ class PreciseExcelDataTransfer:
             copied_count = 0
             # Copy rows 3-500 from source to rows 2-499 in destination
             # Columns A, B, C (1, 2, 3)
-            for src_row in range(3, 501):  # 3 to 500
+            for src_row in range(3, 10000):  # 3 to 500
                 dest_row = src_row - 1  # 2 to 499
 
                 for col_idx in [1, 2, 3]:  # A, B, C
@@ -2024,139 +2025,6 @@ class PreciseExcelDataTransfer:
             traceback.print_exc()
             return False
 
-def main(gui_date=None, month=None, year=None):
-    """Main execution function."""
-    # Step 1: Validate all required files exist
-    print("Starting NBD-MF-10-GA & NBD-MF-11-IS Processing Pipeline")
-    print("="*60)
-
-    # Parse picked_date - prefer exact gui_date if provided, otherwise use month/year
-    picked_date = None
-    if gui_date:
-        try:
-            # Parse exact date from GUI (YYYY-MM-DD format, e.g., "2025-07-15")
-            picked_date = datetime.strptime(gui_date, "%Y-%m-%d").date()
-            print(f"Using exact picked_date from GUI: {picked_date}")
-        except Exception as e:
-            print(f"Warning: Could not parse gui_date ({gui_date}): {e}")
-            picked_date = None
-
-    # Fallback to month/year if gui_date not provided or failed to parse
-    if not picked_date and month and year:
-        try:
-            # Parse month name (e.g., "July") and year (e.g., "2025") to create date
-            # Assume last day of the month
-            month_date = datetime.strptime(f"{month} {year}", "%B %Y")
-            # Get last day of month
-            import calendar
-            last_day = calendar.monthrange(month_date.year, month_date.month)[1]
-            picked_date = datetime(month_date.year, month_date.month, last_day).date()
-            print(f"Using picked_date from month/year (last day of month): {picked_date}")
-        except Exception as e:
-            print(f"Warning: Could not parse month/year ({month}/{year}): {e}")
-            picked_date = None
-
-    validation_success, found_files = validate_required_files()
-
-    if not validation_success:
-        print("Cannot proceed - required files are missing!")
-        print("Please ensure all required files are present and try again.")
-        return False
-
-    print("All required files found. Proceeding with processing...")
-    print()
-
-    # Step 2: Initialize processor and run transfer
-    processor = PreciseExcelDataTransfer(picked_date=picked_date)
-    
-    # Verify all required files were found
-    if not all([processor.main_file, processor.sofp_source, processor.investment_source, 
-                processor.fd_base_file, processor.borrowing_source]):
-        print("Some required files are missing!")
-        print("Missing files:")
-        if not processor.main_file:
-            print("   - NBD-MF-10-GA & NBD-MF-11-IS")
-        if not processor.sofp_source:
-            print("   - NBD-MF-01-SOFP & SOCI AFL Monthly FS")
-        if not processor.investment_source:
-            print("   - Investment Schedule")
-        if not processor.fd_base_file:
-            print("   - FD Base as at")
-        if not processor.borrowing_source:
-            print("   - Borrowing report")
-        return False
-    
-    try:
-        success = processor.run_precise_transfer()
-
-        if success:
-            print("\n" + "="*70)
-            print("SUCCESS! Part 1: Precise data transfer completed successfully!")
-            print("="*70)
-            print("Completed Operations:")
-            print("   • Only specified cells updated with values")
-            print("   • All formulas in destination files preserved")
-            print("   • All other sheets completely untouched")
-            print("   • File structure and formatting maintained")
-            print("   • Investment specific cells transferred")
-            print("   • Other Assets manual values set")
-            print("   • Deposits Process - FD Base Portfolio data transferred")
-            print("   • Fund Back Difference - O16 to C16 addition performed")
-            print("   • Borrowing data transferred (.xlsx/.xlsb/.xlsm supported)")
-            print("   • Borrowing amounts verified")
-            print("   • Borrowings pivot tables refreshed")
-            print("   • C17 formulas fixed in NBD-MF-10-GA")
-            print("   • Borrowings J3:J9 to M3:M9 transferred")
-            print("="*70)
-
-            # Step 3: Run MATCAP processing (Parts 2-3)
-            print("\n" + "="*70)
-            print("Starting Part 2-3: MATCAP Processing")
-            print("="*70)
-            try:
-                matcap_success = main_matcap()
-                if matcap_success:
-                    print("\n" + "="*70)
-                    print("SUCCESS! All processing completed successfully!")
-                    print("="*70)
-                else:
-                    print("\n" + "="*70)
-                    print("WARNING: MATCAP processing completed with issues.")
-                    print("="*70)
-            except Exception as matcap_error:
-                print(f"\nERROR in MATCAP processing: {matcap_error}")
-                import traceback
-                traceback.print_exc()
-                print("\nNote: Part 1 (data transfer) completed successfully.")
-                print("Only MATCAP processing (Part 2-3) failed.")
-        else:
-            print("\n" + "="*70)
-            print("FAILED! Precise data transfer did not complete successfully.")
-            print("Check log messages above for details.")
-            print("="*70)
-
-    except Exception as e:
-        print(f"Unhandled exception: {e}")
-        traceback.print_exc()
-
-if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser(description='NBD-MF-10-GA & NBD-MF-11-IS Report Automation')
-    parser.add_argument('--working-dir', type=str, help='Working directory containing input files')
-    parser.add_argument('--gui-date', type=str, help='Exact report date from GUI (YYYY-MM-DD format, e.g., 2025-07-15)')
-    parser.add_argument('--month', type=str, help='Report month (e.g., July) - used for file naming and other operations')
-    parser.add_argument('--year', type=str, help='Report year (e.g., 2025) - used for file naming and other operations')
-    args = parser.parse_args()
-
-    # Change to working directory if specified
-    if args.working_dir:
-        import os
-        os.chdir(args.working_dir)
-        print(f"Changed working directory to: {args.working_dir}")
-
-    # Pass gui_date to main (preferred), or fall back to month/year
-    main(gui_date=args.gui_date, month=args.month, year=args.year)
-
 # Configure logging
 def setup_logging():
     """Set up logging to file and console with detailed formatting."""
@@ -2213,47 +2081,120 @@ def setup_logging():
     logger.info(f"Log file: {log_filename}")
     return logger
 
+
+import os
+import subprocess
+from datetime import datetime
+
 def load_cbsl_mapping(cbsl_file_path, logger):
-    """Load CBSL mapping as two dictionaries for faster lookup."""
+    """
+    Debug CBSL file structure using VBScript to find NP/P column.
+    Returns two dictionaries just like load_cbsl_mapping:
+    - contract_to_npp: {contract_no: npp_value}
+    - contract_to_product: {contract_no: product_code}
+    """
     logger.info(f"Loading CBSL mapping from: {cbsl_file_path}")
     start_time_local = datetime.now()
     
+    # Get script directory
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    vbs_file = os.path.join(script_dir, "debug_cbsl_structure.vbs")
+    
+    # Output file for results (CSV format)
+    output_file = os.path.join(os.path.dirname(cbsl_file_path), "cbsl_debug_output.csv")
+    
+    if not os.path.exists(vbs_file):
+        logger.error(f"VBScript file not found: {vbs_file}")
+        return None, None
+    
     try:
-        # Use openpyxl directly for faster loading without pandas
-        wb = openpyxl.load_workbook(cbsl_file_path, read_only=True, data_only=True)
-        ws = wb['Portfolio']
+        logger.info("Detected .xlsb format - using xlwings")
         
-        # Create dictionaries for fast lookup
-        contract_to_npp = {}
-        contract_to_product = {}
+        # Execute VBScript
+        result = subprocess.run(
+            ["cscript.exe", "//Nologo", vbs_file,
+             os.path.abspath(cbsl_file_path),
+             os.path.abspath(output_file)],
+            capture_output=True,
+            text=True,
+            timeout=3000
+        )
         
-        # Process rows (starting from row 3 as per your note)
-        for row in ws.iter_rows(min_row=3, min_col=1, max_col=37, values_only=True):  # A to AK
-            contract_no = row[0]  # Column A
-            npp_value = row[36]   # Column AK (index 36 as A=0, B=1, ..., AK=36)
+        # Process VBScript stdout (mimics the logger.info output)
+        if result.stdout:
+            for line in result.stdout.strip().split('\n'):
+                if line.startswith('===') or line.startswith('Checking') or \
+                   line.startswith('  Column') or line.startswith('Sample') or \
+                   line.startswith('Row') or line.startswith('====') or \
+                   line.startswith('Loaded') or line.startswith('NP/P') or \
+                   line.startswith('WARNING') or line.startswith('  Found'):
+                    logger.info(line)
+                elif line.strip():  # Other non-empty lines
+                    logger.info(line)
+        
+        if result.stderr:
+            logger.error("VBScript Errors:")
+            for line in result.stderr.strip().split('\n'):
+                logger.error(line)
+        
+        # Read and parse the CSV output file
+        if os.path.exists(output_file):
+            contract_to_npp = {}
+            contract_to_product = {}
             
-            if contract_no is None:
-                continue
+            with open(output_file, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
                 
-            contract_no_str = str(contract_no).strip().upper()
+                # Skip header line
+                for line in lines[1:]:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    
+                    try:
+                        parts = line.split(',')
+                        if len(parts) >= 3:
+                            contract_no = parts[0].strip()
+                            npp_value = parts[1].strip()
+                            product = parts[2].strip()
+                            
+                            if contract_no:
+                                contract_to_npp[contract_no] = npp_value
+                                if product:
+                                    contract_to_product[contract_no] = product
+                    except Exception as e:
+                        logger.warning(f"Error parsing line: {line} - {e}")
+                        continue
             
-            # Store in dictionaries
-            contract_to_npp[contract_no_str] = str(npp_value).strip() if npp_value is not None else "N/A"
+            # Calculate statistics
+            np_count = sum(1 for v in contract_to_npp.values() if v == 'NP')
+            p_count = sum(1 for v in contract_to_npp.values() if v == 'P')
+            na_count = sum(1 for v in contract_to_npp.values() if v == 'N/A')
             
-            # Extract product from contract number (positions 2-3)
-            if len(contract_no_str) >= 4:
-                product = contract_no_str[2:4]
-                contract_to_product[contract_no_str] = product
+            # Output summary in load_cbsl_mapping format
+            elapsed_time = datetime.now() - start_time_local
+            logger.info(f"Loaded CBSL mapping with {len(contract_to_npp)} contracts in {elapsed_time}")
+            logger.info(f"Sample CBSL entries: {list(contract_to_npp.items())[:5]}")
+            logger.info(f"NP/P distribution: NP={np_count}, P={p_count}, N/A={na_count}")
+            
+            # Additional warnings
+            if np_count == 0 and p_count == 0:
+                logger.warning("WARNING: No NP/P values found in column AK!")
+                logger.warning("Check the debug output above to find the correct column")
+            
+            return contract_to_npp, contract_to_product
+        else:
+            logger.error(f"Output file not created: {output_file}")
+            return None, None
         
-        logger.info(f"Loaded CBSL mapping with {len(contract_to_npp)} contracts in {datetime.now() - start_time_local}")
-        logger.info(f"Sample CBSL entries: {list(contract_to_npp.items())[:5]}")
-        
-        wb.close()
-        return contract_to_npp, contract_to_product
-        
+    except subprocess.TimeoutExpired:
+        logger.error("VBScript execution timed out")
+        return None, None
     except Exception as e:
-        logger.error(f"Failed to load CBSL mapping: {str(e)}")
-        raise
+        logger.error(f"Failed to execute VBScript: {e}")
+        import traceback
+        traceback.print_exc()
+        return None, None
 
 def process_matcap_file_optimized(args):
     current_file_path, output_file_path, cbsl_file_path = args
@@ -2267,7 +2208,12 @@ def process_matcap_file_optimized(args):
         # Step 1: Load CBSL mapping as dictionaries for faster lookup
         process_logger.info("STEP 1: Loading CBSL mapping data...")
         contract_to_npp, contract_to_product = load_cbsl_mapping(cbsl_file_path, process_logger)
-        
+
+        # Check if CBSL loading failed
+        if contract_to_npp is None or contract_to_product is None:
+            process_logger.error("FAILED: CBSL mapping could not be loaded. Check VBScript errors above.")
+            return False
+
         # Debug: Check if CBSL dict has data
         process_logger.info(f"CBSL NP/P dictionary loaded: {len(contract_to_npp)} contracts")
         process_logger.info(f"CBSL Product dictionary loaded: {len(contract_to_product)} products")
@@ -2287,7 +2233,7 @@ def process_matcap_file_optimized(args):
         step_start_time = datetime.now()
         
         wb = openpyxl.load_workbook(output_file_path)
-        ws = wb['MATCAP-01-08-2025']
+        ws = wb.worksheets[0] 
         
         # Get total rows and monthly column count before modifications
         max_row = ws.max_row
@@ -2495,7 +2441,12 @@ def convert_csv_to_excel_with_processing(args):
         # Step 1: Load CBSL mapping as dictionaries for faster lookup
         process_logger.info("Step 1: Loading CBSL mapping")
         contract_to_npp, contract_to_product = load_cbsl_mapping(cbsl_file_path, process_logger)
-        
+
+        # Check if CBSL loading failed
+        if contract_to_npp is None or contract_to_product is None:
+            process_logger.error("FAILED: CBSL mapping could not be loaded. Check VBScript errors above.")
+            return False
+
         # Debug: Check if CBSL dict has data
         process_logger.info(f"CBSL NP/P dictionary size: {len(contract_to_npp)}")
         process_logger.info(f"CBSL Product dictionary size: {len(contract_to_product)}")
@@ -2511,7 +2462,15 @@ def convert_csv_to_excel_with_processing(args):
         process_logger.info("Step 3: Creating Excel workbook with new structure")
         wb = openpyxl.Workbook()
         ws = wb.active
-        ws.title = "MATCAP-01-08-2025"
+        ws = wb.worksheets[0]
+
+        # Get its current name
+        original_sheet_name = ws.title
+
+        print(f"Original sheet name at index 0: {original_sheet_name}")
+
+        # If you want to use the original name as-is:
+        ws.title = original_sheet_name
         
         # Step 4: Set up headers with the new structure including blank column M
         headers = [
@@ -3110,15 +3069,8 @@ def load_matcap_for_pivot(matcap_file):
     """
     print(f"Loading data for pivot from {matcap_file}")
 
-    # Detect sheet name based on file
-    if 'CBSL' in matcap_file or matcap_file.endswith('.xlsb'):
-        sheet_name = 'Portfolio'
-    else:
-        sheet_name = 'MATCAP-01-08-2025'
-
-    print(f"Using sheet: {sheet_name}")
     wb = openpyxl.load_workbook(matcap_file, data_only=True)
-    ws = wb[sheet_name]
+    ws = wb.worksheets[0]
 
     max_row = ws.max_row
     max_col = ws.max_column
@@ -3191,83 +3143,128 @@ def load_matcap_for_pivot(matcap_file):
 
 def part2_main(cbsl_file=None, matcap_file=None):
     """Main function for Part 2 - Pivot Table Creation in both UPDATED-MATCAP.xlsx and CBSL Provision Comparison"""
-    # File paths
+    
+    # Find MATCAP file if not provided
     if matcap_file is None:
-        matcap_file = "UPDATED-MATCAP.xlsx"
+        import glob
+        matcap_files = glob.glob("UPDATED-MATCAP*.xlsx")
+        
+        if not matcap_files:
+            print("ERROR: No file matching 'UPDATED-MATCAP*.xlsx' found!")
+            return False
+        
+        matcap_file = matcap_files[0]  # Get the first match
+        
+        if len(matcap_files) > 1:
+            print(f"WARNING: Multiple UPDATED-MATCAP files found. Using: {matcap_file}")
+            for f in matcap_files:
+                print(f"  - {f}")
 
+    # Find CBSL file if not provided
     if cbsl_file is None:
-        cbsl_file = "CBSL Provision Comparison - Jul 2025.xlsx"
+        import glob
+        cbsl_files = glob.glob("CBSL Provision Comparison*.xlsb")
+        if not cbsl_files:
+            cbsl_files = glob.glob("CBSL Provision Comparison*.xlsx")
+        
+        if not cbsl_files:
+            print("ERROR: No CBSL Provision Comparison file found!")
+            return False
+        
+        cbsl_file = cbsl_files[0]
+        
+        if len(cbsl_files) > 1:
+            print(f"WARNING: Multiple CBSL files found. Using: {cbsl_file}")
 
     # Check if UPDATED-MATCAP file exists
     if not os.path.exists(matcap_file):
-        print(f"File {matcap_file} not found!")
-        return
+        print(f"ERROR: File {matcap_file} not found!")
+        return False
 
     try:
         # Create Sheet1 in UPDATED-MATCAP.xlsx only
-        # Note: CBSL Provision file Sheet1 will be created later in Part 3 by create_cbsl_pivot_table()
         print(f"Creating pivot table in {matcap_file}...")
+        print("Waiting for file to become accessible...")
+
+        # Wait for the file to be fully written and accessible
+        if not wait_for_file_access(matcap_file, max_attempts=20, delay=2):
+            print(f"ERROR: File {matcap_file} is locked or not accessible after waiting")
+            return False
+
+        print("File is accessible, proceeding to load data...")
         df = load_matcap_for_pivot(matcap_file)
 
         if df.empty:
-            print("No data rows found for pivot in UPDATED-MATCAP. Check the workbook.")
-            return
+            print("ERROR: No data rows found for pivot in UPDATED-MATCAP. Check the workbook.")
+            return False
 
         pivot_df = create_pivot_table(df)
         success1 = save_pivot_table_to_sheet1(matcap_file, pivot_df)
 
         if success1:
             print(f"✓ Successfully created pivot table in {matcap_file}, Sheet1")
+            return True
         else:
             print(f"✗ Failed to create pivot table in {matcap_file}")
-            return
+            return False
 
     except Exception as e:
-        print(f"Error: {str(e)}")
+        print(f"ERROR in Part 2: {str(e)}")
         import traceback
         print(traceback.format_exc())
+        return False
+    
 
-def copy_matcap_data(excel):
+def copy_matcap_data(excel_app):
     """
-    Copy data from UPDATED-MATCAP-01-08-2025.xlsx to NBD-MF-10-GA & NBD-MF-11-IS July 2025.xlsx
+    Copy data from UPDATED-MATCAP-*.xlsx to NBD-MF-10-GA & NBD-MF-11-IS July 2025.xlsx
     before creating CBSL pivot table.
+    Uses xlwings for Excel automation.
     """
     
     try:
-        matcap_file = "UPDATED-MATCAP-01-08-2025.xlsx"
+        # Find UPDATED-MATCAP file using pattern matching
+        import glob
+        matcap_files = glob.glob("UPDATED-MATCAP*.xlsx")
         
-        if not os.path.exists(matcap_file):
-            print(f"WARNING: {matcap_file} not found. Skipping MATCAP data copy.")
-            return True
+        if not matcap_files:
+            print(f"WARNING: No file matching 'UPDATED-MATCAP*.xlsx' found. Skipping MATCAP data copy.")
+            return True  # Return True to allow pipeline to continue
+        
+        matcap_file = matcap_files[0]  # Get the first match
+        
+        if len(matcap_files) > 1:
+            print(f"WARNING: Multiple UPDATED-MATCAP files found. Using: {matcap_file}")
+            for f in matcap_files:
+                print(f"  - {f}")
         
         print(f"Processing MATCAP data from: {matcap_file}")
         
-        # Open MATCAP file
-        matcap_wb = excel.Workbooks.Open(os.path.abspath(matcap_file), UpdateLinks=0)
-        matcap_ws = matcap_wb.Sheets("Sheet1")
+        # Rest of the function remains the same...
+        # Open MATCAP file using xlwings
+        matcap_wb = excel_app.books.open(os.path.abspath(matcap_file))
+        matcap_ws = matcap_wb.sheets("Sheet1")
         
         # Define possible NBD file names
-        nbd_files = [
-            "NBD-MF-10-GA & NBD-MF-11-IS July 2025.xlsx",
-            "NBD-MF-10-GA & NBD-MF-11-IS July 2025.xlsb"
-        ]
+        nbd_files = []
+        for pattern in ["NBD-MF-10-GA & NBD-MF-11-IS*.xlsx", "NBD-MF-10-GA & NBD-MF-11-IS*.xlsb"]:
+            nbd_files.extend(glob.glob(pattern))
         
-        nbd_file_found = None
-        for nbd_file in nbd_files:
-            if os.path.exists(nbd_file):
-                nbd_file_found = nbd_file
-                break
-                
-        if not nbd_file_found:
-            print(f"WARNING: NBD file not found. Tried: {', '.join(nbd_files)}")
-            matcap_wb.Close(False)
+        if not nbd_files:
+            print(f"WARNING: No NBD-MF file found matching patterns")
+            matcap_wb.close()
             return False
+        
+        nbd_file_found = nbd_files[0]
+        
+        if len(nbd_files) > 1:
+            print(f"WARNING: Multiple NBD files found. Using: {nbd_file_found}")
         
         print(f"Copying MATCAP data to: {nbd_file_found}")
         
-        # Open NBD file
-        nbd_wb = excel.Workbooks.Open(os.path.abspath(nbd_file_found), UpdateLinks=0)
-        nbd_ws = nbd_wb.Sheets("Portfolio")
+        # Open NBD file using xlwings
+        nbd_wb = excel_app.books.open(os.path.abspath(nbd_file_found))
+        nbd_ws = nbd_wb.sheets("Portfolio")
         
         # Define the copy mappings: (source_range, destination_cell_start)
         copy_mappings = [
@@ -3285,17 +3282,16 @@ def copy_matcap_data(excel):
         # Copy data for each mapping
         for source_range, dest_start in copy_mappings:
             try:
-                # Get source values
-                source_cells = matcap_ws.Range(source_range)
-                source_values = source_cells.Value
+                # Get source values using xlwings
+                source_values = matcap_ws.range(source_range).value
                 
                 # Calculate destination range
                 dest_row_start = int(dest_start[1:])  # Extract row number from cell reference
                 dest_col = dest_start[0]  # Extract column letter
                 dest_range = f"{dest_col}{dest_row_start}:{dest_col}{dest_row_start + 6}"  # 7 rows (4-10)
                 
-                # Paste values to destination
-                nbd_ws.Range(dest_range).Value = source_values
+                # Paste values to destination using xlwings
+                nbd_ws.range(dest_range).value = source_values
                 
                 print(f"Copied {source_range} to {dest_range}")
                 
@@ -3303,36 +3299,39 @@ def copy_matcap_data(excel):
                 print(f"Error copying {source_range} to {dest_start}: {e}")
                 continue
         
-        # Save and close NBD file
         # After pasting, convert any "-" to 0 in D4:D10, E4:E10, F4:F10, G4:G10, H4:H10, I4:I10, J4:J10, K4:K10
         converted_count = 0
         for col in ["D", "E", "F", "G", "H", "I", "J", "K"]:
             for row in range(4, 11):
-                cell = nbd_ws.Range(f"{col}{row}")
-                val = cell.Value
+                cell = nbd_ws.range(f"{col}{row}")
+                val = cell.value
                 if isinstance(val, str) and val.strip() == "-":
-                    cell.Value = 0
+                    cell.value = 0
                     converted_count += 1
         if converted_count:
             print(f"Normalized '-' to 0 in {converted_count} cells within D4:K10")
 
-        nbd_wb.Save()
-        nbd_wb.Close()
+        # Save and close NBD file
+        nbd_wb.save()
+        nbd_wb.close()
         
         # Close MATCAP file
-        matcap_wb.Close(False)
+        matcap_wb.close()
         
         print("SUCCESS: MATCAP data copied successfully.")
         return True
         
     except Exception as e:
         print(f"ERROR in MATCAP copy process: {e}")
+        import traceback
+        traceback.print_exc()
         return False
+    
 
-def create_cbsl_pivot_table(excel, cbsl_file_path):
+def create_cbsl_pivot_table(excel_app, cbsl_file_path):
     """
-    Creates CBSL Pivot Table directly in Excel using win32com (fastest for large files).
-    - Uses Excel COM automation (requires Windows + Excel installed).
+    Creates CBSL Pivot Table directly in Excel using xlwings.
+    - Uses xlwings Excel automation (requires Windows + Excel installed).
     - Creates a pivot table on new Sheet1 while keeping Portfolio sheet intact.
     """
 
@@ -3340,37 +3339,39 @@ def create_cbsl_pivot_table(excel, cbsl_file_path):
 
     try:
         print("Opening workbook...")
-        wb = excel.Workbooks.Open(os.path.abspath(cbsl_file_path), UpdateLinks=0)
+        wb = excel_app.books.open(os.path.abspath(cbsl_file_path))
 
         # Reference Portfolio sheet
-        ws_data = wb.Sheets("Portfolio")
+        ws_data = wb.sheets("Portfolio")
 
         # Use fixed row/column counts to avoid COM issues with .End() method
         last_row = 1000  # Process up to 1000 rows
         last_col = 50    # Process up to 50 columns
         print(f"Using fixed data range: {last_row} rows x {last_col} columns")
 
-        data_range = ws_data.Range(ws_data.Cells(3, 1), ws_data.Cells(last_row, last_col))
+        # Get the data range using xlwings syntax
+        data_range = ws_data.range((3, 1), (last_row, last_col))
 
         # Delete existing Sheet1 if present
-        for sheet in wb.Sheets:
-            if sheet.Name == "Sheet1":
-                sheet.Delete()
+        for sheet in wb.sheets:
+            if sheet.name == "Sheet1":
+                sheet.delete()
                 break
 
-        ws_pivot = wb.Sheets.Add(Before=wb.Sheets(1))
-        ws_pivot.Name = "Sheet1"
+        # Add new sheet at the beginning
+        ws_pivot = wb.sheets.add(before=wb.sheets[0])
+        ws_pivot.name = "Sheet1"
 
-        # Create pivot cache
-        pivot_cache = wb.PivotCaches().Create(
+        # Create pivot cache using the COM API through xlwings
+        pivot_cache = wb.api.PivotCaches().Create(
             SourceType=xlDatabase,
-            SourceData=data_range
+            SourceData=data_range.api
         )
 
         # Create pivot table
         pivot_table_name = "CBSL_Pivot"
         pivot_table = pivot_cache.CreatePivotTable(
-            TableDestination=ws_pivot.Cells(1, 1),
+            TableDestination=ws_pivot.range('A1').api,
             TableName=pivot_table_name
         )
 
@@ -3395,14 +3396,13 @@ def create_cbsl_pivot_table(excel, cbsl_file_path):
             pf.NumberFormat = "#,##0"
             pf.Name = f"Sum of {field}"
 
-        # Formatting
-        ws_pivot.Columns.AutoFit()
-        ws_pivot.Rows.AutoFit()
-        ws_pivot.Range("A1").Select()
+        # Formatting - use xlwings API
+        ws_pivot.autofit()
+        ws_pivot.range("A1").select()
 
         # Save & close
-        wb.Save()
-        wb.Close(SaveChanges=True)
+        wb.save()
+        wb.close()
 
         total_time = time.time() - start_time
         print(f"Pivot table created successfully in {total_time:.2f} seconds!")
@@ -3411,22 +3411,27 @@ def create_cbsl_pivot_table(excel, cbsl_file_path):
 
     except Exception as e:
         print(f"ERROR: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
-def copy_to_nbd_files(excel, cbsl_file_path):
+def copy_to_nbd_files(excel_app, cbsl_file_path):
     """
     Copy values from CBSL file to NBD-MF files and perform additional operations
+    Uses xlwings for Excel automation.
     """
     
     try:
-        # Open CBSL file
-        cbsl_wb = excel.Workbooks.Open(os.path.abspath(cbsl_file_path), UpdateLinks=0)
-        cbsl_ws = cbsl_wb.Sheets("Sheet1")
+        # Open CBSL file using xlwings
+        cbsl_wb = excel_app.books.open(os.path.abspath(cbsl_file_path))
+        cbsl_ws = cbsl_wb.sheets("Sheet1")
         
         # Define possible NBD file names (both .xlsx and .xlsb formats)
+        nbd_files = glob.glob("NBD-MF-10-GA & NBD-MF-11-IS*")
+
+
         nbd_files = [
-            "NBD-MF-10-GA & NBD-MF-11-IS July 2025.xlsx",
-            "NBD-MF-10-GA & NBD-MF-11-IS July 2025.xlsb"
+            nbd_files[0]
         ]
         
         # Mapping of source to destination cells
@@ -3449,93 +3454,111 @@ def copy_to_nbd_files(excel, cbsl_file_path):
                 
         if not nbd_file_found:
             print(f"WARNING: NBD file not found. Tried: {', '.join(nbd_files)}")
-            cbsl_wb.Close(False)
+            cbsl_wb.close()
             return False
         
         print(f"Processing: {nbd_file_found}")
         
-        # Open NBD file
-        nbd_wb = excel.Workbooks.Open(os.path.abspath(nbd_file_found), UpdateLinks=0)
-        nbd_ws = nbd_wb.Sheets("Portfolio")
+        # Open NBD file using xlwings
+        nbd_wb = excel_app.books.open(os.path.abspath(nbd_file_found))
+        nbd_ws = nbd_wb.sheets("Portfolio")
         
         # Clear destination cells (only values, keep formulas)
         for i in range(14, 21):  # Rows 14 to 20
             for col in ["N", "O", "P", "Q", "R", "S"]:
-                cell = nbd_ws.Range(f"{col}{i}")
+                cell = nbd_ws.range(f"{col}{i}")
                 # Only clear values, keep formulas intact
-                cell.Value = None
+                cell.value = None
         
         # Copy values from CBSL to NBD
         for dest, src in cell_mapping:
-            value = cbsl_ws.Range(src).Value
-            nbd_ws.Range(dest).Value = value
+            value = cbsl_ws.range(src).value
+            nbd_ws.range(dest).value = value
         
         # Clear values in O4 to O8 (preserve formulas)
         for i in range(4, 9):  # O4 to O8
-            cell = nbd_ws.Range(f"O{i}")
+            cell = nbd_ws.range(f"O{i}")
             # Only clear value, keep formula intact
-            cell.Value = None
+            cell.value = None
         
         # Set formula for O9 if it doesn't have one
-        o9_cell = nbd_ws.Range("O9")
-        if not o9_cell.Formula or not o9_cell.Formula.startswith("="):
-            o9_cell.Formula = "=O6+O7+O8"
+        o9_cell = nbd_ws.range("O9")
+        o9_formula = o9_cell.formula
+        if not o9_formula or not str(o9_formula).startswith("="):
+            o9_cell.formula = "=O6+O7+O8"
         
         # Process additional steps
-        sofp_file = "NBD-MF-01-SOFP & SOCI AFL Monthly FS July 2025.xlsx"
+        # Find file matching the pattern
+        sofp_pattern = "NBD-MF-01-SOFP & SOCI AFL Monthly FS*.xlsx"
+        sofp_files = glob.glob(sofp_pattern)
+
+        if sofp_files:
+            sofp_file = sofp_files[0]  # Get the first match
+            print(f"Found SOFP file: {sofp_file}")
+        else:
+            print(f"WARNING: No file matching '{sofp_pattern}' found")
+            sofp_file = None
         if os.path.exists(sofp_file):
             print(f"Processing: {sofp_file}")
             
-            # Open SOFP file
-            sofp_wb = excel.Workbooks.Open(os.path.abspath(sofp_file), UpdateLinks=0)
-            sofp_ws = sofp_wb.Sheets("CBSL Provision")
+            # Open SOFP file using xlwings
+            sofp_wb = excel_app.books.open(os.path.abspath(sofp_file))
+            sofp_ws = sofp_wb.sheets("CBSL Provision")
             
             # Copy C9 to O4 (only value, keep formula if exists)
-            c9_value = sofp_ws.Range("C9").Value
-            nbd_ws.Range("O4").Value = c9_value
+            c9_value = sofp_ws.range("C9").value
+            nbd_ws.range("O4").value = c9_value
             
             # Copy C6 and C7, then add them and paste to O5 (only value, keep formula if exists)
-            c6_value = sofp_ws.Range("C6").Value
-            c7_value = sofp_ws.Range("C7").Value
-            nbd_ws.Range("O5").Value = c6_value + c7_value
+            c6_value = sofp_ws.range("C6").value
+            c7_value = sofp_ws.range("C7").value
+            nbd_ws.range("O5").value = c6_value + c7_value
             
             # Calculate O6 = O4 + O5 (only value, keep formula if exists)
-            o4_value = nbd_ws.Range("O4").Value
-            o5_value = nbd_ws.Range("O5").Value
+            o4_value = nbd_ws.range("O4").value
+            o5_value = nbd_ws.range("O5").value
             if o4_value is not None and o5_value is not None:
-                nbd_ws.Range("O6").Value = o4_value + o5_value
+                nbd_ws.range("O6").value = o4_value + o5_value
             
             # Copy H10 to O7 with brackets (only value, keep formula if exists)
-            h10_value = sofp_ws.Range("H10").Value
+            h10_value = sofp_ws.range("H10").value
             if h10_value is not None:
-                nbd_ws.Range("O7").Value = f"({h10_value})"
+                nbd_ws.range("O7").value = f"({h10_value})"
             
             # Copy G10 to O8 with brackets (only value, keep formula if exists)
-            g10_value = sofp_ws.Range("G10").Value
+            g10_value = sofp_ws.range("G10").value
             if g10_value is not None:
-                nbd_ws.Range("O8").Value = f"({g10_value})"
+                nbd_ws.range("O8").value = f"({g10_value})"
             
             # Close SOFP file
-            sofp_wb.Close(False)
+            sofp_wb.close()
             print(f"Completed: {sofp_file}")
         else:
             print(f"WARNING: {sofp_file} not found. Skipping additional operations.")
         
         # Set formula for P7 = N7 - O7 and handle zero values
-        p7_cell = nbd_ws.Range("P7")
-        p7_cell.Formula = "=N7-O7"
+        p7_cell = nbd_ws.range("P7")
+        p7_cell.formula = "=N7-O7"
         
         # Apply custom number format to show 0 instead of "-" when result is zero
-        p7_cell.NumberFormat = "#,##0;-#,##0;0"
+        p7_cell.number_format = "#,##0;-#,##0;0"
         
         # Copy values from FD Base file
-        fd_base_file = "FD Base as at 31.07.2025.xlsx"
+        # Find file matching the pattern
+        fd_base_files = glob.glob("FD Base as at*.xlsx")
+
+        if fd_base_files:
+            fd_base_file = fd_base_files[0]  # Get the first match
+            print(f"Found FD Base file: {fd_base_file}")
+        else:
+            print(f"WARNING: No file matching 'FD Base as at*.xlsx' found")
+            fd_base_file = None
         if os.path.exists(fd_base_file):
             print(f"Processing: {fd_base_file}")
             
-            # Open FD Base file
-            fd_base_wb = excel.Workbooks.Open(os.path.abspath(fd_base_file), UpdateLinks=0)
-            fd_base_ws = fd_base_wb.Sheets("FD Loan")
+            # Open FD Base file using xlwings
+            fd_base_wb = excel_app.books.open(os.path.abspath(fd_base_file))
+            fd_base_ws = fd_base_wb.sheets("FD Loan")
             
             # Mapping of FD Base to NBD cells
             fd_cell_mapping = [
@@ -3547,36 +3570,622 @@ def copy_to_nbd_files(excel, cbsl_file_path):
             
             # Copy values from FD Base to NBD
             for dest, src in fd_cell_mapping:
-                value = fd_base_ws.Range(src).Value
-                nbd_ws.Range(dest).Value = value
+                value = fd_base_ws.range(src).value
+                nbd_ws.range(dest).value = value
             
             # Close FD Base file
-            fd_base_wb.Close(False)
+            fd_base_wb.close()
             print(f"Completed: {fd_base_file}")
         else:
             print(f"WARNING: {fd_base_file} not found. Skipping FD Base operations.")
         
         # Save and close NBD file
-        nbd_wb.Save()
-        nbd_wb.Close()
+        nbd_wb.save()
+        nbd_wb.close()
         
         print(f"Completed: {nbd_file_found}")
         
         # Close CBSL file
-        cbsl_wb.Close(False)
+        cbsl_wb.close()
         
         return True
         
     except Exception as e:
         print(f"ERROR in copy process: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
+def process_matcap_simplified():
+    """
+    Streamlined MATCAP processing function:
+    1. Create pivot table in MATCAP file Sheet1
+    2. Copy MATCAP pivot data to NBD Portfolio sheet
+    3. Create pivot table in CBSL file Sheet1
+    4. Copy CBSL pivot data to NBD Portfolio sheet
+    5. Copy SOFP values to NBD Portfolio sheet
+    """
+    print("="*70)
+    print("STREAMLINED MATCAP PROCESSING")
+    print("="*70)
+
+    # Validate required files
+    validation_success, found_files = validate_required_files()
+    if not validation_success:
+        print("ERROR: Required files not found!")
+        return False
+
+    matcap_file = found_files.get("MATCAP")
+    cbsl_file = found_files.get("CBSL Provision Comparison")
+    nbd_file = found_files.get("NBD-MF-10-GA & NBD-MF-11-IS")
+    sofp_file = found_files.get("NBD-MF-01-SOFP & SOCI AFL Monthly FS")
+
+    if not all([matcap_file, cbsl_file, nbd_file, sofp_file]):
+        print("ERROR: Missing required files")
+        return False
+
+    print(f"Using files:")
+    print(f"  - MATCAP: {matcap_file}")
+    print(f"  - CBSL: {cbsl_file}")
+    print(f"  - NBD: {nbd_file}")
+    print(f"  - SOFP: {sofp_file}")
+
+    excel_app = None
+    try:
+        # Initialize Excel application
+        print("\nInitializing Excel...")
+        excel_app = xw.App(visible=False, add_book=False)
+
+        # ========== STEP 1: MATCAP Pivot Table ==========
+        print("\n" + "="*70)
+        print("STEP 1: Creating pivot table in MATCAP file")
+        print("="*70)
+
+        matcap_wb = excel_app.books.open(os.path.abspath(matcap_file))
+        matcap_ws_data = matcap_wb.sheets[0]  # Data sheet (index 0)
+
+        # Find last row with data in column A
+        last_row = matcap_ws_data.range('A' + str(matcap_ws_data.cells.last_cell.row)).end('up').row
+        print(f"  Data range: A1:L{last_row}")
+
+        # DEBUG: Read and display headers
+        print("  Reading column headers...")
+        headers = matcap_ws_data.range('A1:L1').value
+        if headers:
+            for idx, header in enumerate(headers, 1):
+                print(f"    Col {idx}: '{header}'")
+
+        # Check if Sheet1 exists, delete if found
+        for sheet in matcap_wb.sheets:
+            if sheet.name == "Sheet1":
+                sheet.delete()
+                print("  Deleted existing Sheet1")
+                break
+
+        # Create new Sheet1
+        matcap_ws_pivot = matcap_wb.sheets.add(name="Sheet1", before=matcap_wb.sheets[0])
+        print("  Created new Sheet1")
+
+        # Excel constants
+        xlDatabase = 1
+        xlRowField = 1
+        xlColumnField = 2
+        xlDataField = 4
+        xlSum = -4157
+
+        # Create pivot cache and table
+        print("  Creating pivot cache...")
+        source_data = matcap_ws_data.range(f'A1:L{last_row}')
+        pivot_cache = matcap_wb.api.PivotCaches().Create(
+            SourceType=xlDatabase,
+            SourceData=source_data.api
+        )
+
+        print("  Creating pivot table...")
+        pivot_table = pivot_cache.CreatePivotTable(
+            TableDestination=matcap_ws_pivot.range('A1').api,
+            TableName='MATCAPPivot'
+        )
+
+        # DEBUG: List all available pivot fields
+        print("  Available pivot fields:")
+        available_fields = {}
+        try:
+            field_count = pivot_table.PivotFields().Count
+            for i in range(1, field_count + 1):
+                field = pivot_table.PivotFields(i)
+                field_name = field.Name
+                available_fields[field_name] = i
+                print(f"    {i}. '{field_name}'")
+        except Exception as e:
+            print(f"    WARNING: Could not list fields: {e}")
+
+        # Configure pivot table with robust field matching
+        print("  Configuring row fields...")
+
+        # Add NP/P as row field (Column 2)
+        npp_added = False
+        for field_name in ['NP/P', 'NP', 'NPP', headers[1] if len(headers) > 1 else None]:
+            if field_name and field_name in available_fields:
+                try:
+                    pivot_table.PivotFields(field_name).Orientation = xlRowField
+                    pivot_table.PivotFields(field_name).Position = 1
+                    print(f"    ✓ Added '{field_name}' as row field 1")
+                    npp_added = True
+                    break
+                except Exception as e:
+                    print(f"    Failed to add '{field_name}': {e}")
+
+        if not npp_added:
+            print("    ERROR: Could not add NP/P field!")
+
+        # Add Type as row field (Column 4)
+        type_added = False
+        for field_name in ['Type', 'TYPE', headers[3] if len(headers) > 3 else None]:
+            if field_name and field_name in available_fields:
+                try:
+                    pivot_table.PivotFields(field_name).Orientation = xlRowField
+                    pivot_table.PivotFields(field_name).Position = 2
+                    print(f"    ✓ Added '{field_name}' as row field 2")
+                    type_added = True
+                    break
+                except Exception as e:
+                    print(f"    Failed to add '{field_name}': {e}")
+
+        if not type_added:
+            print("    ERROR: Could not add Type field!")
+
+        # Value fields: Sum of bucket columns
+        print("  Adding value fields (Sum of columns)...")
+        bucket_columns_map = {
+            '7-30 Days (c)': 4,      # Column E (index 5)
+            '1-3 Months (d)': 5,     # Column F (index 6)
+            '3-6 Months (e)': 6,     # Column G (index 7)
+            '6-12 Months (f)': 7,    # Column H (index 8)
+            '1-3 Years (g)': 8,      # Column I (index 9)
+            '3-5 Years (h)': 9,      # Column J (index 10)
+            'Over 5 Years (i)': 10   # Column K (index 11)
+        }
+
+        for expected_name, col_idx in bucket_columns_map.items():
+            actual_name = headers[col_idx] if len(headers) > col_idx else expected_name
+
+            # Try multiple field name variations
+            for field_name in [actual_name, expected_name]:
+                if field_name and field_name in available_fields:
+                    try:
+                        pivot_table.AddDataField(
+                            pivot_table.PivotFields(field_name),
+                            f'Sum of {field_name}',
+                            xlSum
+                        )
+                        print(f"    ✓ Added '{field_name}'")
+                        break
+                    except Exception as e:
+                        print(f"    Failed to add '{field_name}': {e}")
+            else:
+                print(f"    WARNING: Could not add column at index {col_idx}")
+
+        print("  ✓ Pivot table configuration complete")
+
+        # Save MATCAP file
+        matcap_wb.save()
+        print("  ✓ MATCAP file saved")
+
+        # ========== STEP 2: Copy MATCAP Pivot to NBD ==========
+        print("\n" + "="*70)
+        print("STEP 2: Copying MATCAP pivot data to NBD file")
+        print("="*70)
+
+        # Find last row with data in the pivot (start from B1 and go down)
+        matcap_pivot_last_row = matcap_ws_pivot.range('B3').end('down').row
+
+        # Read pivot data from B1 to I (column I = 7 value columns + Type column)
+        print(f"  Reading MATCAP pivot data from B3:H{matcap_pivot_last_row}")
+        matcap_pivot_data = matcap_ws_pivot.range(f'B3:H{matcap_pivot_last_row}').value
+
+        # Convert to DataFrame using pandas and handle NaN
+        import pandas as pd
+        if isinstance(matcap_pivot_data[0], (list, tuple)):
+            matcap_df = pd.DataFrame(matcap_pivot_data)
+        else:
+            matcap_df = pd.DataFrame([matcap_pivot_data])
+
+        # Replace NaN with 0
+        matcap_df = matcap_df.fillna(0)
+
+        print(f"  Read {matcap_df.shape[0]} rows x {matcap_df.shape[1]} columns from MATCAP pivot")
+
+        # Open NBD file and write to Portfolio sheet D4
+        nbd_wb = excel_app.books.open(os.path.abspath(nbd_file))
+
+        # List available sheets for debugging
+        print("  Available sheets in NBD file:")
+        for idx, sheet in enumerate(nbd_wb.sheets, 1):
+            print(f"    {idx}. {sheet.name}")
+
+        # Access Portfolio sheet with error handling
+        nbd_portfolio = None
+        for sheet in nbd_wb.sheets:
+            if sheet.name == 'Portfolio':
+                nbd_portfolio = sheet
+                break
+
+        if nbd_portfolio is None:
+            print("  ERROR: 'Portfolio' sheet not found in NBD file!")
+            raise ValueError("Portfolio sheet not found in NBD file")
+
+        print("  ✓ Using sheet: 'Portfolio'")
+
+        # Write data starting at D4 (without headers)
+        nbd_portfolio.range('D4').value = matcap_df.values
+        print(f"  ✓ Written to NBD Portfolio D4 ({matcap_df.shape[0]} rows x {matcap_df.shape[1]} columns)")
+
+        # Close MATCAP file
+        matcap_wb.close()
+
+        # ========== STEP 3: CBSL Pivot Table ==========
+        print("\n" + "="*70)
+        print("STEP 3: Creating pivot table in CBSL file")
+        print("="*70)
+
+        cbsl_wb = excel_app.books.open(os.path.abspath(cbsl_file))
+
+        # List available sheets for debugging
+        print("  Available sheets in CBSL file:")
+        for idx, sheet in enumerate(cbsl_wb.sheets, 1):
+            print(f"    {idx}. {sheet.name}")
+
+        # Access Portfolio sheet with error handling
+        cbsl_ws_data = None
+        for sheet in cbsl_wb.sheets:
+            if sheet.name == 'Portfolio':
+                cbsl_ws_data = sheet
+                break
+
+        if cbsl_ws_data is None:
+            print("  ERROR: 'Portfolio' sheet not found in CBSL file!")
+            raise ValueError("Portfolio sheet not found in CBSL file")
+
+        print("  ✓ Using sheet: 'Portfolio'")
+
+        # Find last row with data
+        cbsl_last_row = cbsl_ws_data.range('A' + str(cbsl_ws_data.cells.last_cell.row)).end('up').row
+        print(f"  Data range: A3:AY{cbsl_last_row}")
+
+        # DEBUG: Read and display headers from row 3
+        print("  Reading column headers from row 3...")
+        cbsl_headers = cbsl_ws_data.range('A3:AY3').value
+        if cbsl_headers:
+            # Show first 10 and last 5 headers
+            print("  First 10 columns:")
+            for idx in range(min(10, len(cbsl_headers))):
+                print(f"    Col {idx+1}: '{cbsl_headers[idx]}'")
+            print("  Last 5 columns:")
+            for idx in range(max(0, len(cbsl_headers)-5), len(cbsl_headers)):
+                print(f"    Col {idx+1}: '{cbsl_headers[idx]}'")
+
+        # Check if Sheet1 exists, delete if found
+        for sheet in cbsl_wb.sheets:
+            if sheet.name == "Sheet1":
+                sheet.delete()
+                print("  Deleted existing Sheet1")
+                break
+
+        # Create new Sheet1
+        cbsl_ws_pivot = cbsl_wb.sheets.add(name="Sheet1", before=cbsl_wb.sheets[0])
+        print("  Created new Sheet1")
+
+        # Create pivot table - use row 3 as header since data starts there
+        print("  Creating CBSL pivot cache...")
+        cbsl_source_data = cbsl_ws_data.range(f'A3:AY{cbsl_last_row}')
+        cbsl_pivot_cache = cbsl_wb.api.PivotCaches().Create(
+            SourceType=xlDatabase,
+            SourceData=cbsl_source_data.api
+        )
+
+        print("  Creating CBSL pivot table...")
+        cbsl_pivot_table = cbsl_pivot_cache.CreatePivotTable(
+            TableDestination=cbsl_ws_pivot.range('A1').api,
+            TableName='CBSLPivot'
+        )
+
+        # DEBUG: List all available pivot fields
+        print("  Available CBSL pivot fields:")
+        cbsl_available_fields = {}
+        try:
+            cbsl_field_count = cbsl_pivot_table.PivotFields().Count
+            for i in range(1, min(cbsl_field_count + 1, 52)):  # Show max 51 fields
+                field = cbsl_pivot_table.PivotFields(i)
+                field_name = field.Name
+                cbsl_available_fields[field_name] = i
+                if i <= 10 or i > cbsl_field_count - 5:  # Show first 10 and last 5
+                    print(f"    {i}. '{field_name}'")
+                elif i == 11:
+                    print(f"    ... ({cbsl_field_count - 15} more fields) ...")
+        except Exception as e:
+            print(f"    WARNING: Could not list fields: {e}")
+
+        # Configure pivot table with robust field matching
+        print("  Configuring CBSL row fields...")
+
+        # Add CBSL P/NP as row field
+        cbsl_pnp_added = False
+        for field_name in ['CBSL P/NP', 'P/NP', 'CBSL PNP', 'PNP']:
+            if field_name in cbsl_available_fields:
+                try:
+                    cbsl_pivot_table.PivotFields(field_name).Orientation = xlRowField
+                    cbsl_pivot_table.PivotFields(field_name).Position = 1
+                    print(f"    ✓ Added '{field_name}' as row field 1")
+                    cbsl_pnp_added = True
+                    break
+                except Exception as e:
+                    print(f"    Failed to add '{field_name}': {e}")
+
+        if not cbsl_pnp_added:
+            print("    ERROR: Could not add CBSL P/NP field!")
+
+        # Add MODEL LEASE/LOAN as row field
+        cbsl_model_added = False
+        for field_name in ['ACTUAL LEASE/LOAN', 'ACTUAL', 'LEASE/LOAN', 'LEASE LOAN']:
+            if field_name in cbsl_available_fields:
+                try:
+                    cbsl_pivot_table.PivotFields(field_name).Orientation = xlRowField
+                    cbsl_pivot_table.PivotFields(field_name).Position = 2
+                    print(f"    ✓ Added '{field_name}' as row field 2")
+                    cbsl_model_added = True
+                    break
+                except Exception as e:
+                    print(f"    Failed to add '{field_name}': {e}")
+
+        if not cbsl_model_added:
+            print("    ERROR: Could not add MODEL LEASE/LOAN field!")
+
+        # Value fields
+        print("  Adding CBSL value fields (Sum of columns)...")
+        cbsl_value_columns = [
+            'ARREARS',
+            'MOI ADJUSTMENT',
+            'INTEREST RECEIVABLE',
+            'DEFERRED PROMOTION',
+            'IIS',
+            'IMP + PRO.DP'
+        ]
+
+        for col_name in cbsl_value_columns:
+            if col_name in cbsl_available_fields:
+                try:
+                    cbsl_pivot_table.AddDataField(
+                        cbsl_pivot_table.PivotFields(col_name),
+                        f'Sum of {col_name}',
+                        xlSum
+                    )
+                    print(f"    ✓ Added '{col_name}'")
+                except Exception as e:
+                    print(f"    Failed to add '{col_name}': {e}")
+            else:
+                print(f"    WARNING: Field '{col_name}' not found in available fields")
+
+        print("  ✓ CBSL pivot table configuration complete")
+
+        # Save CBSL file
+        cbsl_wb.save()
+        print("  ✓ CBSL file saved")
+
+        # ========== STEP 4: Copy CBSL Pivot to NBD ==========
+        print("\n" + "="*70)
+        print("STEP 4: Copying CBSL pivot data to NBD file")
+        print("="*70)
+
+        # Find the actual data range in the pivot
+        # Start from B1 and find last row and last column with data
+        cbsl_pivot_last_row = cbsl_ws_pivot.range('B3').end('down').row
+        cbsl_pivot_last_col_letter = cbsl_ws_pivot.range('B3').end('right').column
+
+        # Convert column number to letter
+        from openpyxl.utils import get_column_letter
+        last_col_letter = get_column_letter(cbsl_pivot_last_col_letter)
+
+        print(f"  Reading CBSL pivot data from B1:{last_col_letter}{cbsl_pivot_last_row}")
+
+        # Read the range from B1 to end of data
+        cbsl_pivot_data = cbsl_ws_pivot.range(f'B3:{last_col_letter}{cbsl_pivot_last_row}').value
+
+        # Convert to DataFrame using pandas and handle NaN
+        if isinstance(cbsl_pivot_data[0], (list, tuple)):
+            cbsl_df = pd.DataFrame(cbsl_pivot_data)
+        else:
+            cbsl_df = pd.DataFrame([cbsl_pivot_data])
+
+        # Replace NaN with 0
+        cbsl_df = cbsl_df.fillna(0)
+
+        print(f"  Read {len(cbsl_df)} rows x {len(cbsl_df.columns)} columns from CBSL pivot")
+        print(f"  Data shape: {cbsl_df.shape}")
+
+        # Write to NBD Portfolio N14 (without headers)
+        nbd_portfolio.range('N14').value = cbsl_df.values
+        print(f"  ✓ Written to NBD Portfolio N14 ({cbsl_df.shape[0]} rows x {cbsl_df.shape[1]} columns)")
+
+        # Close CBSL file
+        cbsl_wb.close()
+
+        # ========== STEP 5: Copy SOFP Values ==========
+        print("\n" + "="*70)
+        print("STEP 5: Copying SOFP values to NBD file")
+        print("="*70)
+
+        sofp_wb = excel_app.books.open(os.path.abspath(sofp_file))
+
+        # List available sheets for debugging
+        print("  Available sheets in SOFP file:")
+        for idx, sheet in enumerate(sofp_wb.sheets, 1):
+            print(f"    {idx}. {sheet.name}")
+
+        # Access CBSL Provision sheet with error handling
+        sofp_cbsl_sheet = None
+        for sheet in sofp_wb.sheets:
+            if sheet.name == 'CBSL Provision':
+                sofp_cbsl_sheet = sheet
+                break
+
+        if sofp_cbsl_sheet is None:
+            print("  ERROR: 'CBSL Provision' sheet not found in SOFP file!")
+            raise ValueError("CBSL Provision sheet not found in SOFP file")
+
+        print("  ✓ Using sheet: 'CBSL Provision'")
+
+        # Copy C9 to NBD Portfolio O4
+        value_c9 = sofp_cbsl_sheet.range('C9').value
+        nbd_portfolio.range('O4').value = value_c9
+        print(f"  ✓ Copied C9 ({value_c9}) to O4")
+
+        # Copy C6+C7 to NBD Portfolio O5
+        value_c6 = sofp_cbsl_sheet.range('C6').value or 0
+        value_c7 = sofp_cbsl_sheet.range('C7').value or 0
+        sum_c6_c7 = value_c6 + value_c7
+        nbd_portfolio.range('O5').value = sum_c6_c7
+        print(f"  ✓ Copied C6+C7 ({value_c6}+{value_c7}={sum_c6_c7}) to O5")
+
+        # Close SOFP file
+        sofp_wb.close()
+
+        # ========== STEP 6: Copy FD Base Data ==========
+        print("\n" + "="*70)
+        print("STEP 6: Copying FD Base data to NBD file")
+        print("="*70)
+
+        # Get FD Base file
+        fd_base_file = found_files.get("FD Base as at")
+        if not fd_base_file:
+            print("  WARNING: FD Base file not found, skipping step 6")
+        else:
+            try:
+                print(f"  Opening FD Base file: {fd_base_file}")
+                fd_wb = excel_app.books.open(os.path.abspath(fd_base_file))
+
+                # List available sheets for debugging
+                print("  Available sheets in FD Base file:")
+                for idx, sheet in enumerate(fd_wb.sheets, 1):
+                    print(f"    {idx}. {sheet.name}")
+
+                # Access the "FD Loan" sheet
+                sheet_name = "FD Loan"
+                fd_ws = None
+
+                # Try to find the sheet
+                for sheet in fd_wb.sheets:
+                    if sheet.name == sheet_name:
+                        fd_ws = sheet
+                        break
+
+                if fd_ws is None:
+                    print(f"  ERROR: Sheet '{sheet_name}' not found in FD Base file!")
+                    print("  Attempting to use first sheet as fallback...")
+                    fd_ws = fd_wb.sheets[0]
+                    print(f"  Using sheet: '{fd_ws.name}'")
+                else:
+                    print(f"  ✓ Using sheet: '{sheet_name}'")
+
+                # Find last row with data in column A
+                # Find the last row with data starting from A2
+                last_row_with_data = fd_ws.range('A2').end('down').row
+
+                # If A2 is also empty, handle it
+                if last_row_with_data == 2 and fd_ws.range('A2').value is None:
+                    print("  No data found in column A starting from A2")
+                    target_row = 2  # Start from A2 if empty
+                else:
+                    print(f"  Last row with data in column A: {last_row_with_data}")
+                    
+                    # Add 2 to the row index
+                    target_row = last_row_with_data + 2
+                    print(f"  Target row (last_row + 2): {target_row}")
+                print(f"  Target row (last_row + 2): {target_row}")
+
+                # Validate target row is reasonable
+                if target_row > 100000:
+                    print(f"  WARNING: Target row {target_row} seems unusually high!")
+                    print(f"  Please verify the data range")
+
+                # Copy range U{target_row}:AB{target_row} (8 columns: U, V, W, X, Y, Z, AA, AB)
+                source_range = f'U{target_row}:AB{target_row}'
+                print(f"  Reading data from range: {source_range}")
+
+                fd_data = fd_ws.range(source_range).value
+
+                # Validate data was retrieved
+                if fd_data is None:
+                    print(f"  WARNING: No data retrieved from {source_range}")
+                    print(f"  Skipping write to NBD file")
+                else:
+                    # Show data sample (first 3 and last 3 values if it's a list)
+                    if isinstance(fd_data, (list, tuple)):
+                        if len(fd_data) > 6:
+                            print(f"  Data sample: [{fd_data[0]}, {fd_data[1]}, {fd_data[2]}, ..., {fd_data[-3]}, {fd_data[-2]}, {fd_data[-1]}]")
+                        else:
+                            print(f"  Data retrieved: {fd_data}")
+                        data_count = len(fd_data)
+                    else:
+                        print(f"  Data retrieved: {fd_data}")
+                        data_count = 1
+
+                    # Paste to NBD file at C33
+                    print(f"  Writing {data_count} value(s) to NBD Portfolio C33")
+                    nbd_portfolio.range('C33').value = fd_data
+
+                    print(f"  ✓ Successfully copied {source_range} to NBD Portfolio C33")
+
+                # Close FD Base file
+                fd_wb.close()
+                print("  ✓ FD Base file closed")
+
+            except Exception as e:
+                print(f"  ERROR in FD Base processing: {e}")
+                import traceback
+                traceback.print_exc()
+                print("  WARNING: Continuing with remaining steps...")
+                # Try to close the file if it was opened
+                try:
+                    if 'fd_wb' in locals():
+                        fd_wb.close()
+                except:
+                    pass
+
+        # Save and close NBD file
+        nbd_wb.save()
+        print("\n  ✓ NBD file saved")
+        nbd_wb.close()
+        print("  ✓ NBD file closed")
+
+        print("\n" + "="*70)
+        print("SUCCESS! MATCAP Processing Completed")
+        print("="*70)
+
+        return True
+
+    except Exception as e:
+        print(f"\nERROR in MATCAP processing: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+    finally:
+        # Always close Excel
+        if excel_app is not None:
+            try:
+                excel_app.quit()
+                print("Excel application closed")
+            except Exception as e:
+                print(f"Warning: Error closing Excel: {e}")
+
 def main_matcap():
-    """Main pipeline function that runs all parts sequentially"""
-    # Step 1: Validate all required files exist
-    print("Starting MATCAP Processing Pipeline")
-    print("="*60)
-    
+    """Main pipeline function - now calls streamlined MATCAP processor"""
+    return process_matcap_simplified()
+
+# OLD main_matcap code commented out - using streamlined version above
+'''
+def old_main_matcap():
     validation_success, found_files = validate_required_files()
     
     if not validation_success:
@@ -3588,7 +4197,7 @@ def main_matcap():
     print()
 
     # File names (updated for CSV input) - use found files if available
-    current_matcap = found_files.get("MATCAP", "MATCAP-01-08-2025.csv")
+    current_matcap = found_files.get("MATCAP", "MATCAP-01-09-2025.csv")
 
     # Generate output filename from input MATCAP filename (replace MATCAP with UPDATED-MATCAP, .csv with .xlsx)
     if current_matcap.endswith('.csv'):
@@ -3597,7 +4206,7 @@ def main_matcap():
         # Fallback if input is already .xlsx
         updated_matcap = current_matcap.replace('MATCAP', 'UPDATED-MATCAP')
 
-    cbsl_file = found_files.get("CBSL Provision Comparison", "CBSL Provision Comparison - Jul 2025.xlsx")
+    cbsl_file = found_files.get("CBSL Provision Comparison", "CBSL Provision Comparison - Aug 2025.xlsb")
     
     print(f"Using files:")
     print(f"  - MATCAP: {current_matcap}")
@@ -3607,77 +4216,325 @@ def main_matcap():
 
     # Validate inputs for part 1
     if not os.path.exists(current_matcap):
-        raise FileNotFoundError(f"Input MATCAP CSV file not found: {current_matcap}")
+        print(f"ERROR: Input MATCAP CSV file not found: {current_matcap}")
+        return False
+    
     if not os.path.exists(cbsl_file):
-        raise FileNotFoundError(f"CBSL mapping file not found: {cbsl_file}")
+        print(f"ERROR: CBSL mapping file not found: {cbsl_file}")
+        return False
 
     # Run Part 1: process CSV and generate Excel workbook
-    print("Running Part 1: converting CSV to Excel with MATCAP processing...")
-    success = convert_csv_to_excel_with_processing((current_matcap, updated_matcap, cbsl_file))
-    if not success:
-        raise RuntimeError("Part 1 failed to process the MATCAP CSV file.")
-
-    if not os.path.exists(updated_matcap):
-        raise FileNotFoundError(f"Expected updated workbook not found: {updated_matcap}")
+    print("\n" + "="*60)
+    print("PART 1: Converting CSV to Excel with MATCAP processing")
+    print("="*60)
+    
+    try:
+        success = convert_csv_to_excel_with_processing((current_matcap, updated_matcap, cbsl_file))
+        if not success:
+            print("ERROR: Part 1 failed to process the MATCAP CSV file.")
+            return False
+        
+        if not os.path.exists(updated_matcap):
+            print(f"ERROR: Expected updated workbook not found: {updated_matcap}")
+            return False
+        
+        print("SUCCESS: Part 1 completed - CSV converted to Excel with MATCAP processing")
+        
+    except Exception as e:
+        print(f"ERROR in Part 1: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
 
     # Run Part 2: create pivot table in CBSL file Sheet1 and save
-    print("Running Part 2: creating pivot table in CBSL file and saving to Sheet1...")
-    part2_main(cbsl_file, updated_matcap)
+    print("\n" + "="*60)
+    print("PART 2: Creating pivot table in updated MATCAP file")
+    print("="*60)
+    
+    try:
+        part2_main(cbsl_file, updated_matcap)
+        print("SUCCESS: Part 2 completed - Pivot table created in MATCAP file")
+        
+    except Exception as e:
+        print(f"ERROR in Part 2: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
 
     # Run Part 3: CBSL Pivot Table and NBD file operations
-    print("Running Part 3: CBSL Pivot Table and NBD file operations...")
+    print("\n" + "="*60)
+    print("PART 3: CBSL Pivot Table and NBD file operations")
+    print("="*60)
 
-    # Create Excel application instance for Part 3 using xlwings
-    excel_app = xw.App(visible=False, add_book=False)
-
+    excel_app = None
+    part3_success = False
+    
     try:
+        # Create Excel application instance for Part 3 using xlwings
+        print("Initializing Excel application...")
+        excel_app = xw.App(visible=False, add_book=False)
+        print("Excel application initialized successfully")
+
         # Step 1: Copy MATCAP data before creating pivot table
-        print("Step 1: Copying MATCAP data to NBD file...")
+        print("\nStep 3.1: Copying MATCAP data to NBD file...")
         matcap_success = copy_matcap_data(excel_app)
 
-        if matcap_success:
-            print("SUCCESS: MATCAP data copied. Now creating pivot table...")
-            
-            # Step 2: Create pivot table in CBSL file
-            pivot_success = create_cbsl_pivot_table(excel_app, cbsl_file)
-
-            if pivot_success:
-                print("SUCCESS: Pivot table created. Now copying data to NBD file...")
-                # Step 3: Copy data from CBSL to NBD file
-                copy_success = copy_to_nbd_files(excel_app, cbsl_file)
-                
-                if copy_success:
-                    print("SUCCESS: All operations completed successfully!")
-                else:
-                    print("FAILED: Could not copy data to NBD file.")
-            else:
-                print("FAILED: Could not create pivot table.")
-        else:
+        if not matcap_success:
             print("FAILED: Could not copy MATCAP data.")
+            return False
+        
+        print("SUCCESS: MATCAP data copied successfully")
+        
+        # Step 2: Create pivot table in CBSL file
+        print("\nStep 3.2: Creating pivot table in CBSL file...")
+        pivot_success = create_cbsl_pivot_table(excel_app, cbsl_file)
+
+        if not pivot_success:
+            print("FAILED: Could not create pivot table.")
+            return False
+        
+        print("SUCCESS: Pivot table created successfully")
+        
+        # Step 3: Copy data from CBSL to NBD file
+        print("\nStep 3.3: Copying data from CBSL to NBD file...")
+        copy_success = copy_to_nbd_files(excel_app, cbsl_file)
+        
+        if not copy_success:
+            print("FAILED: Could not copy data to NBD file.")
+            return False
+        
+        print("SUCCESS: Data copied to NBD file successfully")
+        part3_success = True
 
     except Exception as e:
         print(f"ERROR in Part 3 process: {e}")
         import traceback
-        print(traceback.format_exc())
+        traceback.print_exc()
+        part3_success = False
 
     finally:
-        # Always quit Excel (xlwings)
-        excel_app.quit()
+        # Always quit Excel (xlwings) - even if errors occurred
+        if excel_app is not None:
+            try:
+                print("\nClosing Excel application...")
+                excel_app.quit()
+                print("Excel application closed successfully")
+            except Exception as e:
+                print(f"Warning: Error while closing Excel: {e}")
 
-    # After all processing is completed, remove the UPDATED-MATCAP file if it is no longer needed
+    # Clean up: Remove UPDATED-MATCAP file if it exists
+    if part3_success:
+        print("\n" + "="*60)
+        print("CLEANUP: Removing temporary files")
+        print("="*60)
+        
+        try:
+            if os.path.exists(updated_matcap):
+                os.remove(updated_matcap)
+                print(f"Removed temporary file: {updated_matcap}")
+            else:
+                print(f"Temporary file not found (already removed): {updated_matcap}")
+        except Exception as e:
+            print(f"Warning: Could not delete temporary file '{updated_matcap}': {e}")
+
+    # Final summary
+    print("\n" + "="*60)
+    if part3_success:
+        print("MATCAP PIPELINE COMPLETED SUCCESSFULLY")
+        print("="*60)
+        print("Summary:")
+        print("  ✓ Part 1: CSV to Excel conversion - COMPLETED")
+        print("  ✓ Part 2: Pivot table creation - COMPLETED")
+        print("  ✓ Part 3: CBSL and NBD operations - COMPLETED")
+        print("  ✓ Cleanup: Temporary files removed")
+    else:
+        print("MATCAP PIPELINE COMPLETED WITH ERRORS")
+        print("="*60)
+        print("Please check the error messages above for details.")
+    
+    print("="*60)
+
+    return part3_success
+'''
+# END OLD main_matcap code
+
+def main(gui_date=None, month=None, year=None):
+    """Main execution function."""
+    # Step 1: Validate all required files exist
+    print("Starting NBD-MF-10-GA & NBD-MF-11-IS Processing Pipeline")
+    print("="*60)
+
+    # Parse picked_date - prefer exact gui_date if provided, otherwise use month/year
+    picked_date = None
+    if gui_date:
+        try:
+            # Parse exact date from GUI (YYYY-MM-DD format, e.g., "2025-07-15")
+            picked_date = datetime.strptime(gui_date, "%Y-%m-%d").date()
+            print(f"Using exact picked_date from GUI: {picked_date}")
+        except Exception as e:
+            print(f"Warning: Could not parse gui_date ({gui_date}): {e}")
+            picked_date = None
+
+    # Fallback to month/year if gui_date not provided or failed to parse
+    if not picked_date and month and year:
+        try:
+            # Parse month name (e.g., "July") and year (e.g., "2025") to create date
+            # Assume last day of the month
+            month_date = datetime.strptime(f"{month} {year}", "%B %Y")
+            # Get last day of month
+            import calendar
+            last_day = calendar.monthrange(month_date.year, month_date.month)[1]
+            picked_date = datetime(month_date.year, month_date.month, last_day).date()
+            print(f"Using picked_date from month/year (last day of month): {picked_date}")
+        except Exception as e:
+            print(f"Warning: Could not parse month/year ({month}/{year}): {e}")
+            picked_date = None
+
+    validation_success, found_files = validate_required_files()
+
+    if not validation_success:
+        print("Cannot proceed - required files are missing!")
+        print("Please ensure all required files are present and try again.")
+        return False
+
+    print("All required files found. Proceeding with processing...")
+    print()
+
+    # Step 2: Initialize processor and run transfer
+    processor = PreciseExcelDataTransfer(picked_date=picked_date)
+    
+    # Verify all required files were found
+    if not all([processor.main_file, processor.sofp_source, processor.investment_source, 
+                processor.fd_base_file, processor.borrowing_source]):
+        print("Some required files are missing!")
+        print("Missing files:")
+        if not processor.main_file:
+            print("   - NBD-MF-10-GA & NBD-MF-11-IS")
+        if not processor.sofp_source:
+            print("   - NBD-MF-01-SOFP & SOCI AFL Monthly FS")
+        if not processor.investment_source:
+            print("   - Investment Schedule")
+        if not processor.fd_base_file:
+            print("   - FD Base as at")
+        if not processor.borrowing_source:
+            print("   - Borrowing report")
+        return False
+    
     try:
-        # Check if the updated MATCAP file exists in the working directory
-        if os.path.exists(updated_matcap):
-            # Attempt to delete the updated MATCAP file to avoid leaving unnecessary artifacts
-            os.remove(updated_matcap)
-            # Confirm deletion to the user via console output
-            print(f"Clean up: Deleted '{updated_matcap}' as it is no longer needed.")
-        else:
-            # Inform that there is nothing to delete if the file is absent
-            print(f"Clean up: '{updated_matcap}' not found; no deletion necessary.")
-    except Exception as e:
-        # Log a non-fatal warning if deletion fails for any reason (e.g., file locked)
-        print(f"Clean up warning: Could not delete '{updated_matcap}': {e}")
+        success = processor.run_precise_transfer()
 
-    print("Pipeline completed. All operations finished.")
-    return True
+        if success:
+            print("\n" + "="*70)
+            print("SUCCESS! Part 1: Precise data transfer completed successfully!")
+            print("="*70)
+            print("Completed Operations:")
+            print("   • Only specified cells updated with values")
+            print("   • All formulas in destination files preserved")
+            print("   • All other sheets completely untouched")
+            print("   • File structure and formatting maintained")
+            print("   • Investment specific cells transferred")
+            print("   • Other Assets manual values set")
+            print("   • Deposits Process - FD Base Portfolio data transferred")
+            print("   • Fund Back Difference - O16 to C16 addition performed")
+            print("   • Borrowing data transferred (.xlsx/.xlsb/.xlsm supported)")
+            print("   • Borrowing amounts verified")
+            print("   • Borrowings pivot tables refreshed")
+            print("   • C17 formulas fixed in NBD-MF-10-GA")
+            print("   • Borrowings J3:J9 to M3:M9 transferred")
+            print("="*70)
+
+            # Step 3: Run MATCAP processing (Parts 2-3)
+            print("\n" + "="*70)
+            print("Starting Part 2-3: MATCAP Processing")
+            print("="*70)
+            try:
+                matcap_success = main_matcap()
+                if matcap_success:
+                    print("\n" + "="*70)
+                    print("SUCCESS! MATCAP processing completed successfully!")
+                    print("="*70)
+                else:
+                    print("\n" + "="*70)
+                    print("WARNING: MATCAP processing completed with issues.")
+                    print("="*70)
+            except Exception as matcap_error:
+                print(f"\nERROR in MATCAP processing: {matcap_error}")
+                import traceback
+                traceback.print_exc()
+                print("\nNote: Part 1 (data transfer) completed successfully.")
+                print("Only MATCAP processing (Part 2-3) failed.")
+
+            # Step 4: Run IFRS Code Processing
+            print("\n" + "="*70)
+            print("Starting Part 4: IFRS Code Processing")
+            print("="*70)
+            try:
+                # Import the IFRS processing function
+                from process_ifrs_codes import process_ifrs_codes
+
+                # Build the IFRS file path - same directory as other input files
+                current_dir = os.getcwd()
+                ifrs_file_path = os.path.join(current_dir, "ifrs_code.xlsx")
+
+                # Use the main_file path from the processor
+                nbd_file_path = processor.main_file
+
+                # Check if IFRS file exists
+                if not os.path.exists(ifrs_file_path):
+                    print(f"\nWARNING: IFRS code file not found: {ifrs_file_path}")
+                    print("Skipping IFRS code processing.")
+                else:
+                    print(f"IFRS file: {ifrs_file_path}")
+                    print(f"NBD file: {nbd_file_path}")
+
+                    # Run IFRS processing
+                    ifrs_success = process_ifrs_codes(ifrs_file=ifrs_file_path, nbd_file=nbd_file_path)
+
+                    if ifrs_success:
+                        print("\n" + "="*70)
+                        print("SUCCESS! IFRS Code processing completed successfully!")
+                        print("="*70)
+                    else:
+                        print("\n" + "="*70)
+                        print("WARNING: IFRS Code processing completed with issues.")
+                        print("="*70)
+
+            except Exception as ifrs_error:
+                print(f"\nERROR in IFRS Code processing: {ifrs_error}")
+                import traceback
+                traceback.print_exc()
+                print("\nNote: Part 1-3 (data transfer and MATCAP) completed successfully.")
+                print("Only IFRS Code processing (Part 4) failed.")
+
+            # Final summary
+            print("\n" + "="*70)
+            print("ALL PROCESSING COMPLETED!")
+            print("="*70)
+        else:
+            print("\n" + "="*70)
+            print("FAILED! Precise data transfer did not complete successfully.")
+            print("Check log messages above for details.")
+            print("="*70)
+
+    except Exception as e:
+        print(f"Unhandled exception: {e}")
+        traceback.print_exc()
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description='NBD-MF-10-GA & NBD-MF-11-IS Report Automation')
+    parser.add_argument('--working-dir', type=str, help='Working directory containing input files')
+    parser.add_argument('--gui-date', type=str, help='Exact report date from GUI (YYYY-MM-DD format, e.g., 2025-07-15)')
+    parser.add_argument('--month', type=str, help='Report month (e.g., July) - used for file naming and other operations')
+    parser.add_argument('--year', type=str, help='Report year (e.g., 2025) - used for file naming and other operations')
+    args = parser.parse_args()
+
+    # Change to working directory if specified
+    if args.working_dir:
+        import os
+        os.chdir(args.working_dir)
+        print(f"Changed working directory to: {args.working_dir}")
+
+    # Pass gui_date to main (preferred), or fall back to month/year
+    main(gui_date=args.gui_date, month=args.month, year=args.year)
+
